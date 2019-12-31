@@ -27,7 +27,7 @@ class MyWebsite(exo.Page):
         user = self.users.get_user(username)
         if user.password_matches(password):
             self.session.create(user)
-            return self.context.redirect(self.routes.home)
+            return self.context.redirect(self.routes("home"))
         return self.context.env(login="failed")
     
     @exo.validator("login")
