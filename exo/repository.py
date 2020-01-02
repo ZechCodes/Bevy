@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cached_property
-from typing import Any, Dict, Generic, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 
 GenericBase = TypeVar("GenericBase")
@@ -11,7 +11,7 @@ class Repository(Generic[GenericBase]):
     Simple registry implementation that provides a helper class that can be
     subclassed
     """
-    def __init__(self, base: GenericBase):
+    def __init__(self, base: Optional[GenericBase] = None):
         self._base = base
         self._registry: Dict[str, GenericBase] = {}
 
