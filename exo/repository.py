@@ -32,7 +32,7 @@ class Repository(Generic[GenericBase]):
         return self
 
     @cached_property
-    def registration_intermediary(self):
+    def registration_subclass(self):
         """\
         Generates a subclass of base that supplies an implementation of
         __init_subclass__ that will register the class with the repository.
