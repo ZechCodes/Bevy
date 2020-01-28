@@ -14,6 +14,17 @@ class Test(TestCase):
             Test.__dependencies__["testing"], 5, "Failed to add the correct dependency"
         )
 
+    def test_uses_direct(self):
+        class Test:
+            __dependencies__ = {}
+
+        uses(Test, testing=5)
+
+        self.assertIn("testing", Test.__dependencies__, "Failed to add the dependency")
+        self.assertEqual(
+            Test.__dependencies__["testing"], 5, "Failed to add the correct dependency"
+        )
+
     def test_not_composable(self):
         with self.assertRaises(NotComposable, msg="Failed to raise on non-composable"):
 
