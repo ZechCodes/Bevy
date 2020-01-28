@@ -1,9 +1,17 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Type, TypeVar
+from typing import Any, Type, TypeVar, Union
 
 
 ExoRepository = TypeVar("ExoRepository", bound="AbstractRepository")
+
+
+class RepositoryNameExists(Exception):
+    ...
+
+
+class RepositoryNameDoesntExist(Exception):
+    ...
 
 
 class AbstractRepository(ABC):
@@ -26,6 +34,10 @@ class AbstractRepository(ABC):
 
     def is_null(self) -> bool:
         return self is NullRepository()
+
+    @abstractmethod
+    def set(self, name: str, cls: Type) -> None:
+        return
 
 
 class NullRepository(AbstractRepository):
@@ -60,6 +72,10 @@ class NullRepository(AbstractRepository):
         """ Doesn't have any instances. """
         return False
 
+    def set(self, name: str, cls: Type) -> None:
+        """ Doesn't set anything. """
+        return
+
 
 class Repository(AbstractRepository):
     """ Simple repository implementation for storing instances of classes for
@@ -76,9 +92,13 @@ class Repository(AbstractRepository):
     def create_child(self) -> ExoRepository:
         return self.__class__(self)
 
-    def get(self, cls: Type) -> Any:
+    def get(self, cls: Union[str, Type]) -> Any:
         instance = self._get(cls)
         if not instance:
+            if isinstance(cls, str):
+                raise RepositoryNameDoesntExist(
+                    f"The repository doesn't have the name {cls}"
+                )
             instance = self._create_instance(cls)
 
         return instance
@@ -91,6 +111,16 @@ class Repository(AbstractRepository):
             return cls in self._repository
 
         return cls in self._repository or self.parent.has(cls)
+
+    def set(self, name: str, cls: Type) -> None:
+        """ Loads an instance into the repository as well as sets a name by
+        which the instance can be retrieved. If the name already exists in the
+        repository it will raise RepositoryNameExists. """
+        if name in self._repository:
+            raise RepositoryNameExists(
+                f"The name {name} already exists in the repository."
+            )
+        self._repository[name] = self.get(cls)
 
     def _build_instance(self, cls: Type) -> Any:
         """ Builds an instance of a class. This will look for a
