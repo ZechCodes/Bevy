@@ -1,5 +1,10 @@
 from unittest import TestCase
-from exo.repositories import NullRepository, Repository
+from exo.repositories import (
+    NullRepository,
+    Repository,
+    RepositoryNameDoesntExist,
+    RepositoryNameExists,
+)
 
 
 class TestNullRepository(TestCase):
@@ -96,3 +101,38 @@ class TestRepository(TestCase):
         self.assertIs(
             number, sentinel, "Repository failed to correctly call build method"
         )
+
+    def test_repository_set(self):
+        sentinel = object()
+
+        class Test:
+            @classmethod
+            def __repository_build__(cls):
+                return sentinel
+
+        repo = Repository()
+        repo.set("testing", Test)
+
+        self.assertIs(
+            repo.get("testing"),
+            sentinel,
+            "Repository failed to load the corrected named instance",
+        )
+
+    def test_repository_set_extra(self):
+        repo = Repository()
+        repo.set("testing", object)
+
+        with self.assertRaises(
+            RepositoryNameExists, msg="Failed to raise name exists exception"
+        ):
+            repo.set("testing", object)
+
+    def test_repository_get_nonexistent_name(self):
+        repo = Repository()
+
+        with self.assertRaises(
+            RepositoryNameDoesntExist,
+            msg="Failed to raise name doesn't exist exception",
+        ):
+            repo.get("testing")
