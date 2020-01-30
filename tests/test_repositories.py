@@ -157,6 +157,23 @@ class TestRepository(TestCase):
             "Something with not instantiating is weird...",
         )
 
+    def test_scoped_repository(self):
+        sentinel = object()
+
+        class Test:
+            @classmethod
+            def __repository_build__(cls, repository: Repository):
+                repository.set("testing", sentinel, instantiate=False)
+                return cls()
+
+        repo = Repository()
+        scope = Repository()
+
+        repo.set("testing", Test, repository=scope)
+        repo.get("testing")
+
+        self.assertIs(scope.get("testing"), sentinel, "Scope repository didn't work")
+
 
 class TestRepositoryElements(TestCase):
     def test_instantiation(self):

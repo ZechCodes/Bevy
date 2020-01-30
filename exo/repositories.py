@@ -114,7 +114,14 @@ class Repository(AbstractRepository):
 
         return name in self._repository or self.parent.has(name)
 
-    def set(self, name: str, obj: Any, *, instantiate: bool = True) -> None:
+    def set(
+        self,
+        name: str,
+        obj: Any,
+        *,
+        instantiate: bool = True,
+        repository: ExoRepository = None,
+    ) -> None:
         """ Loads an object into the repository. If the object should be not be
         instantiated the instantiate keyword should be set to False. If the
         name already exists in the repository it will raise
@@ -123,7 +130,9 @@ class Repository(AbstractRepository):
             raise RepositoryNameExists(
                 f"The name {name} already exists in the repository."
             )
-        self._repository[name] = RepositoryElement(obj, instantiate)
+        self._repository[name] = RepositoryElement(
+            obj, repository if repository else self, instantiate
+        )
 
     def _get(self, name: str) -> Union[Any, NULL_VALUE]:
         """ Gets a value from the repository or it's parents if it has been
@@ -138,10 +147,11 @@ class Repository(AbstractRepository):
 
 
 class RepositoryElement:
-    def __init__(self, obj: Any, instantiate: bool = True):
+    def __init__(self, obj: Any, repository: ExoRepository, instantiate: bool = True):
         self.instance = NULL_VALUE if instantiate else obj
         self.instantiate = instantiate
         self.obj = obj
+        self._repository = repository
 
     @property
     def cacheable(self) -> bool:
@@ -185,6 +195,6 @@ class RepositoryElement:
         built correctly for the repository. If that class method isn't found it
         will fallback to the standard Python constructor. """
         if hasattr(self.obj, "__repository_build__"):
-            return self.obj.__repository_build__()
+            return self.obj.__repository_build__(self._repository)
 
         return self.obj()
