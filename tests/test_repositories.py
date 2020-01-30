@@ -2,6 +2,7 @@ from unittest import TestCase
 from exo.repositories import (
     NullRepository,
     Repository,
+    RepositoryElement,
     RepositoryNameDoesntExist,
     RepositoryNameExists,
 )
@@ -36,7 +37,8 @@ class TestRepository(TestCase):
             pass
 
         repo = Repository()
-        inst = repo.get(Test)
+        repo.set(Test.__name__, Test)
+        inst = repo.get(Test.__name__)
 
         self.assertIsInstance(
             inst, Test, "Repository didn't not return an instance of the correct type"
@@ -47,8 +49,8 @@ class TestRepository(TestCase):
             pass
 
         repo = Repository()
-        inst = repo.get(Test)
-        inst2 = repo.get(Test)
+        inst = repo.get(Test.__name__, default=Test)
+        inst2 = repo.get(Test.__name__, default=Test)
 
         self.assertIs(inst, inst2, "Repository instantiated multiple instances")
 
@@ -59,10 +61,10 @@ class TestRepository(TestCase):
         repo = Repository()
         child_repo = repo.create_child()
 
-        inst = repo.get(Test)
-        inst2 = child_repo.get(Test)
+        inst1 = repo.get(Test.__name__, default=Test)
+        inst2 = child_repo.get(Test.__name__)
 
-        self.assertIs(inst, inst2, "Repository inheritance failed")
+        self.assertIs(inst1, inst2, "Repository inheritance failed")
 
     def test_get_reverse_inheritance(self):
         class Test:
@@ -71,10 +73,10 @@ class TestRepository(TestCase):
         repo = Repository()
         child_repo = repo.create_child()
 
-        inst = child_repo.get(Test)
-        inst2 = repo.get(Test)
+        inst1 = child_repo.get(Test.__name__, default=Test)
+        inst2 = repo.get(Test.__name__, default=Test)
 
-        self.assertIsNot(inst, inst2, "Repository inheritance failed")
+        self.assertIsNot(inst1, inst2, "Repository inheritance failed")
 
     def test_repository_ignore(self):
         class Test:
@@ -82,8 +84,8 @@ class TestRepository(TestCase):
 
         repo = Repository()
 
-        inst1 = repo.get(Test)
-        inst2 = repo.get(Test)
+        inst1 = repo.get(Test.__name__, default=Test)
+        inst2 = repo.get(Test.__name__, default=Test)
 
         self.assertIsNot(inst1, inst2, "Repository instantiated multiple times")
 
@@ -96,7 +98,7 @@ class TestRepository(TestCase):
                 return sentinel
 
         repo = Repository()
-        number = repo.get(Test)
+        number = repo.get(Test.__name__, default=Test)
 
         self.assertIs(
             number, sentinel, "Repository failed to correctly call build method"
@@ -136,3 +138,42 @@ class TestRepository(TestCase):
             msg="Failed to raise name doesn't exist exception",
         ):
             repo.get("testing")
+
+    def test_not_instanitiating_get(self):
+        sentinel = object()
+        repo = Repository()
+        value = repo.get("testing", default=sentinel, instantiate=False)
+
+        self.assertIs(value, sentinel, "Something with not instantiating is weird...")
+
+    def test_not_instanitiating_set(self):
+        sentinel = object()
+        repo = Repository()
+        repo.set("testing", sentinel, instantiate=False)
+
+        self.assertIs(
+            repo.get("testing"),
+            sentinel,
+            "Something with not instantiating is weird...",
+        )
+
+
+class TestRepositoryElements(TestCase):
+    def test_instantiation(self):
+        element = RepositoryElement(object)
+
+        self.assertFalse(
+            isinstance(element.instance, type), "Failed to instantiate object"
+        )
+
+    def test_instance_caching(self):
+        element = RepositoryElement(object)
+
+        self.assertIs(element.instance, element.instance, "Failed to cache instance")
+
+    def test_no_instantiation(self):
+        element = RepositoryElement(object, instantiate=False)
+
+        self.assertIsInstance(
+            element.instance, type, "Instantiated object when it should not have"
+        )

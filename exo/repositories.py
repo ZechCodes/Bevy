@@ -4,6 +4,7 @@ from typing import Any, Type, TypeVar, Union
 
 
 ExoRepository = TypeVar("ExoRepository", bound="AbstractRepository")
+NULL_VALUE = object()
 
 
 class RepositoryNameExists(Exception):
@@ -25,18 +26,18 @@ class AbstractRepository(ABC):
         return NullRepository()
 
     @abstractmethod
-    def get(self, cls: Type) -> Any:
+    def get(self, name: str, *, default: Any = None, instantiate: bool = True) -> Any:
         return
 
     @abstractmethod
-    def has(self, cls: Type, *, propagate: bool = False) -> bool:
+    def has(self, name: str, *, propagate: bool = False) -> bool:
         return False
 
     def is_null(self) -> bool:
         return self is NullRepository()
 
     @abstractmethod
-    def set(self, name: str, cls: Type) -> None:
+    def set(self, name: str, obj: Any, *, instantiate: bool = True) -> None:
         return
 
 
@@ -64,15 +65,15 @@ class NullRepository(AbstractRepository):
     def create_child(self) -> ExoRepository:
         return self
 
-    def get(self, cls: Type) -> Any:
+    def get(self, name: str, *, default: Any = None, instantiate: bool = True) -> Any:
         """ Doesn't load anything and returns None instead. """
         return None
 
-    def has(self, cls: Type, *, propagate: bool = False) -> bool:
+    def has(self, name: str, *, propagate: bool = False) -> bool:
         """ Doesn't have any instances. """
         return False
 
-    def set(self, name: str, cls: Type) -> None:
+    def set(self, name: str, obj: Any, *, instantiate: bool = True) -> None:
         """ Doesn't set anything. """
         return
 
@@ -92,69 +93,98 @@ class Repository(AbstractRepository):
     def create_child(self) -> ExoRepository:
         return self.__class__(self)
 
-    def get(self, cls: Union[str, Type]) -> Any:
-        instance = self._get(cls)
-        if not instance:
-            if isinstance(cls, str):
+    def get(
+        self, name: str, *, default: Any = NULL_VALUE, instantiate: bool = True
+    ) -> Any:
+        if not self.has(name):
+            if default is NULL_VALUE:
                 raise RepositoryNameDoesntExist(
-                    f"The repository doesn't have the name {cls}"
+                    f"The repository doesn't have anything registered with the name '{name}'"
                 )
-            instance = self._create_instance(cls)
+            self.set(name, default, instantiate=instantiate)
 
-        return instance
+        return self._get(name)
 
-    def has(self, cls: Type, *, propagate: bool = True) -> bool:
+    def has(self, name: str, *, propagate: bool = True) -> bool:
         """ Checks if the repository or any of it's parents have an instance of
         the requested class. Propagation to parents can be disabled with the
         "propagate" boolean keyword argument. """
         if not propagate:
-            return cls in self._repository
+            return name in self._repository
 
-        return cls in self._repository or self.parent.has(cls)
+        return name in self._repository or self.parent.has(name)
 
-    def set(self, name: str, cls: Type) -> None:
-        """ Loads an instance into the repository as well as sets a name by
-        which the instance can be retrieved. If the name already exists in the
-        repository it will raise RepositoryNameExists. """
-        if name in self._repository:
+    def set(self, name: str, obj: Any, *, instantiate: bool = True) -> None:
+        """ Loads an object into the repository. If the object should be not be
+        instantiated the instantiate keyword should be set to False. If the
+        name already exists in the repository it will raise
+        RepositoryNameExists. name must be hashable. """
+        if self.has(name, propagate=False):
             raise RepositoryNameExists(
                 f"The name {name} already exists in the repository."
             )
-        self._repository[name] = self.get(cls)
+        self._repository[name] = RepositoryElement(obj, instantiate)
 
-    def _build_instance(self, cls: Type) -> Any:
+    def _get(self, name: str) -> Union[Any, NULL_VALUE]:
+        """ Gets a value from the repository or it's parents if it has been
+        registered, returns None if it's not found. """
+        if not self.has(name):
+            return NULL_VALUE
+
+        if name in self._repository:
+            return self._repository[name].instance
+
+        return self.parent.get(name)
+
+
+class RepositoryElement:
+    def __init__(self, obj: Any, instantiate: bool = True):
+        self.instance = NULL_VALUE if instantiate else obj
+        self.instantiate = instantiate
+        self.obj = obj
+
+    @property
+    def cacheable(self) -> bool:
+        return not (
+            hasattr(self.obj, "__repository_ignore__")
+            and self.obj.__repository_ignore__
+        )
+
+    @property
+    def instance(self) -> Any:
+        instance = self._instance
+        if self._instance is NULL_VALUE:
+            instance = self._create_instance()
+        if self.cacheable:
+            self._instance = instance
+        return instance
+
+    @instance.setter
+    def instance(self, value: Any):
+        self._instance = value
+
+    @property
+    def instantiate(self) -> bool:
+        return self._instantiate
+
+    @instantiate.setter
+    def instantiate(self, value: bool):
+        self._instantiate = value
+
+    @property
+    def obj(self) -> Any:
+        return self._obj
+
+    @obj.setter
+    def obj(self, value: Any):
+        self._obj = value
+
+    def _create_instance(self):
         """ Builds an instance of a class. This will look for a
         __repository_build__ class method which it can call to get an instance
         built correctly for the repository. If that class method isn't found it
         will fallback to the standard Python constructor. """
-        if hasattr(cls, "__repository_build__"):
-            return cls.__repository_build__()
+        if hasattr(self.obj, "__repository_build__"):
+            return self.obj.__repository_build__()
 
-        return cls()
-
-    def _create_instance(self, cls: Type) -> Any:
-        """ Creates and stores an instance of a class placing it in the
-        repository if appropriate. """
-        instance = self._build_instance(cls)
-        self._store_instance(instance, cls)
-        return instance
-
-    def _get(self, cls: Type) -> Any:
-        """ Gets an instance of a class from the repository or it's parents if
-        it has been created, returns None if it's not found. """
-        if not self.has(cls):
-            return None
-
-        if cls in self._repository:
-            return self._repository[cls]
-
-        return self.parent.get(cls)
-
-    def _store_instance(self, instance: Any, cls: Type):
-        """ Stores an instance in the repository. It checks of an
-        __repository_ignore__ class attribute that is set to True, if found it
-        will ignore the instance and not store it. """
-        if hasattr(cls, "__repository_ignore__") and cls.__repository_ignore__:
-            return
-
-        self._repository[cls] = instance
+        return self.obj()
