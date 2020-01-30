@@ -3,7 +3,7 @@ from exo.composables import Composable, uses, NotComposable
 from exo.repositories import Repository
 
 
-class Test(TestCase):
+class TestComposables(TestCase):
     def test_uses(self):
         @uses(testing=5)
         class Test:
@@ -43,25 +43,28 @@ class Test(TestCase):
             Test()
 
     def test_composable_instantiation(self):
-        @uses(testing=-1)
+        sentinel = object()
+
+        @uses(testing="test")
         class Test(Composable):
             ...
 
-        class DummyRepository(Repository):
-            def get(self, *args):
-                return 5
+        repo = Repository()
+        repo.set("test", sentinel, instantiate=False)
 
-        test = Test(__repository__=DummyRepository())
-        self.assertEqual(test.testing, 5, "Incorrect value was injected")
+        test = Test(__repository__=repo)
+
+        self.assertIs(test.testing, sentinel, "Incorrect value was injected")
 
     def test_composable_create(self):
-        @uses(testing=-1)
+        sentinel = object()
+
+        @uses(testing="test")
         class Test(Composable):
             ...
 
-        class DummyRepository(Repository):
-            def get(self, *args):
-                return 5
+        repo = Repository()
+        repo.set("test", sentinel, instantiate=False)
 
-        test = Test.create(DummyRepository())
-        self.assertEqual(test.testing, 5, "Incorrect value was injected")
+        test = Test.create(repo)
+        self.assertIs(test.testing, sentinel, "Incorrect value was injected")

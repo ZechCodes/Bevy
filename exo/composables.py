@@ -25,7 +25,10 @@ class Composable(metaclass=ComposableMeta):
         """ Injects dependencies from a repository. This method is called
         before __init__"""
         for name, dependency in self.__class__.__dependencies__.items():
-            setattr(self, name, repository.get(dependency))
+            dependency_name = (
+                dependency if isinstance(dependency, str) else str(dependency)
+            )
+            setattr(self, name, repository.get(dependency_name, default=dependency))
 
     @classmethod
     def create(
