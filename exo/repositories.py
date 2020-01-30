@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Type, TypeVar, Union
+from typing import Any, Iterable, Type, TypeVar, Union
 
 
 ExoRepository = TypeVar("ExoRepository", bound="AbstractRepository")
@@ -40,6 +40,10 @@ class AbstractRepository(ABC):
     def set(self, name: str, obj: Any, *, instantiate: bool = True) -> None:
         return
 
+    @abstractmethod
+    def __iter__(self) -> Iterable:
+        return tuple()
+
 
 class NullRepository(AbstractRepository):
     """ Null singleton repository. """
@@ -54,6 +58,9 @@ class NullRepository(AbstractRepository):
 
     def __init__(self, *args, **kwargs):
         pass
+
+    def __iter__(self) -> Iterable:
+        return tuple()
 
     @property
     def parent(self) -> ExoRepository:
@@ -85,6 +92,9 @@ class Repository(AbstractRepository):
     def __init__(self, parent: ExoRepository = NullRepository()):
         self._parent = parent
         self._repository = {}
+
+    def __iter__(self) -> Iterable:
+        yield from self._repository.items()
 
     @property
     def parent(self) -> ExoRepository:
