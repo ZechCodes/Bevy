@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from exo.components import ExoComponent
 from exo.extensions import ExoExtension
 from exo.repositories import ExoRepository, Repository
-from typing import Any, Dict, Iterable, Sequence, Tuple, Type, TypeVar
+from typing import Any, Awaitable, Dict, Iterable, Sequence, Tuple, Type, TypeVar
+import asyncio
 
 
 ExoApp = TypeVar("ExoApp", bound="AbstractApp")
@@ -56,7 +57,7 @@ class App(AbstractApp):
         is the state object for the run event. """
         self._components.add(component)
 
-    async def run(self, *args, **kwargs) -> Any:
+    def run(self, *args, **kwargs) -> Any:
         component_repo, scoped_repo = self._build_run_environment(*args, **kwargs)
         self._create_components(component_repo, scoped_repo)
         return self._run_components(component_repo, *args, **kwargs)
@@ -90,8 +91,25 @@ class App(AbstractApp):
     def _run_components(
         self, components: Iterable[ExoComponent], *args, **kwargs
     ) -> Any:
-        result = None
-        for component in components:
-            result = component.run(result, *args, **kwargs)
+        return AppRunner(
+            [component.run(None, *args, **kwargs) for component in components]
+        )
 
-        return result
+
+class AppRunner:
+    def __init__(self, tasks: Sequence[Awaitable]):
+        self._results = []
+        self._tasks = tasks
+
+    def __await__(self):
+        return self.execute().__await__()
+
+    async def execute(self):
+        await asyncio.gather(*[self._runner(task) for task in self._tasks])
+        return self._results[-1] if self._results else None
+
+    async def _runner(self, awaitable: Awaitable):
+        self._save_result(await awaitable)
+
+    def _save_result(self, result: Any):
+        self._results.append(result)
