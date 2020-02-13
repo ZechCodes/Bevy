@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "Exo"
-version = "0.0.1"
-description = "Web framework designed to keep it simple, built to run on Starlette."
+version = "0.1.0"
+description = "Simple app framework intended to make it easy to build looesly coupled applications."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"
