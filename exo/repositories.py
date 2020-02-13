@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Type, TypeVar, Union
+from typing import Any, Iterable, Dict, TypeVar, Union
 
 
 ExoRepository = TypeVar("ExoRepository", bound="AbstractRepository")
@@ -41,7 +41,7 @@ class AbstractRepository(ABC):
         return
 
     @abstractmethod
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Iterable[Any]:
         return tuple()
 
 
@@ -59,7 +59,7 @@ class NullRepository(AbstractRepository):
     def __init__(self, *args, **kwargs):
         pass
 
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Iterable[Any]:
         return tuple()
 
     @property
@@ -91,10 +91,10 @@ class Repository(AbstractRepository):
 
     def __init__(self, parent: ExoRepository = NullRepository()):
         self._parent = parent
-        self._repository = {}
+        self._repository: Dict[str, RepositoryElement] = {}
 
-    def __iter__(self) -> Iterable:
-        yield from self._repository.items()
+    def __iter__(self) -> Iterable[Any]:
+        yield from (element.instance for element in self._repository.values())
 
     @property
     def parent(self) -> ExoRepository:
