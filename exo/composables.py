@@ -17,9 +17,14 @@ class ComposableMeta(ABCMeta):
             instance.__init__(*args, **kwargs)
         return instance
 
+    @classmethod
+    def __prepare__(metacls, name, bases):
+        # Create a dependencies dict that is unique to each class definition
+        return {"__dependencies__": {}}
+
 
 class Composable(metaclass=ComposableMeta):
-    __dependencies__ = {}
+    __dependencies__ = {}  # This is overridden by the metaclass, this is for IDEs.
 
     def __inject__(self, repository: ExoRepository) -> None:
         """ Injects dependencies from a repository. This method is called
