@@ -9,7 +9,7 @@ ExoComponent = TypeVar("ExoComponent", bound="AbstractComponent")
 
 class AbstractComponent(Composable):
     @abstractmethod
-    def run(self) -> Any:
+    def run(self, *args, **kwargs) -> Any:
         return
 
 
