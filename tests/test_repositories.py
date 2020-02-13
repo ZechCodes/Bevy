@@ -34,7 +34,8 @@ class TestRepository(TestCase):
 
     def test_get(self):
         class Test:
-            pass
+            def __init__(self, __repository__):
+                ...
 
         repo = Repository()
         repo.set(Test.__name__, Test)
@@ -46,7 +47,8 @@ class TestRepository(TestCase):
 
     def test_get_single_instance(self):
         class Test:
-            pass
+            def __init__(self, __repository__):
+                ...
 
         repo = Repository()
         inst = repo.get(Test.__name__, default=Test)
@@ -56,7 +58,8 @@ class TestRepository(TestCase):
 
     def test_get_inheritance(self):
         class Test:
-            pass
+            def __init__(self, __repository__):
+                ...
 
         repo = Repository()
         child_repo = repo.create_child()
@@ -68,7 +71,8 @@ class TestRepository(TestCase):
 
     def test_get_reverse_inheritance(self):
         class Test:
-            pass
+            def __init__(self, __repository__):
+                ...
 
         repo = Repository()
         child_repo = repo.create_child()
@@ -82,6 +86,9 @@ class TestRepository(TestCase):
         class Test:
             __repository_ignore__ = True
 
+            def __init__(self, __repository__):
+                ...
+
         repo = Repository()
 
         inst1 = repo.get(Test.__name__, default=Test)
@@ -94,7 +101,7 @@ class TestRepository(TestCase):
 
         class Test:
             @classmethod
-            def __repository_build__(cls):
+            def __repository_build__(cls, repository):
                 return sentinel
 
         repo = Repository()
@@ -109,7 +116,7 @@ class TestRepository(TestCase):
 
         class Test:
             @classmethod
-            def __repository_build__(cls):
+            def __repository_build__(cls, repository):
                 return sentinel
 
         repo = Repository()
@@ -177,19 +184,31 @@ class TestRepository(TestCase):
 
 class TestRepositoryElements(TestCase):
     def test_instantiation(self):
-        element = RepositoryElement(object)
+        class Test:
+            def __init__(self, __repository__):
+                ...
+
+        element = RepositoryElement(Test, None)
 
         self.assertFalse(
             isinstance(element.instance, type), "Failed to instantiate object"
         )
 
     def test_instance_caching(self):
-        element = RepositoryElement(object)
+        class Test:
+            def __init__(self, __repository__):
+                ...
+
+        element = RepositoryElement(Test, None)
 
         self.assertIs(element.instance, element.instance, "Failed to cache instance")
 
     def test_no_instantiation(self):
-        element = RepositoryElement(object, instantiate=False)
+        class Test:
+            def __init__(self, __repository__):
+                ...
+
+        element = RepositoryElement(Test, None, instantiate=False)
 
         self.assertIsInstance(
             element.instance, type, "Instantiated object when it should not have"
