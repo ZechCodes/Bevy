@@ -137,3 +137,18 @@ class TestApp(TestCase):
             run1, extensions.Extension, "The extension was not returned"
         )
         self.assertIs(run1, run2, "The extension was re-instantiated between runs")
+
+    def test_run_flatten(self):
+        class TestComponent(components.Component):
+            async def run(self, result):
+                ...
+
+        class TestComponentB(components.Component):
+            async def run(self, result):
+                ...
+
+        app = self.create_app(components=[TestComponent, TestComponentB])
+
+        self.assertEquals(
+            len(self.run_app(app.run().flatten())), 2, "Not all results were returned"
+        )

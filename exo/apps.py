@@ -108,6 +108,10 @@ class AppRunner:
         await asyncio.gather(*[self._runner(task) for task in self._tasks])
         return self._results[-1] if self._results else None
 
+    async def flatten(self) -> Sequence[Any]:
+        await self.execute()
+        return self._results
+
     async def _runner(self, awaitable: Awaitable):
         self._save_result(await awaitable)
 
