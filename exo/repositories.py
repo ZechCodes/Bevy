@@ -207,4 +207,4 @@ class RepositoryElement:
         if hasattr(self.obj, "__repository_build__"):
             return self.obj.__repository_build__(self._repository)
 
-        return self.obj()
+        return self.obj(__repository__=self._repository)
