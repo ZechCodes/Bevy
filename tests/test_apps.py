@@ -150,5 +150,5 @@ class TestApp(TestCase):
         app = self.create_app(components=[TestComponent, TestComponentB])
 
         self.assertEquals(
-            len(self.run_app(app.run().flatten())), 2, "Not all results were returned"
+            len(self.run_app(app.run.flatten())), 2, "Not all results were returned"
         )

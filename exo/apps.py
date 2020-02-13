@@ -3,7 +3,17 @@ from abc import ABC, abstractmethod
 from exo.components import ExoComponent
 from exo.extensions import ExoExtension
 from exo.repositories import ExoRepository, Repository
-from typing import Any, Awaitable, Dict, Iterable, Sequence, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Coroutine,
+    Dict,
+    Iterable,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+)
 import asyncio
 
 
@@ -57,10 +67,11 @@ class App(AbstractApp):
         is the state object for the run event. """
         self._components.add(component)
 
-    def run(self, *args, **kwargs) -> Any:
-        component_repo, scoped_repo = self._build_run_environment(*args, **kwargs)
+    @property
+    def run(self) -> Any:
+        component_repo, scoped_repo = self._build_run_environment()
         self._create_components(component_repo, scoped_repo)
-        return self._run_components(component_repo, *args, **kwargs)
+        return self._run_components(component_repo)
 
     def _build_environment(
         self, context: Type, _: Tuple, values: Dict[str, Any]
@@ -68,7 +79,7 @@ class App(AbstractApp):
         self._repository.set("app", self, instantiate=False)
         self._repository.set("env", context(**values), instantiate=False)
 
-    def _build_run_environment(self, *_, **__) -> Tuple[ExoRepository, ExoRepository]:
+    def _build_run_environment(self) -> Tuple[ExoRepository, ExoRepository]:
         component_repo = self._repository.create_child()
         scoped_repo = component_repo.create_child()
         scoped_repo.set(
@@ -88,28 +99,29 @@ class App(AbstractApp):
         for extension in extensions:
             self.add_extension(extension)
 
-    def _run_components(
-        self, components: Iterable[ExoComponent], *args, **kwargs
-    ) -> Any:
-        return AppRunner(
-            [component.run(None, *args, **kwargs) for component in components]
-        )
+    def _run_components(self, components: Iterable[ExoComponent]) -> Any:
+        return AppRunner([component.run for component in components])
 
 
 class AppRunner:
-    def __init__(self, tasks: Sequence[Awaitable]):
+    def __init__(self, tasks: Sequence[Coroutine]):
         self._results = []
         self._tasks = tasks
 
     def __await__(self):
         return self.execute().__await__()
 
-    async def execute(self):
-        await asyncio.gather(*[self._runner(task) for task in self._tasks])
+    def __call__(self, *args, **kwargs):
+        return self.execute(*args, **kwargs)
+
+    async def execute(self, *args, **kwargs):
+        await asyncio.gather(
+            *[self._runner(task(None, *args, **kwargs)) for task in self._tasks]
+        )
         return self._results[-1] if self._results else None
 
-    async def flatten(self) -> Sequence[Any]:
-        await self.execute()
+    async def flatten(self, *args, **kwargs) -> Sequence[Any]:
+        await self.execute(*args, **kwargs)
         return self._results
 
     async def _runner(self, awaitable: Awaitable):
