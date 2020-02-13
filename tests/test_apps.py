@@ -8,7 +8,10 @@ class TestApp(TestCase):
         return apps.App(*args, **kwargs)
 
     def run_app(self, coro):
-        return asyncio.run(coro)
+        async def testing():
+            return await coro
+
+        return asyncio.run(testing())
 
     def test_instantiation(self):
         self.create_app()
@@ -45,7 +48,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             ran = False
 
-            def run(self, result):
+            async def run(self, result):
                 TestComponent.ran = True
 
         app = self.create_app()
@@ -59,7 +62,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             ran = False
 
-            def run(self, result):
+            async def run(self, result):
                 TestComponent.ran = True
 
         app = self.create_app(components=[TestComponent])
@@ -72,7 +75,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             sentinel = object()
 
-            def run(self, result):
+            async def run(self, result):
                 return TestComponent.sentinel
 
         app = self.create_app(components=[TestComponent])
@@ -92,7 +95,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             sentinel = object()
 
-            def run(self, result):
+            async def run(self, result):
                 return TestComponent.sentinel
 
         app = self.create_app(extensions=[TestExtension])
@@ -104,7 +107,7 @@ class TestApp(TestCase):
     def test_components_can_access_env(self):
         @uses(app="app")
         class TestComponent(components.Component):
-            def run(self, result):
+            async def run(self, result):
                 return self.app
 
         app = self.create_app(components=[TestComponent])
@@ -122,7 +125,7 @@ class TestApp(TestCase):
 
         @uses(ext="TestExtension")
         class TestComponent(components.Component):
-            def run(self, result):
+            async def run(self, result):
                 return self.ext
 
         app = self.create_app(extensions=[TestExtension], components=[TestComponent])
