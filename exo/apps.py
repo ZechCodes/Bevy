@@ -19,7 +19,7 @@ class AbstractApp(ABC):
         return self
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> Any:
+    async def run(self, *args, **kwargs) -> Any:
         return
 
 
@@ -56,7 +56,7 @@ class App(AbstractApp):
         is the state object for the run event. """
         self._components.add(component)
 
-    def run(self, *args, **kwargs) -> Any:
+    async def run(self, *args, **kwargs) -> Any:
         component_repo, scoped_repo = self._build_run_environment(*args, **kwargs)
         self._create_components(component_repo, scoped_repo)
         return self._run_components(component_repo, *args, **kwargs)

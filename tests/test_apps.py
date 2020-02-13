@@ -1,10 +1,14 @@
 from unittest import TestCase
 from exo import apps, extensions, components, uses
+import asyncio
 
 
 class TestApp(TestCase):
     def create_app(self, *args, **kwargs):
         return apps.App(*args, **kwargs)
+
+    def run_app(self, coro):
+        return asyncio.run(coro)
 
     def test_instantiation(self):
         self.create_app()
@@ -35,7 +39,7 @@ class TestApp(TestCase):
     def test_run(self):
         app = self.create_app()
 
-        self.assertIsNone(app.run(), "Run returned something")
+        self.assertIsNone(self.run_app(app.run()), "Run returned something")
 
     def test_add_component_runs(self):
         class TestComponent(components.Component):
@@ -48,7 +52,7 @@ class TestApp(TestCase):
         app.add_component(TestComponent)
 
         self.assertFalse(TestComponent.ran, "Component ran too early")
-        app.run()
+        self.run_app(app.run())
         self.assertTrue(TestComponent.ran, "Component didn't run")
 
     def test_add_component_init_runs(self):
@@ -61,7 +65,7 @@ class TestApp(TestCase):
         app = self.create_app(components=[TestComponent])
 
         self.assertFalse(TestComponent.ran, "Component ran too early")
-        app.run()
+        self.run_app(app.run())
         self.assertTrue(TestComponent.ran, "Component didn't run")
 
     def test_result_change(self):
@@ -73,7 +77,11 @@ class TestApp(TestCase):
 
         app = self.create_app(components=[TestComponent])
 
-        self.assertIs(app.run(), TestComponent.sentinel, "Result value was not changed")
+        self.assertIs(
+            self.run_app(app.run()),
+            TestComponent.sentinel,
+            "Result value was not changed",
+        )
 
     def test_extensions_adding_components(self):
         @uses(app="app")
@@ -89,7 +97,9 @@ class TestApp(TestCase):
 
         app = self.create_app(extensions=[TestExtension])
 
-        self.assertIs(app.run(), TestComponent.sentinel, "The component was not run")
+        self.assertIs(
+            self.run_app(app.run()), TestComponent.sentinel, "The component was not run"
+        )
 
     def test_components_can_access_env(self):
         @uses(app="app")
@@ -101,7 +111,7 @@ class TestApp(TestCase):
         app.sentinel = object()
 
         self.assertIs(
-            app.run(),
+            self.run_app(app.run()),
             app,
             "The component did not have access to the correct environment",
         )
@@ -117,8 +127,8 @@ class TestApp(TestCase):
 
         app = self.create_app(extensions=[TestExtension], components=[TestComponent])
 
-        run1 = app.run()
-        run2 = app.run()
+        run1 = self.run_app(app.run())
+        run2 = self.run_app(app.run())
 
         self.assertIsInstance(
             run1, extensions.Extension, "The extension was not returned"
