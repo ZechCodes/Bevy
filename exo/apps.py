@@ -105,8 +105,15 @@ class App(AbstractApp):
 
 class AppRunner:
     def __init__(self, tasks: Sequence[Coroutine]):
-        self._results = []
+        self._queue = asyncio.Queue()
+        self._done = asyncio.Event()
+        self._new_result = asyncio.Event()
         self._tasks = tasks
+        self._last_result = None
+
+    @property
+    def done(self):
+        return self._done.is_set()
 
     def __await__(self):
         return self.execute().__await__()
@@ -114,18 +121,35 @@ class AppRunner:
     def __call__(self, *args, **kwargs):
         return self.execute(*args, **kwargs)
 
+    def __aiter__(self):
+        asyncio.create_task(self.execute(), name="execute")
+        return self
+
+    async def __anext__(self):
+        if not self.done and self._queue.empty():
+            await self._new_result.wait()
+
+        if self.done and self._queue.empty():
+            raise StopAsyncIteration
+
+        return self._queue.get_nowait()
+
     async def execute(self, *args, **kwargs):
         await asyncio.gather(
             *[self._runner(task(None, *args, **kwargs)) for task in self._tasks]
         )
-        return self._results[-1] if self._results else None
+        self._done.set()
+        self._new_result.set()
+        return self._last_result
 
     async def flatten(self, *args, **kwargs) -> Sequence[Any]:
-        await self.execute(*args, **kwargs)
-        return self._results
+        return [result async for result in self]
 
     async def _runner(self, awaitable: Awaitable):
         self._save_result(await awaitable)
+        self._new_result.clear()
 
     def _save_result(self, result: Any):
-        self._results.append(result)
+        self._queue.put_nowait(result)
+        self._new_result.set()
+        self._last_result = result

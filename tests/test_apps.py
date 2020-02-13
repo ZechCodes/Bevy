@@ -7,11 +7,9 @@ class TestApp(TestCase):
     def create_app(self, *args, **kwargs):
         return apps.App(*args, **kwargs)
 
-    def run_app(self, coro):
-        async def testing():
-            return await coro
-
-        return asyncio.run(testing())
+    def run_app(self, coro, loop=None):
+        loop = loop if loop else asyncio.get_event_loop()
+        return loop.run_until_complete(coro)
 
     def test_instantiation(self):
         self.create_app()
@@ -149,6 +147,31 @@ class TestApp(TestCase):
 
         app = self.create_app(components=[TestComponent, TestComponentB])
 
-        self.assertEquals(
-            len(self.run_app(app.run.flatten())), 2, "Not all results were returned"
+        loop = asyncio.get_event_loop()
+        self.assertEqual(
+            len(self.run_app(app.run.flatten(), loop=loop)),
+            2,
+            "Not all results were returned",
+        )
+
+    def test_run_stream(self):
+        class TestComponent(components.Component):
+            async def run(self, result):
+                await asyncio.sleep(0.01)
+                return 2
+
+        class TestComponentB(components.Component):
+            async def run(self, result):
+                return 1
+
+        app = self.create_app(components=[TestComponent, TestComponentB])
+
+        async def testing():
+            results = []
+            async for result in app.run:
+                results.append(result)
+            return results
+
+        self.assertEqual(
+            self.run_app(testing()), [1, 2], "Results were not streamed correctly"
         )
