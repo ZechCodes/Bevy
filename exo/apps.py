@@ -70,6 +70,9 @@ class App(AbstractApp):
 
     @property
     def run(self) -> Any:
+        """ Creates an app runner that executes the run method on all of the
+        registered components. The components will all be instantiated with a
+        scope that will exist only within this call. """
         component_repo, scoped_repo = self._build_run_environment()
         self._create_components(component_repo, scoped_repo)
         return self._run_components(component_repo)
@@ -105,6 +108,9 @@ class App(AbstractApp):
 
 
 class AppRunner:
+    """ Runs components and gives some use methods for getting the result
+    you're after. """
+
     def __init__(self, tasks: Sequence[Coroutine]):
         self._queue = asyncio.Queue()
         self._done = asyncio.Event()
@@ -114,24 +120,26 @@ class AppRunner:
         self._last_result = None
 
     @property
-    def done(self):
+    def done(self) -> bool:
+        """ Whether all components have run and returned. """
         return self._done.is_set()
 
     @property
-    def running(self):
+    def running(self) -> bool:
+        """ Whether any components are still running. """
         return self._running.is_set()
 
     def __await__(self):
         return self.execute().__await__()
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Awaitable:
         return self.execute(*args, **kwargs)
 
-    def __aiter__(self):
+    def __aiter__(self) -> AppRunner:
         self._run()
         return self
 
-    async def __anext__(self):
+    async def __anext__(self) -> Any:
         if not self.done and self._queue.empty():
             await self._new_result.wait()
 
@@ -140,16 +148,24 @@ class AppRunner:
 
         return self._queue.get_nowait()
 
-    async def execute(self, *args, **kwargs):
+    async def execute(self, *args, **kwargs) -> Any:
+        """ Allows for arguments to be passed into the component run methods.
+        This functions the same as awaiting the runner and only returns the
+        last value received."""
         self._run(*args, **kwargs)
         await self._done.wait()
         return self._last_result
 
     async def flatten(self, *args, **kwargs) -> Sequence[Any]:
+        """ Runs all components and returns a list of all the values they
+        returned. """
         self._run(*args, **kwargs)
         return [result async for result in self]
 
-    async def reduce(self, func: Callable, *args, **kwargs) -> Any:
+    async def reduce(self, func: Callable[[any, any], any], *args, **kwargs) -> Any:
+        """ Applies a function to two return values until there are no
+        components left to return, returns the final value given by the
+        function. """
         self._run(*args, **kwargs)
         values = []
         async for result in self:
@@ -159,11 +175,16 @@ class AppRunner:
         return values[0] if values else None
 
     def _run(self, *args, **kwargs):
+        """ Runs the executor, setting the running event before creating the
+        event loop task. """
         if not self.running and not self.done:
             self._running.set()
             asyncio.create_task(self._executor(*args, **kwargs))
 
     async def _executor(self, *args, **kwargs):
+        """ Awaits all of the components calling them with the provided
+        arguments and wrapping them in a runner that will notify the app runner
+        when the component has finished. """
         await asyncio.gather(
             *[self._runner(task(None, *args, **kwargs)) for task in self._tasks]
         )
@@ -172,10 +193,13 @@ class AppRunner:
         self._new_result.set()
 
     async def _runner(self, awaitable: Awaitable):
+        """ Component runner that saves the returned value and clears the
+        new result event. """
         self._save_result(await awaitable)
         self._new_result.clear()
 
     def _save_result(self, result: Any):
+        """ Saves a return and sets the new result event. """
         self._queue.put_nowait(result)
         self._new_result.set()
         self._last_result = result
