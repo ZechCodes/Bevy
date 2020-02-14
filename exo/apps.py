@@ -6,6 +6,7 @@ from exo.repositories import ExoRepository, Repository
 from typing import (
     Any,
     Awaitable,
+    Callable,
     Coroutine,
     Dict,
     Iterable,
@@ -107,6 +108,7 @@ class AppRunner:
     def __init__(self, tasks: Sequence[Coroutine]):
         self._queue = asyncio.Queue()
         self._done = asyncio.Event()
+        self._running = asyncio.Event()
         self._new_result = asyncio.Event()
         self._tasks = tasks
         self._last_result = None
@@ -115,6 +117,10 @@ class AppRunner:
     def done(self):
         return self._done.is_set()
 
+    @property
+    def running(self):
+        return self._running.is_set()
+
     def __await__(self):
         return self.execute().__await__()
 
@@ -122,7 +128,7 @@ class AppRunner:
         return self.execute(*args, **kwargs)
 
     def __aiter__(self):
-        asyncio.create_task(self.execute(), name="execute")
+        self._run()
         return self
 
     async def __anext__(self):
@@ -135,15 +141,26 @@ class AppRunner:
         return self._queue.get_nowait()
 
     async def execute(self, *args, **kwargs):
-        await asyncio.gather(
-            *[self._runner(task(None, *args, **kwargs)) for task in self._tasks]
-        )
-        self._done.set()
-        self._new_result.set()
+        self._run(*args, **kwargs)
+        await self._done.wait()
         return self._last_result
 
     async def flatten(self, *args, **kwargs) -> Sequence[Any]:
+        self._run(*args, **kwargs)
         return [result async for result in self]
+
+    def _run(self, *args, **kwargs):
+        if not self.running and not self.done:
+            self._running.set()
+            asyncio.create_task(self._executor(*args, **kwargs))
+
+    async def _executor(self, *args, **kwargs):
+        await asyncio.gather(
+            *[self._runner(task(None, *args, **kwargs)) for task in self._tasks]
+        )
+        self._running.clear()
+        self._done.set()
+        self._new_result.set()
 
     async def _runner(self, awaitable: Awaitable):
         self._save_result(await awaitable)
