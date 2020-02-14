@@ -149,6 +149,15 @@ class AppRunner:
         self._run(*args, **kwargs)
         return [result async for result in self]
 
+    async def reduce(self, func: Callable, *args, **kwargs) -> Any:
+        self._run(*args, **kwargs)
+        values = []
+        async for result in self:
+            values.append(result)
+            if len(values) == 2:
+                values = [func(*values)]
+        return values[0] if values else None
+
     def _run(self, *args, **kwargs):
         if not self.running and not self.done:
             self._running.set()

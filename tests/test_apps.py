@@ -154,6 +154,28 @@ class TestApp(TestCase):
             "Not all results were returned",
         )
 
+    def test_run_reduce(self):
+        class TestComponent(components.Component):
+            async def run(self, result):
+                await asyncio.sleep(0.01)
+                return 2
+
+        class TestComponentB(components.Component):
+            async def run(self, result):
+                return 1
+
+        app = self.create_app(components=[TestComponent, TestComponentB])
+
+        def reduce(value_1, value_2):
+            return value_1 - value_2
+
+        loop = asyncio.get_event_loop()
+        self.assertEqual(
+            self.run_app(app.run.reduce(reduce), loop=loop),
+            -1,
+            "Not all results were returned",
+        )
+
     def test_run_stream(self):
         class TestComponent(components.Component):
             async def run(self, result):
