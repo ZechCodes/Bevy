@@ -46,7 +46,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             ran = False
 
-            async def run(self, result):
+            async def run(self):
                 TestComponent.ran = True
 
         app = self.create_app()
@@ -60,7 +60,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             ran = False
 
-            async def run(self, result):
+            async def run(self):
                 TestComponent.ran = True
 
         app = self.create_app(components=[TestComponent])
@@ -73,7 +73,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             sentinel = object()
 
-            async def run(self, result):
+            async def run(self):
                 return TestComponent.sentinel
 
         app = self.create_app(components=[TestComponent])
@@ -93,7 +93,7 @@ class TestApp(TestCase):
         class TestComponent(components.Component):
             sentinel = object()
 
-            async def run(self, result):
+            async def run(self):
                 return TestComponent.sentinel
 
         app = self.create_app(extensions=[TestExtension])
@@ -105,7 +105,7 @@ class TestApp(TestCase):
     def test_components_can_access_env(self):
         @uses(app="app")
         class TestComponent(components.Component):
-            async def run(self, result):
+            async def run(self):
                 return self.app
 
         app = self.create_app(components=[TestComponent])
@@ -123,7 +123,7 @@ class TestApp(TestCase):
 
         @uses(ext="TestExtension")
         class TestComponent(components.Component):
-            async def run(self, result):
+            async def run(self):
                 return self.ext
 
         app = self.create_app(extensions=[TestExtension], components=[TestComponent])
@@ -138,11 +138,11 @@ class TestApp(TestCase):
 
     def test_run_flatten(self):
         class TestComponent(components.Component):
-            async def run(self, result):
+            async def run(self):
                 ...
 
         class TestComponentB(components.Component):
-            async def run(self, result):
+            async def run(self):
                 ...
 
         app = self.create_app(components=[TestComponent, TestComponentB])
@@ -156,12 +156,12 @@ class TestApp(TestCase):
 
     def test_run_reduce(self):
         class TestComponent(components.Component):
-            async def run(self, result):
+            async def run(self):
                 await asyncio.sleep(0.01)
                 return 2
 
         class TestComponentB(components.Component):
-            async def run(self, result):
+            async def run(self):
                 return 1
 
         app = self.create_app(components=[TestComponent, TestComponentB])
@@ -178,12 +178,12 @@ class TestApp(TestCase):
 
     def test_run_stream(self):
         class TestComponent(components.Component):
-            async def run(self, result):
+            async def run(self):
                 await asyncio.sleep(0.01)
                 return 2
 
         class TestComponentB(components.Component):
-            async def run(self, result):
+            async def run(self):
                 return 1
 
         app = self.create_app(components=[TestComponent, TestComponentB])

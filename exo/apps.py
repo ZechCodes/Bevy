@@ -186,7 +186,7 @@ class AppRunner:
         arguments and wrapping them in a runner that will notify the app runner
         when the component has finished. """
         await asyncio.gather(
-            *[self._runner(task(None, *args, **kwargs)) for task in self._tasks]
+            *[self._runner(task(*args, **kwargs)) for task in self._tasks]
         )
         self._running.clear()
         self._done.set()
