@@ -19,7 +19,7 @@ class ExoMeta(type):
         **kwargs
     ):
         repo = Repository.create(__repository__)
-        instance = cls.__new__(*args, **kwargs)
+        instance = cls.__new__(cls, *args, **kwargs)
         if instance.__class__ is cls:
             instance.__repository__ = repo
             instance.__inject_dependencies__()
