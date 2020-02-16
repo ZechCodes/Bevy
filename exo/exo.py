@@ -53,5 +53,5 @@ class Exo(metaclass=ExoMeta):
     __repository__: GenericRepository = None  # This is so IDEs don't complain, overridden in the metaclass
 
     def __inject_dependencies__(self):
-        for name, dependency in self.__dependencies__:
+        for name, dependency in self.__dependencies__.items():
             setattr(self, name, self.__repository__.get(dependency))
