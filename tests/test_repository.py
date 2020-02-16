@@ -19,6 +19,17 @@ class TestRepository(TestCase):
 
         self.assertIs(child._parent, repo, "Failed to assign parent of child repo")
 
+    def test_create_scope_type(self):
+        class CustomRepo(Repository):
+            ...
+
+        repo = CustomRepo()
+        child = repo.create_scope()
+
+        self.assertIsInstance(
+            child, CustomRepo, "Failed to create child repo of parent's type"
+        )
+
     def test_create(self):
         self.assertIsInstance(
             Repository.create(),
