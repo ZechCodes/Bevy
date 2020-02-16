@@ -1,4 +1,5 @@
 from __future__ import annotations
+from exo.repository import GenericRepository, Repository
 from typing import Any, List, Dict, Optional, Tuple, Type, TypeVar, Union
 
 
@@ -10,6 +11,20 @@ class ExoMeta(type):
         """ Find and inherit all dependencies. """
         mcs._build_dependencies(attrs, bases)
         return super().__new__(mcs, name, bases, attrs)
+
+    def __call__(
+        cls: GenericExo,
+        *args,
+        __repository__: Optional[GenericRepository] = None,
+        **kwargs
+    ):
+        repo = Repository.create(__repository__)
+        instance = cls.__new__(*args, **kwargs)
+        if instance.__class__ is cls:
+            instance.__repository__ = repo
+            instance.__inject_dependencies__()
+            instance.__init__(*args, **kwargs)
+        return instance
 
     @staticmethod
     def _build_dependencies(attrs: Dict[str, Any], bases: Tuple[Type]):
