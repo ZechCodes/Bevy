@@ -41,7 +41,7 @@ class ExoMeta(type):
             {
                 name: dependency
                 for name, dependency in attrs.get("__annotations__", {}).items()
-                if issubclass(dependency, Exo)
+                if name not in attrs
             }
         )
 
