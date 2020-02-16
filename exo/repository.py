@@ -9,28 +9,34 @@ _NOVAL = object()
 
 
 class Repository:
-    def __init__(self):
+    def __init__(self, parent: Optional[GenericRepository] = None):
+        self._parent = parent
         self._instance_repo: Dict[GenericType, GenericInstance] = {}
 
     def get(
-        self, obj: GenericType, *, default: Any = _NOVAL
+        self, obj: GenericType, *, default: Any = _NOVAL, propagate: bool = True
     ) -> Optional[GenericInstance]:
         """ Get's an instance matching the requested type from the repository.
         If default is not set and an match is not found this will create an
         instance using the requested type. """
-        if not self.has(obj):
+        if propagate and self._parent and not self.has(obj, propagate=False):
+            return self._parent.get(obj, default=default)
+
+        if not self.has(obj, propagate=False):
             if default is not _NOVAL:
                 return default
             return self.set(obj, obj)
         return self._find(obj)
 
-    def has(self, obj: GenericType) -> bool:
+    def has(self, obj: GenericType, *, propagate: bool = True) -> bool:
         """ Checks if an instance matching the requested type exists in the
         repository. If a type is not provided this will raise an exception. """
         if not isinstance(obj, type):
             raise ExoRepositoryMustBeType(f"Repository expected a type received {obj}")
 
-        return self._find(obj) is not _NOVAL
+        return self._find(obj) is not _NOVAL or (
+            propagate and self._parent and self._parent.has(obj)
+        )
 
     def set(
         self, look_up_type: GenericType, instance: Union[GenericType, GenericInstance]

@@ -113,6 +113,22 @@ class TestRepository(TestCase):
 
         self.assertTrue(repo.has(str), "Failed to find existing instance")
 
+    def test_has_propagate(self):
+        repo = Repository()
+        repo.set(str, "")
+        child = Repository(repo)
+
+        self.assertTrue(child.has(str), "Failed to find existing instance on parent")
+
+    def test_has_no_propagate(self):
+        repo = Repository()
+        repo.set(str, "")
+        child = Repository(repo)
+
+        self.assertFalse(
+            child.has(str, propagate=False), "Propagated to parent when disabled"
+        )
+
     def test_get_non_type(self):
         repo = Repository()
 
@@ -138,3 +154,41 @@ class TestRepository(TestCase):
         self.assertEqual(
             repo.get(str, default="NOVAL"), "NOVAL", "Failed to create instance"
         )
+
+    def test_get_propagate(self):
+        repo = Repository()
+        repo.set(str, "")
+        child = Repository(repo)
+
+        self.assertEqual(
+            child.get(str), "", "Failed to find existing instance on parent"
+        )
+
+    def test_get_no_propagate(self):
+        repo = Repository()
+        repo.set(str, "")
+        child = Repository(repo)
+
+        self.assertEqual(
+            child.get(str, default="NOVAL", propagate=False),
+            "NOVAL",
+            "Propagated to parent when disabled",
+        )
+
+    def test_get_propagate_default(self):
+        repo = Repository()
+        child = Repository(repo)
+
+        self.assertEqual(
+            child.get(str, default="NOVAL"),
+            "NOVAL",
+            "Failed to propagate default value",
+        )
+
+    def test_get_propagate_override(self):
+        repo = Repository()
+        repo.set(str, "")
+        child = Repository(repo)
+        child.set(str, "child")
+
+        self.assertEqual(child.get(str), "child", "Failed to find value on child repo")
