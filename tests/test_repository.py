@@ -7,6 +7,18 @@ from exo.repository import (
 
 
 class TestRepository(TestCase):
+    def test_create_scope(self):
+        repo = Repository()
+        child = repo.create_scope()
+
+        self.assertIsNot(child, repo, "Failed to create child repo")
+
+    def test_create_scope_parent(self):
+        repo = Repository()
+        child = repo.create_scope()
+
+        self.assertIs(child._parent, repo, "Failed to assign parent of child repo")
+
     def test_create(self):
         self.assertIsInstance(
             Repository.create(),

@@ -13,6 +13,11 @@ class Repository:
         self._parent = parent
         self._instance_repo: Dict[GenericType, GenericInstance] = {}
 
+    def create_scope(self) -> GenericRepository:
+        """ Creates a repository of the same time with the parent set to the
+        creating repository. """
+        return type(self)(self)
+
     def get(
         self, obj: GenericType, *, default: Any = _NOVAL, propagate: bool = True
     ) -> Optional[GenericInstance]:
