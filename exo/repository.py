@@ -54,7 +54,9 @@ class Repository:
                 f"Repository expected a type received {look_up_type}"
             )
 
-        value = instance() if isinstance(instance, type) else instance
+        value = (
+            instance(__repository__=self) if isinstance(instance, type) else instance
+        )
 
         if not isinstance(value, look_up_type):
             raise ExoRepositoryMustBeMatchingTypes(
