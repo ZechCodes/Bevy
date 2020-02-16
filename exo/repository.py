@@ -59,10 +59,10 @@ class Repository:
         self._instance_repo[look_up_type] = value
         return value
 
-    def _find(self, obj: GenericType) -> Union[GenericInstance, _NOVAL]:
-        for obj_type in self._instance_repo:
-            if issubclass(obj, obj_type):
-                return self._instance_repo[obj_type]
+    def _find(self, look_up_type: GenericType) -> Union[GenericInstance, _NOVAL]:
+        for repo_type in self._instance_repo:
+            if issubclass(repo_type, look_up_type):
+                return self._instance_repo[repo_type]
         return _NOVAL
 
     @classmethod

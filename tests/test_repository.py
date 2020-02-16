@@ -192,3 +192,19 @@ class TestRepository(TestCase):
         child.set(str, "child")
 
         self.assertEqual(child.get(str), "child", "Failed to find value on child repo")
+
+    def test_get_subclass(self):
+        class ValueParent:
+            ...
+
+        class ValueChild(ValueParent):
+            ...
+
+        repo = Repository()
+        repo.set(ValueChild, ValueChild)
+
+        self.assertIsInstance(
+            repo.get(ValueParent),
+            ValueChild,
+            "Failed to match a sub class of the look up type",
+        )
