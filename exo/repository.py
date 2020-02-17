@@ -15,6 +15,8 @@ class Strategy(enum.Enum):
 
 
 class Repository:
+    strategy = Strategy
+
     def __init__(self, parent: Optional[GenericRepository] = None):
         self._parent = parent
         self._instance_repo: Dict[GenericType, GenericInstance] = {}
