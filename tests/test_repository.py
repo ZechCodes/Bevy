@@ -231,3 +231,18 @@ class TestRepository(TestCase):
             ValueChild,
             "Failed to match a sub class of the look up type",
         )
+
+    def test_pass_repository(self):
+        class Extension:
+            __repository__ = None
+
+            def __init__(self, __repository__=None):
+                self.__repository__ = __repository__
+
+        repo = Repository()
+
+        self.assertIs(
+            repo.get(Extension).__repository__,
+            repo,
+            "Failed to pass the repository to the instance",
+        )
