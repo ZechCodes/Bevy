@@ -54,9 +54,12 @@ class Repository:
                 f"Repository expected a type received {look_up_type}"
             )
 
-        value = (
-            instance(__repository__=self) if isinstance(instance, type) else instance
-        )
+        value = instance
+        if isinstance(instance, type):
+            kwargs = {}
+            if hasattr(instance, "__repository__"):
+                kwargs["__repository__"] = self
+            value = instance(**kwargs)
 
         if not isinstance(value, look_up_type):
             raise ExoRepositoryMustBeMatchingTypes(
