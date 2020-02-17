@@ -3,6 +3,7 @@ from exo.repository import (
     Repository,
     ExoRepositoryMustBeMatchingTypes,
     ExoRepositoryMustBeType,
+    Strategy,
 )
 
 
@@ -245,4 +246,17 @@ class TestRepository(TestCase):
             repo.get(Extension).__repository__,
             repo,
             "Failed to pass the repository to the instance",
+        )
+
+    def test_no_inherit(self):
+        class Extension:
+            __repository_strategy__ = Strategy.NO_INHERIT
+
+        parent = Repository()
+        child = parent.create_scope()
+
+        self.assertIsNot(
+            parent.get(Extension),
+            child.get(Extension),
+            "Inherited when it was not supposed to",
         )

@@ -1,11 +1,17 @@
 from __future__ import annotations
 from typing import Any, List, Dict, Optional, Tuple, Type, TypeVar, Union
+import enum
 
 
 GenericRepository = TypeVar("GenericRepository", bound="Repository")
 GenericInstance = TypeVar("GenericInstance")
 GenericType = Type[GenericInstance]
 _NOVAL = object()
+
+
+class Strategy(enum.Enum):
+    INHERIT = enum.auto()
+    NO_INHERIT = enum.auto()
 
 
 class Repository:
@@ -24,7 +30,7 @@ class Repository:
         """ Get's an instance matching the requested type from the repository.
         If default is not set and an match is not found this will create an
         instance using the requested type. """
-        if propagate and self._parent and not self.has(obj, propagate=False):
+        if propagate and self._can_inherit(obj):
             return self._parent.get(obj, default=default)
 
         if not self.has(obj, propagate=False):
@@ -68,6 +74,16 @@ class Repository:
 
         self._instance_repo[look_up_type] = value
         return value
+
+    def _can_inherit(self, look_up_type: GenericType) -> bool:
+        if not self._parent:
+            return False
+
+        strategy = getattr(look_up_type, "__repository_strategy__", Strategy.INHERIT)
+        if strategy == Strategy.NO_INHERIT:
+            return False
+
+        return not self.has(look_up_type, propagate=False)
 
     def _find(self, look_up_type: GenericType) -> Union[GenericInstance, _NOVAL]:
         for repo_type in self._instance_repo:
