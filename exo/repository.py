@@ -22,8 +22,8 @@ class Repository:
         self._instance_repo: Dict[GenericType, GenericInstance] = {}
 
     def create_scope(self) -> GenericRepository:
-        """ Creates a repository of the same time with the parent set to the
-        creating repository. """
+        """ Creates a repository using the parent's type and passes the parent
+        to the new repository. """
         return type(self)(self)
 
     def get(
