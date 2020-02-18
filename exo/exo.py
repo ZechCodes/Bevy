@@ -1,6 +1,6 @@
 from __future__ import annotations
 from exo.repository import GenericRepository, Repository
-from typing import Any, List, Dict, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar
 
 
 GenericExo = TypeVar("GenericExo", bound="Exo")
