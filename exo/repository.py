@@ -12,6 +12,7 @@ _NOVAL = object()
 class Strategy(enum.Enum):
     INHERIT = enum.auto()
     NO_INHERIT = enum.auto()
+    ALWAYS_CREATE = enum.auto()
 
 
 class Repository:
@@ -74,7 +75,10 @@ class Repository:
                 f"Cannot set a value for mismatched types, received {look_up_type} and {instance}"
             )
 
-        self._instance_repo[look_up_type] = value
+        strategy = getattr(look_up_type, "__repository_strategy__", Strategy.INHERIT)
+        if strategy != Strategy.ALWAYS_CREATE:
+            self._instance_repo[look_up_type] = value
+
         return value
 
     def _can_inherit(self, look_up_type: GenericType) -> bool:
@@ -82,7 +86,7 @@ class Repository:
             return False
 
         strategy = getattr(look_up_type, "__repository_strategy__", Strategy.INHERIT)
-        if strategy == Strategy.NO_INHERIT:
+        if strategy != Strategy.INHERIT:
             return False
 
         return not self.has(look_up_type, propagate=False)
