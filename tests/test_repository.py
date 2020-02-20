@@ -260,3 +260,28 @@ class TestRepository(TestCase):
             child.get(Extension),
             "Inherited when it was not supposed to",
         )
+
+    def test_always_create(self):
+        class Extension:
+            __repository_strategy__ = Strategy.ALWAYS_CREATE
+
+        repo = Repository()
+
+        self.assertIsNot(
+            repo.get(Extension),
+            repo.get(Extension),
+            "Failed to create for each request",
+        )
+
+    def test_always_create_inherit(self):
+        class Extension:
+            __repository_strategy__ = Strategy.ALWAYS_CREATE
+
+        parent = Repository()
+        child = parent.create_scope()
+
+        self.assertIsNot(
+            parent.get(Extension),
+            child.get(Extension),
+            "Inherited an ALWAYS_CREATE instance",
+        )
