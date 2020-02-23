@@ -1,42 +1,43 @@
-from unittest import TestCase
-from exo.exo import Exo
+from pytest import fixture
+from exo.exo import Exo, ExoBuilder
 
 
-class TestExeDependencies(TestCase):
-    def test_dependencies(self):
+class TestBuilder:
+    @fixture
+    def dependency(self):
         class Dep(Exo):
             ...
 
-        class App(Exo):
-            dep: Dep
+        return Dep
 
-        self.assertEqual(
-            App.__dependencies__, {"dep": Dep}, "Dependencies failed to set correctly"
-        )
-
-    def test_dependency_injection(self):
-        class Dep(Exo):
+    @fixture
+    def sub_dependency(self, dependency):
+        class SubDep(dependency):
             ...
 
+        return SubDep
+
+    @fixture
+    def app(self, dependency):
         class App(Exo):
-            dep: Dep
+            dep: dependency
 
-        app = App()
-        self.assertTrue(
-            hasattr(app, "dep"), "Failed to inject the dependency with the correct name"
-        )
-        self.assertIsInstance(app.dep, Dep, "Dependency is of the wrong type")
+        return App
 
-    def test_dependency_injection_sharing(self):
-        class Dep(Exo):
-            ...
+    def test_declare(self, app, sub_dependency):
+        a = app.declare(sub_dependency()).build()
 
-        class App(Exo):
-            dep: Dep
+        assert isinstance(a.dep, sub_dependency)
 
-        class App2(Exo):
-            dep: Dep
+    def test_imperative_dependencies(self, app, dependency):
+        builder = ExoBuilder(app)
+        builder.dependencies(imp=dependency)
+        a = builder.build()
 
-        app = App()
-        app2 = App2(__repository__=app.__repository__)
-        self.assertIs(app.dep, app2.dep, "Dependency was not shared")
+        assert hasattr(a, "imp")
+
+    def test_exo_constructor_ret_type(self, app, dependency):
+        assert isinstance(app(), app)
+
+    def test_exo_constructor_ret_dependencies(self, app, dependency):
+        assert isinstance(app().dep, dependency)
