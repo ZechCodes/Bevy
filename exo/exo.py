@@ -56,7 +56,7 @@ class Exo(metaclass=ExoMeta):
         return super().__new__(cls, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
-        ...
+        pass
 
 
 class ExoBuilder:
