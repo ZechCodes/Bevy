@@ -1,28 +1,35 @@
 from __future__ import annotations
 from exo.repository import GenericRepository, Repository
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 
 class ExoMeta(type):
+    _dependencies: Dict[Type[Exo], Dict[str, Type]] = {}
+
     def __new__(mcs, name: str, bases: Tuple[Type], attrs: Dict[str, Any]):
         """ Find and inherit all dependencies. """
-        attrs["__dependencies__"] = mcs._build_dependencies(attrs, bases)
-        return super().__new__(mcs, name, bases, attrs)
+        cls = super().__new__(mcs, name, bases, attrs)
+        mcs._dependencies[cls] = mcs._build_dependencies(attrs, bases)
+        return cls
 
     def __call__(cls: Type[Exo], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Exo:
-        return ExoBuilder(cls).build(*args, **kwargs)
+        return ExoMeta.builder(cls).build(*args, **kwargs)
 
-    def declare(
-        cls: Type[Exo], *args: Tuple[Any], repository: Optional[Type[Repository]] = None
-    ) -> ExoBuilder:
+    def declare(cls: Type[Exo], *args: Tuple[Any]) -> ExoBuilder:
         """ Creates a builder and passes it the declared dependencies. """
-        builder = ExoBuilder(cls, repository=repository)
+        builder = ExoMeta.builder(cls)
         builder.declare(*args)
         return builder
 
-    @staticmethod
+    @classmethod
+    def builder(mcs, cls: Type[Exo]) -> ExoBuilder:
+        builder = ExoBuilder(cls)
+        builder.dependencies(**mcs._dependencies.get(cls, {}))
+        return builder
+
+    @classmethod
     def _build_dependencies(
-        attrs: Dict[str, Any], bases: Tuple[Type]
+        mcs, attrs: Dict[str, Any], bases: Tuple[Union[Type[Exo], Type]]
     ) -> Dict[str, Type]:
         """ Builds a dictionary of dependencies from the annotated properties
         that are found on the bases and in the class definition. These
@@ -30,8 +37,8 @@ class ExoMeta(type):
         """
         dependencies = {}
         for base in bases:
-            if hasattr(base, "__dependencies__"):
-                dependencies.update(base.__dependencies__)
+            if base in mcs._dependencies:
+                dependencies.update(mcs._dependencies[base])
 
         dependencies.update(
             {
@@ -45,8 +52,6 @@ class ExoMeta(type):
 
 
 class Exo(metaclass=ExoMeta):
-    __dependencies__ = {}  # This is so IDEs don't complain, overridden in the metaclass
-
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls, *args, **kwargs)
 
@@ -59,7 +64,7 @@ class ExoBuilder:
         self, cls: Type[Exo], *, repository: Optional[Type[Repository]] = None
     ):
         self._cls = cls
-        self._dependencies = self._cls.__dependencies__.copy()
+        self._dependencies = {}
         self._repo = Repository.create(repository)
 
     def build(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Exo:

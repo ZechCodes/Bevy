@@ -1,26 +1,35 @@
 from unittest import TestCase
 from exo.exo import Exo
-from exo.app import ExoApp
+from exo.app import App, AppResult
 import asyncio
 
 
 class TestExoApp(TestCase):
     def test_run(self):
-        class Extension(Exo):
-            async def run(self):
-                return "Hello"
+        class Dependency(Exo):
+            def __init__(self):
+                self.message = "interface"
 
-        class ExtensionB(Exo):
-            async def run(self):
-                return "World"
+        class DependencyB(Dependency):
+            def __init__(self, message):
+                self.message = message
 
-        loop = asyncio.get_event_loop()
-        app = ExoApp([ExtensionB, Extension])
+        class Component(Exo):
+            dep: Dependency
+            result: AppResult
 
-        self.assertTrue(hasattr(app, "extensions"))
-        self.assertTrue(hasattr(app, "run"))
-        self.assertEqual(len(app.extensions._extensions), 2)
-        self.assertIs(app.extensions, app.run.extensions)
+            def __init__(self):
+                self.result.result = self.dep.message
+
+        class TestApp(App):
+            def __init__(self, components):
+                self.add_component_dependency(DependencyB("subclass"))
+
+        app = TestApp([Component])
+        result = app.run()
+
         self.assertEqual(
-            "Hello World", " ".join(sorted(loop.run_until_complete(app.run())))
+            "subclass",
+            result.result,
+            "The result returned was incorrect. Component dependency likely failed.",
         )
