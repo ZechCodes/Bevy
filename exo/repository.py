@@ -42,26 +42,32 @@ class Repository:
             return self.set(obj, obj)
         return self._find(obj)
 
-    def has(self, obj: GenericType, *, propagate: bool = True) -> bool:
+    def has(
+        self, obj: Union[GenericType, GenericInstance], *, propagate: bool = True
+    ) -> bool:
         """ Checks if an instance matching the requested type exists in the
         repository. If a type is not provided this will raise an exception. """
         if not isinstance(obj, type):
-            raise ExoRepositoryMustBeType(f"Repository expected a type received {obj}")
+            obj = type(obj)
 
         return self._find(obj) is not _NOVAL or (
             propagate and self._parent and self._parent.has(obj)
         )
 
     def set(
-        self, look_up_type: GenericType, instance: Union[GenericType, GenericInstance]
+        self,
+        look_up_type: Union[GenericType, GenericInstance],
+        instance: Optional[Union[GenericType, GenericInstance]] = None,
     ) -> GenericInstance:
         """ Sets the instance that should be returned when a given type is
         requested. This will raise exceptions if the look up type isn't a type
         and if the instance type is not an instance of the look up type. """
         if not isinstance(look_up_type, type):
-            raise ExoRepositoryMustBeType(
-                f"Repository expected a type received {look_up_type}"
-            )
+            instance = look_up_type
+            look_up_type = type(instance)
+
+        elif not instance:
+            instance = look_up_type
 
         value = instance
         if isinstance(instance, type):
@@ -117,10 +123,6 @@ class Repository:
             return repo(*args, **kwargs)
 
         return cls(*args, **kwargs)
-
-
-class ExoRepositoryMustBeType(Exception):
-    ...
 
 
 class ExoRepositoryMustBeMatchingTypes(Exception):
