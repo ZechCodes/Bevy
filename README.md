@@ -1,4 +1,4 @@
-<img src="./res/icon.svg" width="92px" align="left" />
+<img src="./res/icon.svg" width="100px" align="left" />
 
 # Exo
 Exo makes using *Dependency Inversion* a breeze so that you can focus on creating amazing code.
