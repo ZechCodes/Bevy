@@ -1,7 +1,7 @@
 <img src="./res/icon.svg" width="128px" align="right" />
 
-# Exo
-Exo makes using *Dependency Inversion* a breeze so that you can focus on creating amazing code.
+# Bevy
+Bevy makes using *Dependency Inversion* a breeze so that you can focus on creating amazing code.
 
 ## Dependency Inversion
 Put simply, *Dependency Inversion* is a design pattern where the objects that your class depends on are instantiated outside of the class. Those dependencies are then injected into your class when it is instantiated.
@@ -11,11 +11,11 @@ Python doesn’t have an actual interface implementation like many other languag
 ## Why Do I Care?
 *Dependency Inversion* and its reliance on abstract interfaces makes your code easier to maintain:
 - Changes can be made without needing to alter implementation details in unrelated code, so long as the interface isn’t modified in a substantial way.
-- Tests can provide mock implementations of dependencies without needing to jump through hoops to inject them. They can provide the mock to the builder and Exo will make sure it is used where appropriate.
-## How Exo Works
-Exo allows your class to say what dependencies it has by using undefined class attribute annotations. That’s a bit vague so here is an example:
+- Tests can provide mock implementations of dependencies without needing to jump through hoops to inject them. They can provide the mock to the builder and Bevy will make sure it is used where appropriate.
+## How Bevy Works
+Bevy allows your class to say what dependencies it has by using undefined class attribute annotations. That’s a bit vague so here is an example:
 ```py
-class MyClass(Exo):
+class MyClass(Bevy):
     my_dependency: MyDependency
 ```
 The class `MyClass` has a dependency on the `MyDependency` interface. It wants this dependency to be made available with the attribute name `my_dependency`. This will allow your class to access an instance of `MyDependency` as `self.my_dependency`, even from `__init__` since the injection happens right after `__new__` is called!
@@ -26,11 +26,11 @@ my_dependency: MyDependency = MyDependency()
 ```
 This will be ignored by the dependency resolver because it’s been assigned a value.
 ## Dependency Resolution
-Dependency resolution and injection is handled right after `__new__` is called. Exo has a repository of all dependencies that have already been created. This repository is used anytime a class is instantiated to look for each of the dependency class interfaces. A dependency will be used from the repository only if it is the same class as the interface requested or a sub class of that interface. If no match is found for an interface, the class interface will be instantiated without arguments.
+Dependency resolution and injection is handled right after `__new__` is called. Bevy has a repository of all dependencies that have already been created. This repository is used anytime a class is instantiated to look for each of the dependency class interfaces. A dependency will be used from the repository only if it is the same class as the interface requested or a sub class of that interface. If no match is found for an interface, the class interface will be instantiated without arguments.
 
 So, in short, all dependencies are guaranteed to be either the same class as the dependency’s interface or a sub class of that interface.
 ## How To Customize Dependencies
-What if you need to instantiate a dependency with arguments or provide an alternate implementation of a dependency? This can be accomplished by using your class’ builder. The builder can be accessed by calling the `declare` class method, which takes an arbitrary number of object instances as its arguments. These instances will then be saved in the repository and will be used as dependencies for any matching interface. `declare` returns an `ExoBuilder` instance so you will need to call its `build` method.
+What if you need to instantiate a dependency with arguments or provide an alternate implementation of a dependency? This can be accomplished by using your class’ builder. The builder can be accessed by calling the `declare` class method, which takes an arbitrary number of object instances as its arguments. These instances will then be saved in the repository and will be used as dependencies for any matching interface. `declare` returns an `BevyBuilder` instance so you will need to call its `build` method.
 
 Example *(continuing the code from above)*:
 ```py
@@ -39,7 +39,7 @@ app = MyClass \
     .build()
 ```
 ## Driving Motivations
-The motivations that drive the decisions about how Exo is implemented are as follows.
+The motivations that drive the decisions about how Bevy is implemented are as follows.
 - It should feel like nothing has been changed from normal.
 - IDEs should be able to understand what is happening.
 - Everything should work independently.

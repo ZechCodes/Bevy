@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "Exo"
+name = "Bevy"
 version = "0.1.0"
-description = "Simple app framework intended to make it easy to build looesly coupled applications."
+description = "Simple app framework that helps you build looesly coupled applications."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
 

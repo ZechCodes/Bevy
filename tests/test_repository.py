@@ -1,10 +1,5 @@
 from unittest import TestCase
-from exo.repository import (
-    Repository,
-    ExoRepositoryMustBeMatchingTypes,
-    ExoRepositoryMustBeType,
-    Strategy,
-)
+from bevy.repository import Repository, BevyRepositoryMustBeMatchingTypes, Strategy
 
 
 class TestRepository(TestCase):
@@ -104,17 +99,9 @@ class TestRepository(TestCase):
         repo = Repository()
 
         with self.assertRaises(
-            ExoRepositoryMustBeMatchingTypes, msg="Failed to detect unmatched types"
+            BevyRepositoryMustBeMatchingTypes, msg="Failed to detect unmatched types"
         ):
             repo.set(str, 1)
-
-    def test_set_non_type(self):
-        repo = Repository()
-
-        with self.assertRaises(
-            ExoRepositoryMustBeType, msg="Failed to detect non-type"
-        ):
-            repo.set("", "")
 
     def test_not_has(self):
         repo = Repository()
@@ -122,14 +109,6 @@ class TestRepository(TestCase):
         self.assertFalse(
             repo.has(str), "Has check found something when it shouldn't have"
         )
-
-    def test_has_non_type(self):
-        repo = Repository()
-
-        with self.assertRaises(
-            ExoRepositoryMustBeType, msg="Failed to detect non-type"
-        ):
-            repo.has("")
 
     def test_has(self):
         repo = Repository()
@@ -152,14 +131,6 @@ class TestRepository(TestCase):
         self.assertFalse(
             child.has(str, propagate=False), "Propagated to parent when disabled"
         )
-
-    def test_get_non_type(self):
-        repo = Repository()
-
-        with self.assertRaises(
-            ExoRepositoryMustBeType, msg="Failed to detect non-type"
-        ):
-            repo.get("")
 
     def test_get_existing(self):
         repo = Repository()

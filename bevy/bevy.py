@@ -1,10 +1,10 @@
 from __future__ import annotations
-from exo.repository import GenericRepository, Repository
+from bevy.repository import GenericRepository, Repository
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 
-class ExoMeta(type):
-    _dependencies: Dict[Type[Exo], Dict[str, Type]] = {}
+class BevyMeta(type):
+    _dependencies: Dict[Type[Bevy], Dict[str, Type]] = {}
 
     def __new__(mcs, name: str, bases: Tuple[Type], attrs: Dict[str, Any]):
         """ Find and inherit all dependencies. """
@@ -12,24 +12,24 @@ class ExoMeta(type):
         mcs._dependencies[cls] = mcs._build_dependencies(attrs, bases)
         return cls
 
-    def __call__(cls: Type[Exo], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Exo:
-        return ExoMeta.builder(cls).build(*args, **kwargs)
+    def __call__(cls: Type[Bevy], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Bevy:
+        return BevyMeta.builder(cls).build(*args, **kwargs)
 
-    def declare(cls: Type[Exo], *args: Tuple[Any]) -> ExoBuilder:
+    def declare(cls: Type[Bevy], *args: Tuple[Any]) -> BevyBuilder:
         """ Creates a builder and passes it the declared dependencies. """
-        builder = ExoMeta.builder(cls)
+        builder = BevyMeta.builder(cls)
         builder.declare(*args)
         return builder
 
     @classmethod
-    def builder(mcs, cls: Type[Exo]) -> ExoBuilder:
-        builder = ExoBuilder(cls)
+    def builder(mcs, cls: Type[Bevy]) -> BevyBuilder:
+        builder = BevyBuilder(cls)
         builder.dependencies(**mcs._dependencies.get(cls, {}))
         return builder
 
     @classmethod
     def _build_dependencies(
-        mcs, attrs: Dict[str, Any], bases: Tuple[Union[Type[Exo], Type]]
+        mcs, attrs: Dict[str, Any], bases: Tuple[Union[Type[Bevy], Type]]
     ) -> Dict[str, Type]:
         """ Builds a dictionary of dependencies from the annotated properties
         that are found on the bases and in the class definition. These
@@ -51,7 +51,7 @@ class ExoMeta(type):
         return dependencies
 
 
-class Exo(metaclass=ExoMeta):
+class Bevy(metaclass=BevyMeta):
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls, *args, **kwargs)
 
@@ -59,15 +59,15 @@ class Exo(metaclass=ExoMeta):
         pass
 
 
-class ExoBuilder:
+class BevyBuilder:
     def __init__(
-        self, cls: Type[Exo], *, repository: Optional[Type[Repository]] = None
+        self, cls: Type[Bevy], *, repository: Optional[Type[Repository]] = None
     ):
         self._cls = cls
         self._dependencies = {}
         self._repo = Repository.create(repository)
 
-    def build(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Exo:
+    def build(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Bevy:
         """ Builds an instance of the class which has its dependencies
         resolved and injected. """
         instance = self._cls.__new__(self._cls, *args, **kwargs)
@@ -90,7 +90,7 @@ class ExoBuilder:
         self._dependencies.update(kwargs)
 
     @staticmethod
-    def _inject_dependencies(instance: Exo, dependencies: Dict[str, Any]):
+    def _inject_dependencies(instance: Bevy, dependencies: Dict[str, Any]):
         for name, dependency in dependencies.items():
             setattr(instance, name, dependency)
 

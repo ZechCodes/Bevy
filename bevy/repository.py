@@ -77,7 +77,7 @@ class Repository:
             value = instance(**kwargs)
 
         if not isinstance(value, look_up_type):
-            raise ExoRepositoryMustBeMatchingTypes(
+            raise BevyRepositoryMustBeMatchingTypes(
                 f"Cannot set a value for mismatched types, received {look_up_type} and {instance}"
             )
 
@@ -125,5 +125,5 @@ class Repository:
         return cls(*args, **kwargs)
 
 
-class ExoRepositoryMustBeMatchingTypes(Exception):
+class BevyRepositoryMustBeMatchingTypes(Exception):
     ...

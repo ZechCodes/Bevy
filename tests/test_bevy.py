@@ -1,11 +1,11 @@
 from pytest import fixture
-from exo.exo import Exo, ExoBuilder
+from bevy.bevy import Bevy, BevyBuilder
 
 
 class TestBuilder:
     @fixture
     def dependency(self):
-        class Dep(Exo):
+        class Dep(Bevy):
             ...
 
         return Dep
@@ -19,7 +19,7 @@ class TestBuilder:
 
     @fixture
     def app(self, dependency):
-        class App(Exo):
+        class App(Bevy):
             dep: dependency
 
         return App
@@ -30,14 +30,14 @@ class TestBuilder:
         assert isinstance(a.dep, sub_dependency)
 
     def test_imperative_dependencies(self, app, dependency):
-        builder = ExoBuilder(app)
+        builder = BevyBuilder(app)
         builder.dependencies(imp=dependency)
         a = builder.build()
 
         assert hasattr(a, "imp")
 
-    def test_exo_constructor_ret_type(self, app, dependency):
+    def test_bevy_constructor_ret_type(self, app, dependency):
         assert isinstance(app(), app)
 
-    def test_exo_constructor_ret_dependencies(self, app, dependency):
+    def test_bevy_constructor_ret_dependencies(self, app, dependency):
         assert isinstance(app().dep, dependency)
