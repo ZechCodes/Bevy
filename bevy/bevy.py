@@ -61,7 +61,10 @@ class Bevy(metaclass=BevyMeta):
 
 class BevyBuilder:
     def __init__(
-        self, cls: Type[Bevy], *, repository: Optional[Type[Repository]] = None
+        self,
+        cls: Type[Bevy],
+        *,
+        repository: Optional[Union[Type[Repository], Repository]] = None
     ):
         self._cls = cls
         self._dependencies = {}
