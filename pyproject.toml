@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Exo"
-version = "0.1.0-alpha.0"
+version = "0.1.0"
 description = "Simple app framework intended to make it easy to build looesly coupled applications."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
