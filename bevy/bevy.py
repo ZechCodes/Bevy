@@ -22,8 +22,10 @@ class BevyMeta(type):
         return builder
 
     @classmethod
-    def builder(mcs, cls: Type[Bevy]) -> BevyBuilder:
-        builder = BevyBuilder(cls)
+    def builder(
+        mcs, cls: Type[Bevy], repository: Optional[Repository] = None
+    ) -> BevyBuilder:
+        builder = BevyBuilder(cls, repository=repository)
         builder.dependencies(**mcs._dependencies.get(cls, {}))
         return builder
 
