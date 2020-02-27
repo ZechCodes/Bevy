@@ -1,5 +1,8 @@
 from unittest import TestCase
+from pytest import fixture
 from bevy.repository import Repository, BevyRepositoryMustBeMatchingTypes, Strategy
+from bevy.bevy import Bevy
+import random
 
 
 class TestRepository(TestCase):
@@ -204,21 +207,6 @@ class TestRepository(TestCase):
             "Failed to match a sub class of the look up type",
         )
 
-    def test_pass_repository(self):
-        class Extension:
-            __repository__ = None
-
-            def __init__(self, __repository__=None):
-                self.__repository__ = __repository__
-
-        repo = Repository()
-
-        self.assertIs(
-            repo.get(Extension).__repository__,
-            repo,
-            "Failed to pass the repository to the instance",
-        )
-
     def test_no_inherit(self):
         class Extension:
             __repository_strategy__ = Strategy.NO_INHERIT
@@ -256,3 +244,41 @@ class TestRepository(TestCase):
             child.get(Extension),
             "Inherited an ALWAYS_CREATE instance",
         )
+
+
+class TestRepositoryInherited:
+    @fixture
+    def dependency(self):
+        class Dependency:
+            def __init__(self, name, rand=True):
+                self._name = name
+                self._rand = random.randint(0, 100) if rand else ""
+
+            @property
+            def name(self):
+                return f"{self._name}{self._rand}"
+
+        return Dependency
+
+    @fixture
+    def child_bevy(self, dependency):
+        class Child(Bevy):
+            dep: dependency
+
+        return Child
+
+    @fixture
+    def owner(self, child_bevy, dependency):
+        class Owner(Bevy):
+            dep: dependency
+            child: child_bevy
+
+        return Owner
+
+    def test_inherited(self, owner, dependency):
+        app = owner.declare(dependency("foo", False)).build()
+        assert app.dep.name == "foo"
+
+    def test_match(self, owner, dependency):
+        app = owner.declare(dependency("foo")).build()
+        assert app.dep.name == app.child.dep.name
