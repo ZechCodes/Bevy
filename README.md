@@ -13,12 +13,12 @@ Python doesn’t have an actual interface implementation like many other languag
 - Changes can be made without needing to alter implementation details in unrelated code, so long as the interface isn’t modified in a substantial way.
 - Tests can provide mock implementations of dependencies without needing to jump through hoops to inject them. They can provide the mock to the builder and Exo will make sure it is used where appropriate.
 ## How Exo Works
-Exo allows your class to say what dependencies it has by using undefined class attribute annotations. Yeah… That’s not clear at all… Ok, here’s an example:
+Exo allows your class to say what dependencies it has by using undefined class attribute annotations. That’s a bit vague so here is an example:
 ```py
 class MyClass(Exo):
     my_dependency: MyDependency
 ```
-Now to explain. `MyClass` has a dependency on the `MyDependency` interface. It wants this dependency to be made available with the attribute name `my_dependency`. This will allow your class to access an instance of `MyDependency` as `self.my_dependency`, it’ll even be available when `__init__` is called!
+The class `MyClass` has a dependency on the `MyDependency` interface. It wants this dependency to be made available with the attribute name `my_dependency`. This will allow your class to access an instance of `MyDependency` as `self.my_dependency`, even from `__init__` since the injection happens right after `__new__` is called!
 
 It is important to note that this cannot be assigned a value. For example:
 ```py
