@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, Dict, Optional, Type, TypeVar, Union
+import bevy.bevy as bevy
 import enum
 
 
@@ -71,10 +72,11 @@ class Repository:
 
         value = instance
         if isinstance(instance, type):
-            kwargs = {}
-            if hasattr(instance, "__repository__"):
-                kwargs["__repository__"] = self
-            value = instance(**kwargs)
+            value = (
+                bevy.BevyMeta.builder(instance, repository=self).build()
+                if issubclass(instance, bevy.Bevy)
+                else instance()
+            )
 
         if not isinstance(value, look_up_type):
             raise BevyRepositoryMustBeMatchingTypes(
