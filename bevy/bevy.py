@@ -15,10 +15,10 @@ class BevyMeta(type):
     def __call__(cls: Type[Bevy], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Bevy:
         return BevyMeta.builder(cls).build(*args, **kwargs)
 
-    def declare(cls: Type[Bevy], *args: Tuple[Any]) -> BevyBuilder:
-        """ Creates a builder and passes it the declared dependencies. """
+    def context(cls: Type[Bevy], *args: Tuple[Any]) -> BevyBuilder:
+        """ Declares dependencies in a context using a bevy builder. """
         builder = BevyMeta.builder(cls)
-        builder.declare(*args)
+        builder.context(*args)
         return builder
 
     @classmethod
@@ -82,9 +82,9 @@ class BevyBuilder:
             instance.__init__(*args, **kwargs)
         return instance
 
-    def declare(self, *args: Tuple[Any]):
-        """ Allows for initialized instances to be declared for use
-        during dependency resolution. Useful for configuring a dependency
+    def context(self, *args: Tuple[Any]):
+        """ Allows for initialized instances to be declared in the context for
+        use during dependency resolution. Useful for configuring a dependency
         at the top level of an app for use by app components. """
         for declaration in args:
             self._repo.set(declaration)
