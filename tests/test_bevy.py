@@ -24,8 +24,8 @@ class TestBuilder:
 
         return App
 
-    def test_declare(self, app, sub_dependency):
-        a = app.declare(sub_dependency()).build()
+    def test_context(self, app, sub_dependency):
+        a = app.context(sub_dependency()).build()
 
         assert isinstance(a.dep, sub_dependency)
 

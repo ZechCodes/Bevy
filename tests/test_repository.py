@@ -283,9 +283,9 @@ class TestRepositoryInherited:
         return Owner
 
     def test_inherited(self, owner, dependency):
-        app = owner.declare(dependency("foo", False)).build()
+        app = owner.context(dependency("foo", False)).build()
         assert app.dep.name == "foo"
 
     def test_match(self, owner, dependency):
-        app = owner.declare(dependency("foo")).build()
+        app = owner.context(dependency("foo")).build()
         assert app.dep.name == app.child.dep.name
