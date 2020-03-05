@@ -4,7 +4,7 @@ import bevy.bevy as bevy
 import enum
 
 
-GenericRepository = TypeVar("GenericRepository", bound="Context")
+GenericContext = TypeVar("GenericContext", bound="Context")
 GenericInstance = TypeVar("GenericInstance")
 GenericType = Type[GenericInstance]
 _NOVAL = object()
@@ -19,19 +19,19 @@ class Strategy(enum.Enum):
 class Context:
     strategy = Strategy
 
-    def __init__(self, parent: Optional[GenericRepository] = None):
+    def __init__(self, parent: Optional[GenericContext] = None):
         self._parent = parent
         self._instance_repo: Dict[GenericType, GenericInstance] = {self.__class__: self}
 
-    def create_scope(self) -> GenericRepository:
-        """ Creates a repository using the parent's type and passes the parent
-        to the new repository. """
+    def create_scope(self) -> GenericContext:
+        """ Creates a context using the parent's type and passes the parent
+        to the new context. """
         return type(self)(self)
 
     def get(
         self, obj: GenericType, *, default: Any = _NOVAL, propagate: bool = True
     ) -> Optional[GenericInstance]:
-        """ Get's an instance matching the requested type from the repository.
+        """ Get's an instance matching the requested type from the context.
         If default is not set and an match is not found this will create an
         instance using the requested type. """
         if propagate and self._can_inherit(obj):
@@ -47,7 +47,7 @@ class Context:
         self, obj: Union[GenericType, GenericInstance], *, propagate: bool = True
     ) -> bool:
         """ Checks if an instance matching the requested type exists in the
-        repository. If a type is not provided this will raise an exception. """
+        context. If a type is not provided this will raise an exception. """
         if not isinstance(obj, type):
             obj = type(obj)
 
@@ -73,17 +73,17 @@ class Context:
         value = instance
         if isinstance(instance, type):
             value = (
-                bevy.BevyMeta.builder(instance, repository=self).build()
+                bevy.BevyMeta.builder(instance, context=self).build()
                 if issubclass(instance, bevy.Bevy)
                 else instance()
             )
 
         if not isinstance(value, look_up_type):
-            raise BevyRepositoryMustBeMatchingTypes(
+            raise BevyContextMustBeMatchingTypes(
                 f"Cannot set a value for mismatched types, received {look_up_type} and {instance}"
             )
 
-        strategy = getattr(look_up_type, "__repository_strategy__", Strategy.INHERIT)
+        strategy = getattr(look_up_type, "__context_strategy__", Strategy.INHERIT)
         if strategy != Strategy.ALWAYS_CREATE:
             self._instance_repo[look_up_type] = value
 
@@ -93,7 +93,7 @@ class Context:
         if not self._parent:
             return False
 
-        strategy = getattr(look_up_type, "__repository_strategy__", Strategy.INHERIT)
+        strategy = getattr(look_up_type, "__context_strategy__", Strategy.INHERIT)
         if strategy != Strategy.INHERIT:
             return False
 
@@ -108,11 +108,11 @@ class Context:
     @classmethod
     def create(
         cls,
-        repo: Optional[Union[GenericRepository, Type[GenericRepository]]] = None,
+        repo: Optional[Union[GenericContext, Type[GenericContext]]] = None,
         *args,
         **kwargs,
-    ) -> GenericRepository:
-        """ Return a repository object. If the repo provided is already
+    ) -> GenericContext:
+        """ Return a context object. If the repo provided is already
         instantiated it will be returned without change. If it is a subclass of
         Context it will be instantiated with any args provided and returned.
         If neither of those is true Context will be instantiated with the
@@ -127,5 +127,5 @@ class Context:
         return cls(*args, **kwargs)
 
 
-class BevyRepositoryMustBeMatchingTypes(Exception):
+class BevyContextMustBeMatchingTypes(Exception):
     ...

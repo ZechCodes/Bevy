@@ -1,5 +1,5 @@
 from __future__ import annotations
-from bevy.repository import GenericRepository, Repository
+from bevy.context import GenericContext, Context
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 
@@ -22,10 +22,8 @@ class BevyMeta(type):
         return builder
 
     @classmethod
-    def builder(
-        mcs, cls: Type[Bevy], repository: Optional[Repository] = None
-    ) -> BevyBuilder:
-        builder = BevyBuilder(cls, repository=repository)
+    def builder(mcs, cls: Type[Bevy], context: Optional[Context] = None) -> BevyBuilder:
+        builder = BevyBuilder(cls, context=context)
         builder.dependencies(**mcs._dependencies.get(cls, {}))
         return builder
 
@@ -66,11 +64,11 @@ class BevyBuilder:
         self,
         cls: Type[Bevy],
         *,
-        repository: Optional[Union[Type[Repository], Repository]] = None
+        context: Optional[Union[Type[Context], Context]] = None
     ):
         self._cls = cls
         self._dependencies = {}
-        self._repo = Repository.create(repository)
+        self._repo = Context.create(context)
 
     def build(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Bevy:
         """ Builds an instance of the class which has its dependencies

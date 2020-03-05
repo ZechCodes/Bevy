@@ -1,171 +1,171 @@
 from unittest import TestCase
 from pytest import fixture
-from bevy.repository import Repository, BevyRepositoryMustBeMatchingTypes, Strategy
+from bevy.context import Context, BevyContextMustBeMatchingTypes, Strategy
 from bevy.bevy import Bevy
 import random
 
 
-class TestRepository(TestCase):
+class TestContext(TestCase):
     def test_create_scope(self):
-        repo = Repository()
-        child = repo.create_scope()
+        context = Context()
+        child = context.create_scope()
 
-        self.assertIsNot(child, repo, "Failed to create child repo")
+        self.assertIsNot(child, context, "Failed to create child context")
 
     def test_create_scope_parent(self):
-        repo = Repository()
-        child = repo.create_scope()
+        context = Context()
+        child = context.create_scope()
 
-        self.assertIs(child._parent, repo, "Failed to assign parent of child repo")
+        self.assertIs(
+            child._parent, context, "Failed to assign parent of child context"
+        )
 
     def test_create_scope_type(self):
-        class CustomRepo(Repository):
+        class CustomRepo(Context):
             ...
 
-        repo = CustomRepo()
-        child = repo.create_scope()
+        context = CustomRepo()
+        child = context.create_scope()
 
         self.assertIsInstance(
-            child, CustomRepo, "Failed to create child repo of parent's type"
+            child, CustomRepo, "Failed to create child context of parent's type"
         )
 
     def test_create(self):
         self.assertIsInstance(
-            Repository.create(),
-            Repository,
-            "Repository create failed to return a repository",
+            Context.create(), Context, "Context create failed to return a context"
         )
 
-    def test_create_non_repo_instance(self):
+    def test_create_non_context_instance(self):
         class NotARepo:
             ...
 
         self.assertIsInstance(
-            Repository.create(NotARepo()),
-            Repository,
-            "Repository create failed to return a repository",
+            Context.create(NotARepo()),
+            Context,
+            "Context create failed to return a context",
         )
 
-    def test_create_non_repo_type(self):
+    def test_create_non_context_type(self):
         class NotARepo:
             ...
 
         self.assertIsInstance(
-            Repository.create(NotARepo),
-            Repository,
-            "Repository create failed to return a repository",
+            Context.create(NotARepo),
+            Context,
+            "Context create failed to return a context",
         )
 
-    def test_create_repo_instance(self):
-        class Repo(Repository):
+    def test_create_context_instance(self):
+        class Repo(Context):
             ...
 
-        repo = Repo()
+        context = Repo()
 
         self.assertIs(
-            Repository.create(repo),
-            repo,
-            "Failed to return the existing repository instance",
+            Context.create(context),
+            context,
+            "Failed to return the existing context instance",
         )
 
-    def test_create_repo_type(self):
-        class Repo(Repository):
+    def test_create_context_type(self):
+        class Repo(Context):
             ...
 
         self.assertIsInstance(
-            Repository.create(Repo),
+            Context.create(Repo),
             Repo,
-            "Failed to create an instance of the repository subclass",
+            "Failed to create an instance of the context subclass",
         )
 
     # TEST GET/HAS/SET
     def test_set_instance(self):
-        repo = Repository()
+        context = Context()
         sentinel = object()
 
         self.assertEqual(
-            repo.set(object, sentinel),
+            context.set(object, sentinel),
             sentinel,
-            "Failed to set the value in the repository",
+            "Failed to set the value in the context",
         )
 
     def test_set_type(self):
-        repo = Repository()
+        context = Context()
 
         self.assertEqual(
-            repo.set(str, str),
+            context.set(str, str),
             "",
-            "Failed to instantiate and set the value in the repository",
+            "Failed to instantiate and set the value in the context",
         )
 
     def test_set_unmatched(self):
-        repo = Repository()
+        context = Context()
 
         with self.assertRaises(
-            BevyRepositoryMustBeMatchingTypes, msg="Failed to detect unmatched types"
+            BevyContextMustBeMatchingTypes, msg="Failed to detect unmatched types"
         ):
-            repo.set(str, 1)
+            context.set(str, 1)
 
     def test_not_has(self):
-        repo = Repository()
+        context = Context()
 
         self.assertFalse(
-            repo.has(str), "Has check found something when it shouldn't have"
+            context.has(str), "Has check found something when it shouldn't have"
         )
 
     def test_has(self):
-        repo = Repository()
-        repo.set(str, "")
+        context = Context()
+        context.set(str, "")
 
-        self.assertTrue(repo.has(str), "Failed to find existing instance")
+        self.assertTrue(context.has(str), "Failed to find existing instance")
 
     def test_has_propagate(self):
-        repo = Repository()
-        repo.set(str, "")
-        child = Repository(repo)
+        context = Context()
+        context.set(str, "")
+        child = Context(context)
 
         self.assertTrue(child.has(str), "Failed to find existing instance on parent")
 
     def test_has_no_propagate(self):
-        repo = Repository()
-        repo.set(str, "")
-        child = Repository(repo)
+        context = Context()
+        context.set(str, "")
+        child = Context(context)
 
         self.assertFalse(
             child.has(str, propagate=False), "Propagated to parent when disabled"
         )
 
     def test_get_existing(self):
-        repo = Repository()
-        repo.set(str, "")
+        context = Context()
+        context.set(str, "")
 
-        self.assertEqual(repo.get(str), "", "Failed to find existing instance")
+        self.assertEqual(context.get(str), "", "Failed to find existing instance")
 
     def test_get_instantiate(self):
-        repo = Repository()
+        context = Context()
 
-        self.assertEqual(repo.get(str), "", "Failed to create instance")
+        self.assertEqual(context.get(str), "", "Failed to create instance")
 
     def test_get_default(self):
-        repo = Repository()
+        context = Context()
 
         self.assertEqual(
-            repo.get(str, default="NOVAL"), "NOVAL", "Failed to create instance"
+            context.get(str, default="NOVAL"), "NOVAL", "Failed to create instance"
         )
 
     def test_get_propagate(self):
-        repo = Repository()
-        repo.set(str, "")
-        child = Repository(repo)
+        context = Context()
+        context.set(str, "")
+        child = Context(context)
 
         self.assertEqual(
             child.get(str), "", "Failed to find existing instance on parent"
         )
 
     def test_get_no_propagate(self):
-        repo = Repository()
-        repo.set(str, "")
-        child = Repository(repo)
+        context = Context()
+        context.set(str, "")
+        child = Context(context)
 
         self.assertEqual(
             child.get(str, default="NOVAL", propagate=False),
@@ -174,8 +174,8 @@ class TestRepository(TestCase):
         )
 
     def test_get_propagate_default(self):
-        repo = Repository()
-        child = Repository(repo)
+        context = Context()
+        child = Context(context)
 
         self.assertEqual(
             child.get(str, default="NOVAL"),
@@ -184,12 +184,14 @@ class TestRepository(TestCase):
         )
 
     def test_get_propagate_override(self):
-        repo = Repository()
-        repo.set(str, "")
-        child = Repository(repo)
+        context = Context()
+        context.set(str, "")
+        child = Context(context)
         child.set(str, "child")
 
-        self.assertEqual(child.get(str), "child", "Failed to find value on child repo")
+        self.assertEqual(
+            child.get(str), "child", "Failed to find value on child context"
+        )
 
     def test_get_subclass(self):
         class ValueParent:
@@ -198,20 +200,20 @@ class TestRepository(TestCase):
         class ValueChild(ValueParent):
             ...
 
-        repo = Repository()
-        repo.set(ValueChild, ValueChild)
+        context = Context()
+        context.set(ValueChild, ValueChild)
 
         self.assertIsInstance(
-            repo.get(ValueParent),
+            context.get(ValueParent),
             ValueChild,
             "Failed to match a sub class of the look up type",
         )
 
     def test_no_inherit(self):
         class Extension:
-            __repository_strategy__ = Strategy.NO_INHERIT
+            __context_strategy__ = Strategy.NO_INHERIT
 
-        parent = Repository()
+        parent = Context()
         child = parent.create_scope()
 
         self.assertIsNot(
@@ -222,21 +224,21 @@ class TestRepository(TestCase):
 
     def test_always_create(self):
         class Extension:
-            __repository_strategy__ = Strategy.ALWAYS_CREATE
+            __context_strategy__ = Strategy.ALWAYS_CREATE
 
-        repo = Repository()
+        context = Context()
 
         self.assertIsNot(
-            repo.get(Extension),
-            repo.get(Extension),
+            context.get(Extension),
+            context.get(Extension),
             "Failed to create for each request",
         )
 
     def test_always_create_inherit(self):
         class Extension:
-            __repository_strategy__ = Strategy.ALWAYS_CREATE
+            __context_strategy__ = Strategy.ALWAYS_CREATE
 
-        parent = Repository()
+        parent = Context()
         child = parent.create_scope()
 
         self.assertIsNot(
@@ -245,15 +247,15 @@ class TestRepository(TestCase):
             "Inherited an ALWAYS_CREATE instance",
         )
 
-    def test_repository_access(self):
+    def test_context_access(self):
         class App(Bevy):
-            context: Repository
+            context: Context
 
-        repo = Repository()
-        self.assertIs(repo.get(App).context, repo)
+        context = Context()
+        self.assertIs(context.get(App).context, context)
 
 
-class TestRepositoryInherited:
+class TestContextInherited:
     @fixture
     def dependency(self):
         class Dependency:
