@@ -21,7 +21,7 @@ class Repository:
 
     def __init__(self, parent: Optional[GenericRepository] = None):
         self._parent = parent
-        self._instance_repo: Dict[GenericType, GenericInstance] = {}
+        self._instance_repo: Dict[GenericType, GenericInstance] = {self.__class__: self}
 
     def create_scope(self) -> GenericRepository:
         """ Creates a repository using the parent's type and passes the parent

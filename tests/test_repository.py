@@ -245,6 +245,13 @@ class TestRepository(TestCase):
             "Inherited an ALWAYS_CREATE instance",
         )
 
+    def test_repository_access(self):
+        class App(Bevy):
+            context: Repository
+
+        repo = Repository()
+        self.assertIs(repo.get(App).context, repo)
+
 
 class TestRepositoryInherited:
     @fixture
