@@ -55,9 +55,6 @@ class Bevy(metaclass=BevyMeta):
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls, *args, **kwargs)
 
-    def __init__(self, *args, **kwargs):
-        pass
-
 
 class BevyBuilder:
     def __init__(
