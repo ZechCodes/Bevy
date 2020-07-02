@@ -1,5 +1,5 @@
 from __future__ import annotations
-from bevy.context import GenericContext, Context
+from bevy.context import Context
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 
