@@ -53,8 +53,7 @@ class BevyMeta(type):
 
 
 class Bevy(metaclass=BevyMeta):
-    def __new__(cls, *args, **kwargs):
-        return super().__new__(cls, *args, **kwargs)
+    ...
 
 
 class BevyBuilder:
