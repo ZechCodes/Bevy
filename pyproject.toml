@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Bevy"
-version = "0.2.2"
+version = "0.2.3"
 description = "Simple app framework that helps you build looesly coupled applications."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
