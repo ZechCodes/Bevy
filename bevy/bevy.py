@@ -1,5 +1,6 @@
 from __future__ import annotations
 from bevy.context import Context
+from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 
@@ -96,6 +97,8 @@ class BevyBuilder:
 
     def _resolve_dependencies(self) -> Dict[str, Any]:
         return {
-            name: self._repo.get(dependency)
+            name: dependency.create_factory(self._repo)
+            if isinstance(dependency, FactoryAnnotation)
+            else self._repo.get(dependency)
             for name, dependency in self._dependencies.items()
         }
