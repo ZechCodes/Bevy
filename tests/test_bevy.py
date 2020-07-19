@@ -5,7 +5,7 @@ from bevy.bevy import Bevy
 
 @fixture()
 def dep():
-    class Dep():
+    class Dep(Bevy):
         ...
 
     return Dep
@@ -23,7 +23,7 @@ def dep_b(dep):
 
 @fixture()
 def app(dep):
-    class App():
+    class App(Bevy):
         dependency: dep
     return App
 
