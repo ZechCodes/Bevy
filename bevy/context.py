@@ -1,131 +1,74 @@
 from __future__ import annotations
 from typing import Any, Dict, Optional, Type, TypeVar, Union
+from functools import lru_cache
 import bevy.bevy as bevy
-import enum
 
 
-GenericContext = TypeVar("GenericContext", bound="Context")
-GenericInstance = TypeVar("GenericInstance")
-GenericType = Type[GenericInstance]
-_NOVAL = object()
-
-
-class Strategy(enum.Enum):
-    INHERIT = enum.auto()
-    NO_INHERIT = enum.auto()
-    ALWAYS_CREATE = enum.auto()
+T = TypeVar("T")
+NO_VALUE = type("NO_VALUE", tuple(), {"__repr__": lambda self: "<NO_VALUE>", "__slots__": []})()
 
 
 class Context:
-    strategy = Strategy
-
-    def __init__(self, parent: Optional[GenericContext] = None):
+    def __init__(self, parent: Context = None):
         self._parent = parent
-        self._instance_repo: Dict[GenericType, GenericInstance] = {self.__class__: self}
+        self._repository: Dict[Type[T], T] = {}
 
-    def create_scope(self) -> GenericContext:
-        """ Creates a context using the parent's type and passes the parent
-        to the new context. """
+        self.load(self)
+
+    def branch(self) -> Context:
+        """ Creates a new context and adds the current context as its parent. """
         return type(self)(self)
 
-    def get(
-        self, obj: GenericType, *, default: Any = _NOVAL, propagate: bool = True
-    ) -> Optional[GenericInstance]:
-        """ Get's an instance matching the requested type from the context.
-        If default is not set and an match is not found this will create an
-        instance using the requested type. """
-        if propagate and self._can_inherit(obj):
-            return self._parent.get(obj, default=default)
+    def create(self, object_type: Type[T], *args, **kwargs) -> T:
+        """ Creates an instance of an object using the current context. """
+        instance = object_type.__new__(object_type, *args, **kwargs)
+        for name, dependency in self._find_dependencies(object_type).items():
+            setattr(instance, name, self.get(dependency))
+        instance.__init__(*args, **kwargs)
+        return instance
 
-        if not self.has(obj, propagate=False):
-            if default is not _NOVAL:
-                return default
-            return self.set(obj, obj)
-        return self._find(obj)
+    def get(self, object_type: Type[T], *, default: Any = NO_VALUE, propagate: bool = True) -> Optional[T]:
+        """ Get's an instance matching the requested type from the context. If default is not set and no match is found
+        this will create an instance using the requested type. """
+        if self.has(object_type, propagate=False):
+            return self._find(object_type)
 
-    def has(
-        self, obj: Union[GenericType, GenericInstance], *, propagate: bool = True
-    ) -> bool:
-        """ Checks if an instance matching the requested type exists in the
-        context. If a type is not provided this will raise an exception. """
-        if not isinstance(obj, type):
-            obj = type(obj)
+        if propagate and self._parent:
+            return self._parent.get(object_type, default=default)
 
-        return self._find(obj) is not _NOVAL or (
-            propagate and self._parent and self._parent.has(obj)
-        )
+        if default is NO_VALUE:
+            return self.load(object_type())
 
-    def set(
-        self,
-        look_up_type: Union[GenericType, GenericInstance],
-        instance: Optional[Union[GenericType, GenericInstance]] = None,
-    ) -> GenericInstance:
-        """ Sets the instance that should be returned when a given type is
-        requested. This will raise exceptions if the look up type isn't a type
-        and if the instance type is not an instance of the look up type. """
-        if not isinstance(look_up_type, type):
-            instance = look_up_type
-            look_up_type = type(instance)
+        return default
 
-        elif not instance:
-            instance = look_up_type
+    def has(self, object_type: Type[T], *, propagate: bool = True) -> bool:
+        """ Checks if an instance matching the requested type exists in the context or one of its parent contexts. """
+        if self._find(object_type) is NO_VALUE:
+            return propagate and self._parent and self._parent.has(object_type)
+        return True
 
-        value = instance
-        if isinstance(instance, type):
-            value = (
-                bevy.BevyMeta.builder(instance, context=self).build()
-                if issubclass(instance, bevy.Bevy)
-                else instance()
+    def load(self, instance: T) -> Context:
+        """ Sets the instance that should be returned when a given type is requested. """
+        self._repository[type(instance)] = instance
+        return self
+
+    def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
+        """ Finds an instance that is either of the requested type or a sub-type of that type. If it is not found
+        NO_VALUE will be returned. """
+        for repo_type in self._repository:
+            if issubclass(repo_type, object_type):
+                return self._repository[repo_type]
+        return NO_VALUE
+
+    @lru_cache()
+    def _find_dependencies(self, object_type: Type) -> Dict[str, Type[T]]:
+        dependencies: Dict[str, Type[T]] = {}
+        for cls in reversed(object_type.__mro__):
+            dependencies.update(
+                {
+                    name: annotation_type
+                    for name, annotation_type in getattr(cls, "__annotations__", {}).items()
+                    if not hasattr(cls, name)
+                }
             )
-
-        if not isinstance(value, look_up_type):
-            raise BevyContextMustBeMatchingTypes(
-                f"Cannot set a value for mismatched types, received {look_up_type} and {instance}"
-            )
-
-        strategy = getattr(look_up_type, "__context_strategy__", Strategy.INHERIT)
-        if strategy != Strategy.ALWAYS_CREATE:
-            self._instance_repo[look_up_type] = value
-
-        return value
-
-    def _can_inherit(self, look_up_type: GenericType) -> bool:
-        if not self._parent:
-            return False
-
-        strategy = getattr(look_up_type, "__context_strategy__", Strategy.INHERIT)
-        if strategy != Strategy.INHERIT:
-            return False
-
-        return not self.has(look_up_type, propagate=False)
-
-    def _find(self, look_up_type: GenericType) -> Union[GenericInstance, _NOVAL]:
-        for repo_type in self._instance_repo:
-            if issubclass(repo_type, look_up_type):
-                return self._instance_repo[repo_type]
-        return _NOVAL
-
-    @classmethod
-    def create(
-        cls,
-        repo: Optional[Union[GenericContext, Type[GenericContext]]] = None,
-        *args,
-        **kwargs,
-    ) -> GenericContext:
-        """ Return a context object. If the repo provided is already
-        instantiated it will be returned without change. If it is a subclass of
-        Context it will be instantiated with any args provided and returned.
-        If neither of those is true Context will be instantiated with the
-        provided args and returned. The return is guaranteed to be an instance
-        of Context. """
-        if isinstance(repo, Context):
-            return repo
-
-        if repo and isinstance(repo, type) and issubclass(repo, Context):
-            return repo(*args, **kwargs)
-
-        return cls(*args, **kwargs)
-
-
-class BevyContextMustBeMatchingTypes(Exception):
-    ...
+        return dependencies

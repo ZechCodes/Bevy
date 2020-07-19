@@ -1,43 +1,47 @@
 from pytest import fixture
-from bevy.bevy import Bevy, BevyBuilder
+from bevy.context import Context
+from bevy.bevy import Bevy
 
 
-class TestBuilder:
-    @fixture
-    def dependency(self):
-        class Dep(Bevy):
-            ...
+@fixture()
+def dep():
+    class Dep():
+        ...
 
-        return Dep
+    return Dep
 
-    @fixture
-    def sub_dependency(self, dependency):
-        class SubDep(dependency):
-            ...
 
-        return SubDep
+@fixture()
+def dep_a(dep):
+    return dep()
 
-    @fixture
-    def app(self, dependency):
-        class App(Bevy):
-            dep: dependency
 
-        return App
+@fixture()
+def dep_b(dep):
+    return dep()
 
-    def test_context(self, app, sub_dependency):
-        a = app.context(sub_dependency()).build()
 
-        assert isinstance(a.dep, sub_dependency)
+@fixture()
+def app(dep):
+    class App():
+        dependency: dep
+    return App
 
-    def test_imperative_dependencies(self, app, dependency):
-        builder = BevyBuilder(app)
-        builder.dependencies(imp=dependency)
-        a = builder.build()
 
-        assert hasattr(a, "imp")
+# ###   TESTS   ### #
 
-    def test_bevy_constructor_ret_type(self, app, dependency):
-        assert isinstance(app(), app)
 
-    def test_bevy_constructor_ret_dependencies(self, app, dependency):
-        assert isinstance(app().dep, dependency)
+def test_context_resolution(dep_a, dep):
+    c = Context().load(dep_a)
+    assert c.get(dep) is dep_a
+
+
+def test_context_creation(dep_a, app):
+    c = Context().load(dep_a)
+    a = c.create(app)
+    assert a.dependency is dep_a
+
+
+def test_instantiation(dep, app):
+    a = app()
+    assert isinstance(a.dependency, dep)
