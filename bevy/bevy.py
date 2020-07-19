@@ -1,13 +1,8 @@
 from __future__ import annotations
 from bevy.context import Context
-from bevy.factory import FactoryAnnotation
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Type
 
 
-class BevyMeta(type):
-    def __call__(cls: Type[Bevy], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Bevy:
+class Bevy:
+    def __new__(cls: Type[Bevy], *args, **kwargs) -> Bevy:
         return Context().create(cls, *args, **kwargs)
-
-
-class Bevy(metaclass=BevyMeta):
-    ...
