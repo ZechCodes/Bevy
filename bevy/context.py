@@ -1,4 +1,5 @@
 from __future__ import annotations
+from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
 
@@ -22,7 +23,10 @@ class Context:
         """ Creates an instance of an object using the current context. """
         instance = object_type.__new__(object_type, *args, **kwargs)
         for name, dependency in self._find_dependencies(object_type).items():
-            setattr(instance, name, self.get(dependency))
+            if isinstance(dependency, FactoryAnnotation):
+                setattr(instance, name, dependency.create_factory(self))
+            else:
+                setattr(instance, name, self.get(dependency))
         instance.__init__(*args, **kwargs)
         return instance
 
