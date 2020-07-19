@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "Bevy"
-version = "0.3.2"
+version = "0.3.3"
 description = "Simple app framework that helps you build loosely coupled applications."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/ZechCodes/Bevy"
-repository = "https://github.com/ZechCodes/Bevy/blob/master/README.md"
+repository = "https://github.com/ZechCodes/Bevy"
+documentation = "https://github.com/ZechCodes/Bevy/blob/master/README.md"
 keywords = ["dependency", "injection", "annotations", "types"]
 classifiers = [
     "Development Status :: 4 - Beta",
