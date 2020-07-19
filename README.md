@@ -1,4 +1,4 @@
-# <img src=“./res/icon.svg” width=“128px” align=“right” />
+# <img src="https://github.com/ZechCodes/Bevy/blob/master/res/icon.svg" width="128px" align="right" />
 
 # Bevy
 Bevy makes using *Dependency Inversion* a breeze so that you can focus on creating amazing code.
