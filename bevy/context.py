@@ -36,7 +36,9 @@ class Context:
             return self._parent.get(object_type, default=default)
 
         if default is NO_VALUE:
-            return self.load(object_type())
+            instance = self.create(object_type)
+            self.load(instance)
+            return instance
 
         return default
 
