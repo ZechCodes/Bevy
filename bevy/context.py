@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
-import bevy.bevy as bevy
 
 
 T = TypeVar("T")
