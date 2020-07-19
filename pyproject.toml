@@ -4,6 +4,15 @@ version = "0.3.0"
 description = "Simple app framework that helps you build loosely coupled applications."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/ZechCodes/Bevy"
+repository = "https://github.com/ZechCodes/Bevy/blob/master/README.md"
+keywords = ["dependency", "injection", "annotations", "types"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Libraries :: Application Frameworks"
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
