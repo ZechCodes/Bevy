@@ -47,14 +47,20 @@ def test_instantiation(dep, app):
     assert isinstance(a.dependency, dep)
 
 
-def test_dependency_resolution():
-    class Dependency:
+class Dependency:
+    class SubDependency:
         ...
 
-    class Base:
-        dep: "Dependency"
 
+class Base:
+    dep: "Dependency"
+    sub: "Dependency.SubDependency"
+
+
+def test_dependency_resolution():
     d = Dependency()
-    c = Context().load(d)
+    s = Dependency.SubDependency()
+    c = Context().load(d).load(s)
     a = c.create(Base)
     assert a.dep is d
+    assert a.sub is s
