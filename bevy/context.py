@@ -2,6 +2,7 @@ from __future__ import annotations
 from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
+import sys
 
 
 T = TypeVar("T")
@@ -71,9 +72,16 @@ class Context:
         for cls in reversed(object_type.__mro__):
             dependencies.update(
                 {
-                    name: annotation_type
+                    name: self._resolve_dependency(cls, annotation_type)
                     for name, annotation_type in getattr(cls, "__annotations__", {}).items()
                     if not hasattr(cls, name)
                 }
             )
         return dependencies
+
+    @lru_cache()
+    def _resolve_dependency(self, cls: Type, annotation: Union[str, Type]) -> Type:
+        if isinstance(annotation, str):
+            module = sys.modules[cls.__module__]
+            return eval(annotation, module.__dict__)
+        return annotation
