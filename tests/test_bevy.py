@@ -45,3 +45,16 @@ def test_context_creation(dep_a, app):
 def test_instantiation(dep, app):
     a = app()
     assert isinstance(a.dependency, dep)
+
+
+def test_dependency_resolution():
+    class Dependency:
+        ...
+
+    class Base:
+        dep: "Dependency"
+
+    d = Dependency()
+    c = Context().load(d)
+    a = c.create(Base)
+    assert a.dep is d
