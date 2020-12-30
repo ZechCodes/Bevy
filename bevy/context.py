@@ -14,7 +14,12 @@ class Context:
         self._parent = parent
         self._repository: Dict[Type[T], T] = {}
 
-        self.load(self)
+        self.add(self)
+
+    def add(self, instance: T) -> Context:
+        """ Adds an instance to the context repository. """
+        self._repository[type(instance)] = instance
+        return self
 
     def branch(self) -> Context:
         """ Creates a new context and adds the current context as its parent. """
@@ -42,7 +47,7 @@ class Context:
 
         if default is NO_VALUE:
             instance = self.create(object_type)
-            self.load(instance)
+            self.add(instance)
             return instance
 
         return default
@@ -52,11 +57,6 @@ class Context:
         if self._find(object_type) is NO_VALUE:
             return propagate and self._parent and self._parent.has(object_type)
         return True
-
-    def load(self, instance: T) -> Context:
-        """ Sets the instance that should be returned when a given type is requested. """
-        self._repository[type(instance)] = instance
-        return self
 
     def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
         """ Finds an instance that is either of the requested type or a sub-type of that type. If it is not found

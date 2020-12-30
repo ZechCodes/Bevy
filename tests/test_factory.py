@@ -46,7 +46,7 @@ def test_distinct_instances(app, dependency):
 
 def test_deps_inherited(app, dependency, sub_dependency):
     s = sub_dependency()
-    c = Context().load(s)
+    c = Context().add(s)
     a = c.get(app)
 
     x = a.get().sub

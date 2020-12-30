@@ -32,12 +32,12 @@ def app(dep):
 
 
 def test_context_resolution(dep_a, dep):
-    c = Context().load(dep_a)
+    c = Context().add(dep_a)
     assert c.get(dep) is dep_a
 
 
 def test_context_creation(dep_a, app):
-    c = Context().load(dep_a)
+    c = Context().add(dep_a)
     a = c.create(app)
     assert a.dependency is dep_a
 
@@ -60,7 +60,7 @@ class Base:
 def test_dependency_resolution():
     d = Dependency()
     s = Dependency.SubDependency()
-    c = Context().load(d).load(s)
+    c = Context().add(d).add(s)
     a = c.create(Base)
     assert a.dep is d
     assert a.sub is s

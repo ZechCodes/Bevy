@@ -36,9 +36,11 @@ Dependency resolution and injection is handled when `__new__` is called. Bevy ke
 So, in short, all dependencies are guaranteed to be either the same class as the dependency’s interface or a sub class of that interface.
 ## How To Customize Dependencies
 If you need to instantiate a dependency with arguments or provide an alternate implementation of a dependency you can create a custom context.
+
 ```py
 from bevy import Context
-context = Contex().load(MyDependency(foo="bar"))
+
+context = Contex().add(MyDependency(foo="bar"))
 app = context.create(MyApp, "some instantiation args")
 ```
 It is important to note that `Context.create` does not add the instance returned to the context repository. If that is necessary use `Context.get`, or if you need to pass instantiation arguments use `Context.load` passing the instance returned by `Context.create`.
