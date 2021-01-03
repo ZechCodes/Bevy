@@ -1,7 +1,6 @@
 from __future__ import annotations
 from bevy.context import Context
-from bevy.factory import FactoryAnnotation
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Dict, Tuple, Type
 
 
 class InjectableMeta(type):
