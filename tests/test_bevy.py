@@ -52,7 +52,7 @@ class Dependency:
         ...
 
 
-class Base:
+class Base(Injectable):
     dep: "Dependency"
     sub: "Dependency.SubDependency"
 

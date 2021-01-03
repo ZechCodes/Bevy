@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABC, abstractmethod
 from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
@@ -9,22 +10,23 @@ T = TypeVar("T")
 NO_VALUE = type("NO_VALUE", tuple(), {"__repr__": lambda self: "<NO_VALUE>", "__slots__": []})()
 
 
-class Context:
-    def __init__(self, parent: Context = None):
+class BaseContext(ABC):
+    def __init__(self, parent: BaseContext = None):
         self._parent = parent
         self._repository: Dict[Type[T], T] = {}
 
         self.add(self)
 
-    def add(self, instance: T) -> Context:
+    def add(self, instance: T) -> BaseContext:
         """ Adds an instance to the context repository. """
         self._repository[type(instance)] = instance
         return self
 
-    def branch(self) -> Context:
+    def branch(self) -> BaseContext:
         """ Creates a new context and adds the current context as its parent. """
         return type(self)(self)
 
+    @abstractmethod
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
         """ Creates an instance of an object using the current context. """
         instance = object_type.__new__(object_type, *args, **kwargs)
@@ -85,3 +87,16 @@ class Context:
             module = sys.modules[cls.__module__]
             return eval(annotation, module.__dict__)
         return annotation
+
+
+class GreedyContext(BaseContext):
+    def create(self, object_type: Type[T], *args, **kwargs) -> T:
+        """ Creates an instance of an object using the current context. """
+        instance = object_type.__new__(object_type, *args, **kwargs)
+        for name, dependency in self._find_dependencies(object_type).items():
+            if isinstance(dependency, FactoryAnnotation):
+                setattr(instance, name, dependency.create_factory(self))
+            else:
+                setattr(instance, name, self.get(dependency))
+        instance.__init__(*args, **kwargs)
+        return instance
