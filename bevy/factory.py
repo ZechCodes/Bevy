@@ -14,7 +14,7 @@ class Factory(Generic[T]):
     def __call__(self, *args, **kwargs) -> T:
         return self.context.create(self.build_type, *args, **kwargs)
 
-    def __class_getitem__(cls, build_type: Type[T]) -> FactoryAnnotation:
+    def __class_getitem__(cls, build_type: Type[T]) -> FactoryAnnotation[T]:
         return FactoryAnnotation(build_type, cls)
 
 
@@ -23,5 +23,5 @@ class FactoryAnnotation(Generic[T]):
         self.build_type = build_type
         self.factory = factory
 
-    def create_factory(self, context: bevy.context.Context) -> Factory:
+    def create_factory(self, context: bevy.context.Context) -> Factory[Type[T]]:
         return self.factory(self.build_type, context)
