@@ -4,10 +4,10 @@ from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 
-class BevyMeta(type):
-    def __call__(cls: Type[Bevy], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Bevy:
+class InjectableMeta(type):
+    def __call__(cls: Type[Injectable], *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Injectable:
         return Context().create(cls, *args, **kwargs)
 
 
-class Bevy(metaclass=BevyMeta):
+class Injectable(metaclass=InjectableMeta):
     ...

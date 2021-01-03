@@ -1,10 +1,10 @@
 from pytest import fixture
-from bevy import Bevy, Context, Factory
+from bevy import Injectable, Context, Factory
 
 
 @fixture
 def dependency(sub_dependency):
-    class Dep(Bevy):
+    class Dep(Injectable):
         sub: sub_dependency
 
     return Dep
@@ -20,7 +20,7 @@ def sub_dependency():
 
 @fixture
 def app(dependency):
-    class App(Bevy):
+    class App(Injectable):
         dep_factory: Factory[dependency]
 
         def get(self) -> dependency:

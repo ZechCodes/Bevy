@@ -1,11 +1,11 @@
 from pytest import fixture
 from bevy.context import Context
-from bevy.bevy import Bevy
+from bevy.injectable import Injectable
 
 
 @fixture()
 def dep():
-    class Dep(Bevy):
+    class Dep(Injectable):
         ...
 
     return Dep
@@ -23,7 +23,7 @@ def dep_b(dep):
 
 @fixture()
 def app(dep):
-    class App(Bevy):
+    class App(Injectable):
         dependency: dep
     return App
 
