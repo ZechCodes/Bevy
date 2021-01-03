@@ -33,7 +33,7 @@ class Factory(Generic[T]):
     ...     example_factory: Factory[Dependency]
     """
 
-    def __init__(self, build_type: Type[T], context: bevy.context.Context):
+    def __init__(self, build_type: Type[T], context: bevy.context.BaseContext):
         self.build_type = build_type
         self.context = context
 
@@ -53,6 +53,6 @@ class FactoryAnnotation(Generic[T]):
         self.build_type = build_type
         self.factory = factory
 
-    def create_factory(self, context: bevy.context.Context) -> Factory[Type[T]]:
+    def create_factory(self, context: bevy.context.BaseContext) -> Factory[Type[T]]:
         """ Creates a new factory that is bound to the given context. """
         return self.factory(self.build_type, context)
