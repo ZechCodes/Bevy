@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
+import bevy.injectable
 import sys
 
 
@@ -100,3 +101,12 @@ class GreedyContext(BaseContext):
                 setattr(instance, name, self.get(dependency))
         instance.__init__(*args, **kwargs)
         return instance
+
+
+class Context(GreedyContext):
+    def create(self, object_type: Type[T], *args, **kwargs) -> T:
+        """ Creates an instance of an object using the current context. """
+        if not issubclass(object_type, bevy.injectable.Injectable):
+            return object_type(*args, **kwargs)
+
+        return super().create(object_type, *args, **kwargs)
