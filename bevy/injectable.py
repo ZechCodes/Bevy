@@ -9,4 +9,4 @@ class InjectableMeta(type):
 
 
 class Injectable(metaclass=InjectableMeta):
-    ...
+    pass
