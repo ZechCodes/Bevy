@@ -14,6 +14,24 @@ NO_VALUE = type(
 
 
 class BaseContext(ABC):
+    """The base context provides the core logic for all context types.
+
+    Contexts are used as a factory for creating instances of classes that have their required dependencies injected. The
+    context then stores the instances used to fulfill the requirements in a repository so they can be used again if any
+    other class instance requires them. This allows all instance created by an instance to share the same dependencies.
+
+    Contexts also allows for pre-initialized instances to be added to the repository which will later be used to fulfill
+    dependency requirements. This allows for more complex initialization of dependencies, such as for connecting to a
+    database.
+
+    Additionally each context has the ability to branch off sub-contexts. The context will share its dependency
+    repository with the sub-contexts but any new dependencies created by the sub-contexts will not be propagated back.
+    This allows for isolating objects that may have similar dependency requirements but that should have distinct
+    dependency instances.
+
+    The context can inject itself as a dependency if a class requires the BaseContext. It's not recommended to require
+    the Context or GreedyContext classes as they would fail to inject if the other type of context is used."""
+
     def __init__(self, parent: BaseContext = None):
         self._parent = parent
         self._repository: Dict[Type[T], T] = {}
@@ -21,24 +39,31 @@ class BaseContext(ABC):
         self.add(self)
 
     def add(self, instance: T) -> BaseContext:
-        """ Adds an instance to the context repository. """
+        """ Adds a pre-initialized instance to the context's repository. """
         self._repository[type(instance)] = instance
         return self
 
     def branch(self) -> BaseContext:
-        """ Creates a new context and adds the current context as its parent. """
+        """Creates a new context and adds the current context as its parent. The new context will have access to the
+        repository of the branched context, new dependencies that it creates will not be propagated. This is useful for
+        isolating instances that may have similar dependencies but that should have distinct dependency instances."""
         return type(self)(self)
 
     @abstractmethod
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
-        """ Creates an instance of an object using the current context. """
+        """Creates an instance of an object using the current context's repository to fulfill all required
+        dependencies. For any dependencies not found in the repository the context will attempt to initialize them
+        without any arguments."""
         ...
 
     def get(
         self, object_type: Type[T], *, default: Any = NO_VALUE, propagate: bool = True
     ) -> Optional[T]:
         """Get's an instance matching the requested type from the context. If default is not set and no match is found
-        this will create an instance using the requested type."""
+        this will attempt to create an instance by calling the requested type with no arguments. The returned instance
+        maybe a subclass of the type but it will never be a superclass. If propagation is allowed and no match is found
+        it will attempt to find a match by propagating up through the parent contexts.
+        """
         if self.has(object_type, propagate=False):
             return self._find(object_type)
 
@@ -90,8 +115,12 @@ class BaseContext(ABC):
 
 
 class GreedyContext(BaseContext):
+    """ The Greedy Context will attempt to inject dependencies for any object type. """
+
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
-        """ Creates an instance of an object using the current context. """
+        """Creates an instance of an object using the current context's repository to fulfill all required
+        dependencies. For any dependencies not found in the repository the context will attempt to initialize them
+        without any arguments."""
         instance = object_type.__new__(object_type, *args, **kwargs)
         for name, dependency in self._find_dependencies(object_type).items():
             if isinstance(dependency, FactoryAnnotation):
@@ -103,9 +132,13 @@ class GreedyContext(BaseContext):
 
 
 class Context(GreedyContext):
+    """ Context will only attempt to inject dependencies on subclasses of bevy.Injectable. """
+
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
-        """ Creates an instance of an object using the current context. """
-        if not issubclass(object_type, bevy.injectable.Injectable):
+        """Creates an instance of an object using the current context's repository to fulfill all required
+        dependencies. For any dependencies not found in the repository the context will attempt to initialize them
+        without any arguments."""
+        if not issubclass(object_type, bevy.Injectable):
             return object_type(*args, **kwargs)
 
         return super().create(object_type, *args, **kwargs)
