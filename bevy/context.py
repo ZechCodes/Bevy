@@ -32,14 +32,7 @@ class BaseContext(ABC):
     @abstractmethod
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
         """ Creates an instance of an object using the current context. """
-        instance = object_type.__new__(object_type, *args, **kwargs)
-        for name, dependency in self._find_dependencies(object_type).items():
-            if isinstance(dependency, FactoryAnnotation):
-                setattr(instance, name, dependency.create_factory(self))
-            else:
-                setattr(instance, name, self.get(dependency))
-        instance.__init__(*args, **kwargs)
-        return instance
+        ...
 
     def get(
         self, object_type: Type[T], *, default: Any = NO_VALUE, propagate: bool = True
