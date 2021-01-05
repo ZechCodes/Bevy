@@ -8,7 +8,9 @@ import sys
 
 
 T = TypeVar("T")
-NO_VALUE = type("NO_VALUE", tuple(), {"__repr__": lambda self: "<NO_VALUE>", "__slots__": []})()
+NO_VALUE = type(
+    "NO_VALUE", tuple(), {"__repr__": lambda self: "<NO_VALUE>", "__slots__": []}
+)()
 
 
 class BaseContext(ABC):
@@ -39,9 +41,11 @@ class BaseContext(ABC):
         instance.__init__(*args, **kwargs)
         return instance
 
-    def get(self, object_type: Type[T], *, default: Any = NO_VALUE, propagate: bool = True) -> Optional[T]:
-        """ Get's an instance matching the requested type from the context. If default is not set and no match is found
-        this will create an instance using the requested type. """
+    def get(
+        self, object_type: Type[T], *, default: Any = NO_VALUE, propagate: bool = True
+    ) -> Optional[T]:
+        """Get's an instance matching the requested type from the context. If default is not set and no match is found
+        this will create an instance using the requested type."""
         if self.has(object_type, propagate=False):
             return self._find(object_type)
 
@@ -62,8 +66,8 @@ class BaseContext(ABC):
         return True
 
     def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
-        """ Finds an instance that is either of the requested type or a sub-type of that type. If it is not found
-        NO_VALUE will be returned. """
+        """Finds an instance that is either of the requested type or a sub-type of that type. If it is not found
+        NO_VALUE will be returned."""
         for repo_type in self._repository:
             if issubclass(repo_type, object_type):
                 return self._repository[repo_type]
@@ -76,7 +80,9 @@ class BaseContext(ABC):
             dependencies.update(
                 {
                     name: self._resolve_dependency(cls, annotation_type)
-                    for name, annotation_type in getattr(cls, "__annotations__", {}).items()
+                    for name, annotation_type in getattr(
+                        cls, "__annotations__", {}
+                    ).items()
                     if not hasattr(cls, name)
                 }
             )
