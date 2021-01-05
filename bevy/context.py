@@ -49,7 +49,7 @@ class BaseContext(ABC):
         if self.has(object_type, propagate=False):
             return self._find(object_type)
 
-        if propagate and self._parent:
+        if propagate and self._parent and self._parent.has(object_type):
             return self._parent.get(object_type, default=default)
 
         if default is NO_VALUE:

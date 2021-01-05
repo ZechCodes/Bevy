@@ -64,3 +64,14 @@ def test_dependency_resolution():
     a = c.create(Base)
     assert a.dep is d
     assert a.sub is s
+
+
+def test_propagated_creation():
+    class Testing:
+        ...
+
+    parent = Context()
+    child = parent.branch()
+    child_instance = child.get(Testing)
+    parent_instance = parent.get(Testing)
+    assert child_instance is not parent_instance
