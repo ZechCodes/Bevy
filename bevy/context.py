@@ -149,10 +149,14 @@ class BaseContext(ABC):
         return True
 
     def find_conflicting_type(self, search_for_type: Type[T]) -> Union[Type, bool]:
-        """Finds any type that may conflict with the given type. A type is considered conflicting if it is the same type
-        as or is a subclass of a type already in the repository."""
+        """Finds any type that may conflict with the given type. A type is considered conflicting if it is the same
+        type, a super type, or a sub type of any instance already in the repository."""
         for t in self._repository:
-            if t is search_for_type or issubclass(search_for_type, t):
+            if (
+                t is search_for_type
+                or issubclass(search_for_type, t)
+                or issubclass(t, search_for_type)
+            ):
                 return t
 
         return False

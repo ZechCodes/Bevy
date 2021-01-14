@@ -101,3 +101,17 @@ def test_conflicting_same_types():
 
     with raises(ConflictingTypeAddedToRepository):
         context.add(TestType())
+
+
+def test_conflicting_super_type():
+    class Parent:
+        ...
+
+    class Child(Parent):
+        ...
+
+    context = Context()
+    context.add(Child())
+
+    with raises(ConflictingTypeAddedToRepository):
+        context.add(Parent())
