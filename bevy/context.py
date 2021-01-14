@@ -63,7 +63,7 @@ from __future__ import annotations
 from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
-import bevy.injectable
+import bevy
 import sys
 
 
@@ -175,7 +175,7 @@ class Context:
         return False
 
     def _can_inject(self, object_type: Type[T]) -> bool:
-        return issubclass(object_type, bevy.injectable.Injectable)
+        return issubclass(object_type, bevy.Injectable)
 
     def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
         instance = object_type.__new__(object_type, *args, **kwargs)
