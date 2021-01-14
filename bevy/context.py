@@ -210,31 +210,37 @@ class BaseContext(ABC):
         return annotation
 
 
-class GreedyContext(BaseContext):
-    """ The Greedy Context will attempt to inject dependencies for any object regardless of type. """
-
-    def create(self, object_type: Type[T], *args, **kwargs) -> T:
-        """Creates an instance of an object using the current context's repository to fulfill all required
-        dependencies. For any dependencies not found in the repository the context will attempt to initialize them
-        without any arguments."""
-        instance = object_type.__new__(object_type, *args, **kwargs)
-        for name, dependency in self._find_dependencies(object_type).items():
-            if isinstance(dependency, FactoryAnnotation):
-                setattr(instance, name, dependency.create_factory(self))
-            else:
-                setattr(instance, name, self.get(dependency))
-        instance.__init__(*args, **kwargs)
-        return instance
-
-
-class Context(GreedyContext):
+class Context(BaseContext):
     """ Context will only attempt to inject dependencies on subclasses of bevy.Injectable. """
 
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
         """Creates an instance of an object using the current context's repository to fulfill all required
         dependencies. For any dependencies not found in the repository the context will attempt to initialize them
         without any arguments."""
-        if not issubclass(object_type, bevy.Injectable):
+        if not self._can_inject(object_type):
             return object_type(*args, **kwargs)
 
-        return super().create(object_type, *args, **kwargs)
+        return self._create_instance(object_type, args, kwargs)
+
+    def _can_inject(self, object_type: Type[T]) -> bool:
+        return issubclass(object_type, bevy.injectable.Injectable)
+
+    def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
+        instance = object_type.__new__(object_type, *args, **kwargs)
+        self._inject(instance)
+        instance.__init__(*args, **kwargs)
+        return instance
+
+    def _inject(self, instance: T):
+        for name, dependency in self._find_dependencies(type(instance)).items():
+            if isinstance(dependency, FactoryAnnotation):
+                setattr(instance, name, dependency.create_factory(self))
+            else:
+                setattr(instance, name, self.get(dependency))
+
+
+class GreedyContext(Context):
+    """ The Greedy Context will attempt to inject dependencies for any object regardless of type. """
+
+    def _can_inject(self, object_type: Type[T]) -> bool:
+        return True
