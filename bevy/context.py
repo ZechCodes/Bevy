@@ -159,6 +159,7 @@ class Context:
         """ Checks if an instance matching the requested type exists in the context or one of its parent contexts. """
         if self._find(object_type) is NO_VALUE:
             return propagate and self._parent and self._parent.has(object_type)
+
         return True
 
     def find_conflicting_type(self, search_for_type: Type[T]) -> Union[Type, bool]:
@@ -189,6 +190,7 @@ class Context:
         for repo_type in self._repository:
             if issubclass(repo_type, object_type):
                 return self._repository[repo_type]
+
         return NO_VALUE
 
     @lru_cache()
@@ -204,6 +206,7 @@ class Context:
                     if not hasattr(cls, name)
                 }
             )
+
         return dependencies
 
     def _inject(self, instance: T):
@@ -220,4 +223,5 @@ class Context:
         if isinstance(annotation, str):
             module = sys.modules[cls.__module__]
             return eval(annotation, module.__dict__)
+
         return annotation
