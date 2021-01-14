@@ -8,6 +8,8 @@ import sys
 
 
 T = TypeVar("T")
+
+# Using a singleton to represent unset values simplifies the context API since None no longer has an internal meaning
 NO_VALUE = type(
     "NO_VALUE", tuple(), {"__repr__": lambda self: "<NO_VALUE>", "__slots__": []}
 )()
