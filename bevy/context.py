@@ -39,6 +39,13 @@ That will add a postgres database object with the necessary connection details t
 instance of the MyWebsiteApp class with two parameters and any dependencies injected. Context.create will not add the
 instance created to the repository, that can be accomplished by passing the returned instance to Context.add.
 
+Repository Instance Conflicts
+
+The context retrieves the first instance that passes an issubclass check. This means if there are two instances with a
+shared MRO it will not be clearly defined which should be used if a super class of both is requested. To prevent this
+from happening the context will raise ConflictingTypeAddedToRepository when an instance is added and it is the same
+type, a super type of, or a sub type of any instanec already in the repository.
+
 Branching
 
 It is possible to branch a context. This will allow the dependencies on the root context to be used by the branch
