@@ -64,6 +64,13 @@ NO_VALUE = type(
 )()
 
 
+class ConflictingTypeAddedToRepository(Exception):
+    def __init__(self, attempted_to_add: Any, conflicts_with: Any):
+        super().__init__(
+            f"{attempted_to_add} conflicts with {conflicts_with} which is already in the repository"
+        )
+
+
 class BaseContext(ABC):
     """The base context provides the core logic for all context types.
 
@@ -90,7 +97,14 @@ class BaseContext(ABC):
         self.add(self)
 
     def add(self, instance: T) -> BaseContext:
-        """ Adds a pre-initialized instance to the context's repository. """
+        """Adds a pre-initialized instance to the context's repository.
+
+        This will raise ConflictingTypeAddedToRepository if the instance being added is the same type as or a subclass
+        of an instance already in the repository."""
+        conflict = self.find_conflicting_type(type(instance))
+        if conflict:
+            raise ConflictingTypeAddedToRepository(instance, self.get(conflict))
+
         self._repository[type(instance)] = instance
         return self
 
@@ -133,6 +147,15 @@ class BaseContext(ABC):
         if self._find(object_type) is NO_VALUE:
             return propagate and self._parent and self._parent.has(object_type)
         return True
+
+    def find_conflicting_type(self, search_for_type: Type[T]) -> Union[Type, bool]:
+        """Finds any type that may conflict with the given type. A type is considered conflicting if it is the same type
+        as or is a subclass of a type already in the repository."""
+        for t in self._repository:
+            if t is search_for_type or issubclass(search_for_type, t):
+                return t
+
+        return False
 
     def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
         """Finds an instance that is either of the requested type or a sub-type of that type. If it is not found

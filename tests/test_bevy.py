@@ -1,5 +1,5 @@
-from pytest import fixture
-from bevy.context import Context
+from pytest import fixture, raises
+from bevy.context import Context, ConflictingTypeAddedToRepository
 from bevy.injectable import Injectable
 
 
@@ -25,6 +25,7 @@ def dep_b(dep):
 def app(dep):
     class App(Injectable):
         dependency: dep
+
     return App
 
 
@@ -75,3 +76,28 @@ def test_propagated_creation():
     child_instance = child.get(Testing)
     parent_instance = parent.get(Testing)
     assert child_instance is not parent_instance
+
+
+def test_conflicting_types():
+    class Parent:
+        ...
+
+    class Child(Parent):
+        ...
+
+    context = Context()
+    context.add(Parent())
+
+    with raises(ConflictingTypeAddedToRepository):
+        context.add(Child())
+
+
+def test_conflicting_same_types():
+    class TestType:
+        ...
+
+    context = Context()
+    context.add(TestType())
+
+    with raises(ConflictingTypeAddedToRepository):
+        context.add(TestType())
