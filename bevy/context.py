@@ -3,11 +3,8 @@ instances are created.
 
 Contexts
 
-Bevy provides two basic types of contexts: Context and GreedyContext. The standard context will add any object to its
-repository and inject them when necessary. The standard context will only attempt to inject into objects being
-instantiated that inherit from bevy.Injectable. The greedy context on the other hand will attempt to inject into any
-object type when it is being instantiated. Greedy contexts can make for cleaner imports and neater code with less
-inheriting but it could lead to conflicts with other packages that may not be aware of Bevy.
+Bevy provides a basic context type. The standard context will add any object to its repository and inject them when
+necessary. The context will only attempt to inject into objects being instantiated that inherit from bevy.Injectable.
 
 Injection
 
@@ -28,9 +25,6 @@ possible to just add an annotation for any subclass of BaseContext. Here's an ex
 
     class Example(Injectable):
         context: Context
-
-It's important to note that if the class can function with any type of Context it should annotate with
-bevy.context.BaseContext.
 
 Repository
 
@@ -66,7 +60,6 @@ may have their own custom dependencies classes or may need a differently configu
 """
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
 from bevy.factory import FactoryAnnotation
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
@@ -89,15 +82,14 @@ class ConflictingTypeAddedToRepository(Exception):
         )
 
 
-class BaseContext(ABC):
-    """The base context provides the core logic for all context types.
+class Context:
+    """Contexts are used as a factory for creating instances of classes that have their required dependencies injected.
+    The context then stores the instances used to fulfill the requirements in a repository so they can be used again if
+    any other class instance requires them. This allows all instances created by a context to share the same
+    dependencies.
 
-    Contexts are used as a factory for creating instances of classes that have their required dependencies injected. The
-    context then stores the instances used to fulfill the requirements in a repository so they can be used again if any
-    other class instance requires them. This allows all instance created by an instance to share the same dependencies.
-
-    Contexts also allows for pre-initialized instances to be added to the repository which will later be used to fulfill
-    dependency requirements. This allows for more complex initialization of dependencies, such as for connecting to a
+    Contexts also allow for pre-initialized instances to be added to the repository which will later be used to fulfill
+    dependency requirements. This provides for more complex initialization of dependencies, such as for connecting to a
     database.
 
     Additionally each context has the ability to branch off sub-contexts. The context will share its dependency
@@ -105,16 +97,17 @@ class BaseContext(ABC):
     This allows for isolating objects that may have similar dependency requirements but that should have distinct
     dependency instances.
 
-    The context can inject itself as a dependency if a class requires the BaseContext. It's not recommended to require
-    the Context or GreedyContext classes as they would fail to inject if the other type of context is used."""
+    The context can inject itself as a dependency if a class requires the context's type.
 
-    def __init__(self, parent: BaseContext = None):
+    The base Context type will only inject into objects that are derived from bevy.Injectable."""
+
+    def __init__(self, parent: Context = None):
         self._parent = parent
         self._repository: Dict[Type[T], T] = {}
 
         self.add(self)
 
-    def add(self, instance: T) -> BaseContext:
+    def add(self, instance: T) -> Context:
         """Adds a pre-initialized instance to the context's repository.
 
         This will raise ConflictingTypeAddedToRepository if the instance being added is the same type as or a subclass
@@ -126,18 +119,20 @@ class BaseContext(ABC):
         self._repository[type(instance)] = instance
         return self
 
-    def branch(self) -> BaseContext:
+    def branch(self) -> Context:
         """Creates a new context and adds the current context as its parent. The new context will have access to the
         repository of the branched context, new dependencies that it creates will not be propagated. This is useful for
         isolating instances that may have similar dependencies but that should have distinct dependency instances."""
         return type(self)(self)
 
-    @abstractmethod
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
         """Creates an instance of an object using the current context's repository to fulfill all required
         dependencies. For any dependencies not found in the repository the context will attempt to initialize them
         without any arguments."""
-        ...
+        if not self._can_inject(object_type):
+            return object_type(*args, **kwargs)
+
+        return self._create_instance(object_type, args, kwargs)
 
     def get(
         self, object_type: Type[T], *, default: Any = NO_VALUE, propagate: bool = True
@@ -179,6 +174,15 @@ class BaseContext(ABC):
 
         return False
 
+    def _can_inject(self, object_type: Type[T]) -> bool:
+        return issubclass(object_type, bevy.injectable.Injectable)
+
+    def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
+        instance = object_type.__new__(object_type, *args, **kwargs)
+        self._inject(instance)
+        instance.__init__(*args, **kwargs)
+        return instance
+
     def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
         """Finds an instance that is either of the requested type or a sub-type of that type. If it is not found
         NO_VALUE will be returned."""
@@ -202,35 +206,6 @@ class BaseContext(ABC):
             )
         return dependencies
 
-    @lru_cache()
-    def _resolve_dependency(self, cls: Type, annotation: Union[str, Type]) -> Type:
-        if isinstance(annotation, str):
-            module = sys.modules[cls.__module__]
-            return eval(annotation, module.__dict__)
-        return annotation
-
-
-class Context(BaseContext):
-    """ Context will only attempt to inject dependencies on subclasses of bevy.Injectable. """
-
-    def create(self, object_type: Type[T], *args, **kwargs) -> T:
-        """Creates an instance of an object using the current context's repository to fulfill all required
-        dependencies. For any dependencies not found in the repository the context will attempt to initialize them
-        without any arguments."""
-        if not self._can_inject(object_type):
-            return object_type(*args, **kwargs)
-
-        return self._create_instance(object_type, args, kwargs)
-
-    def _can_inject(self, object_type: Type[T]) -> bool:
-        return issubclass(object_type, bevy.injectable.Injectable)
-
-    def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
-        instance = object_type.__new__(object_type, *args, **kwargs)
-        self._inject(instance)
-        instance.__init__(*args, **kwargs)
-        return instance
-
     def _inject(self, instance: T):
         for name, dependency in self._find_dependencies(type(instance)).items():
             if isinstance(dependency, FactoryAnnotation):
@@ -238,9 +213,9 @@ class Context(BaseContext):
             else:
                 setattr(instance, name, self.get(dependency))
 
-
-class GreedyContext(Context):
-    """ The Greedy Context will attempt to inject dependencies for any object regardless of type. """
-
-    def _can_inject(self, object_type: Type[T]) -> bool:
-        return True
+    @lru_cache()
+    def _resolve_dependency(self, cls: Type, annotation: Union[str, Type]) -> Type:
+        if isinstance(annotation, str):
+            module = sys.modules[cls.__module__]
+            return eval(annotation, module.__dict__)
+        return annotation

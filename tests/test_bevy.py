@@ -1,5 +1,5 @@
 from pytest import fixture, raises
-from bevy.context import Context, GreedyContext, ConflictingTypeAddedToRepository
+from bevy.context import Context, ConflictingTypeAddedToRepository
 from bevy.injectable import Injectable
 
 
@@ -127,8 +127,11 @@ def test_context_access():
 
 
 def test_context_access_different_type():
+    class TestContext(Context):
+        ...
+
     class TestType(Injectable):
-        c: GreedyContext
+        c: TestContext
 
     context = Context()
     with raises(Exception):
