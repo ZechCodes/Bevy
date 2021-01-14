@@ -128,8 +128,8 @@ def test_context_access():
 
 def test_context_access_different_type():
     class TestType(Injectable):
-        c: Context
+        c: GreedyContext
 
-    context = GreedyContext()
+    context = Context()
     with raises(Exception):
         context.create(TestType)
