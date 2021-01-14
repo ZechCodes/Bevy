@@ -194,7 +194,7 @@ class Context:
     @lru_cache()
     def _find_dependencies(self, object_type: Type) -> Dict[str, Type[T]]:
         dependencies: Dict[str, Type[T]] = {}
-        for cls in reversed(object_type.__mro__):
+        for cls in reversed(object_type.mro()):
             dependencies.update(
                 {
                     name: self._resolve_dependency(cls, annotation_type)
