@@ -115,7 +115,7 @@ class BaseContext(ABC):
 
 
 class GreedyContext(BaseContext):
-    """ The Greedy Context will attempt to inject dependencies for any object type. """
+    """ The Greedy Context will attempt to inject dependencies for any object regardless of type. """
 
     def create(self, object_type: Type[T], *args, **kwargs) -> T:
         """Creates an instance of an object using the current context's repository to fulfill all required
