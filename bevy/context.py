@@ -1,3 +1,52 @@
+"""Bevy's Contexts manage tracking instances that have been created and injecting the necessary dependencies when new
+instances are created.
+
+Contexts
+
+Bevy provides two basic types of contexts: Context and GreedyContext. The standard context will add any object to its
+repository and inject them when necessary. The standard context will only attempt to inject into objects being
+instantiated that inherit from bevy.Injectable. The greedy context on the other hand will attempt to inject into any
+object type when it is being instantiated. Greedy contexts can make for cleaner imports and neater code with less
+inheriting but it could lead to conflicts with other packages that may not be aware of Bevy.
+
+Injection
+
+All the basic context types built into Bevy handle injection by using a metaclass which overrides the object type's
+dunder call method. It then adds a step between dunder new being called and dunder init, in this step it injects the
+dependencies. So if a class defines a dunder new it will not have access to any attributes that need to be injected.
+When dunder init is called all injections will have been made.
+
+Using a metaclass allows for the class instantiation lifecycle to be modified without ever having to change the
+structure of the classes themselves. Bevy doesn't require any state to be stored on a class object and it never needs to
+inject anything that isn't specifically defined in the class definition. So Bevy has no impact on the memory foot print
+of class objects or on the performance of the class after it's been instantiated.
+
+Repository
+
+The context stores every instance that's been created as a dependency in a repository. When a class is found that has a
+dependency annotation Bevy checks the repository for any instances that are of the same type or that are a subclass of
+that annotation. If no match is found it will create an instance by calling the type with no parameters.
+
+If more advanced instantiation is required for a dependency it is possible to add an instance to the context using
+Context.add. That will add the instance to the repository for use in injections. It is then possible to instantiate an
+object with the context using Context.create. Here's an example:
+
+    context = Context()
+    context.add(PostgresDB(host, port, username, password, database))
+    app = context.create(MyWebsiteApp, "My Website", "www.mywebsite.com")
+
+That will add a postgres database object with the necessary connection details to the repository. It will then create an
+instance of the MyWebsiteApp class with two parameters and any dependencies injected. Context.create will not add the
+instance created to the repository, that can be accomplished by passing the returned instance to Context.add.
+
+Branching
+
+It is possible to branch a context. This will allow the dependencies on the root context to be used by the branch
+context. Dependency instances created on the branch context however will not be available to the root context. This is
+useful for preventing the dependencies of a plugin, for example, from polluting the root context and other plugins which
+may have their own custom dependencies classes or may need a differently configured instance.
+"""
+
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from bevy.factory import FactoryAnnotation
