@@ -1,5 +1,5 @@
 from pytest import fixture, raises
-from bevy.context import Context, ConflictingTypeAddedToRepository
+from bevy.context import Context, GreedyContext, ConflictingTypeAddedToRepository
 from bevy.injectable import Injectable
 
 
@@ -115,3 +115,21 @@ def test_conflicting_super_type():
 
     with raises(ConflictingTypeAddedToRepository):
         context.add(Parent())
+
+
+def test_context_access():
+    class TestType(Injectable):
+        c: Context
+
+    context = Context()
+    t = context.create(TestType)
+    assert t.c is context
+
+
+def test_context_access_different_type():
+    class TestType(Injectable):
+        c: Context
+
+    context = GreedyContext()
+    with raises(Exception):
+        context.create(TestType)

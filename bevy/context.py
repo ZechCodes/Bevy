@@ -21,6 +21,17 @@ structure of the classes themselves. Bevy doesn't require any state to be stored
 inject anything that isn't specifically defined in the class definition. So Bevy has no impact on the memory foot print
 of class objects or on the performance of the class after it's been instantiated.
 
+Injecting The Context
+
+If an object needs access to the context that created it (useful for branching or adding instantiated dependencies) it's
+possible to just add an annotation for any subclass of BaseContext. Here's an example:
+
+    class Example(Injectable):
+        context: Context
+
+It's important to note that if the class can function with any type of Context it should annotate with
+bevy.context.BaseContext.
+
 Repository
 
 The context stores every instance that's been created as a dependency in a repository. When a class is found that has a
