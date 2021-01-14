@@ -209,9 +209,11 @@ class Context:
     def _inject(self, instance: T):
         for name, dependency in self._find_dependencies(type(instance)).items():
             if isinstance(dependency, FactoryAnnotation):
-                setattr(instance, name, dependency.create_factory(self))
+                value = dependency.create_factory(self)
             else:
-                setattr(instance, name, self.get(dependency))
+                value = self.get(dependency)
+
+            setattr(instance, name, value)
 
     @lru_cache()
     def _resolve_dependency(self, cls: Type, annotation: Union[str, Type]) -> Type:
