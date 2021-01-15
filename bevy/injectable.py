@@ -21,17 +21,16 @@ Here is an example of how to use Injectable.
 """
 
 from __future__ import annotations
+from abc import ABCMeta
 from bevy.context import Context
 from typing import Any, Dict, Tuple, Type
 
 
-class InjectableMeta(type):
+class InjectableMeta(ABCMeta):
     """Metaclass for hooking into the object's call logic, allowing Bevy to insert itself just before dunder init is
     called and inject the required dependencies."""
 
-    def __call__(
-        cls: Type[Injectable], *args: Tuple[Any], **kwargs: Dict[str, Any]
-    ) -> Injectable:
+    def __call__(cls: Type, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Injectable:
         """Creates a context object which is used to provide custom instantiation logic that injects the required
         dependencies before dunder init is called."""
         return Context().create(cls, *args, **kwargs)

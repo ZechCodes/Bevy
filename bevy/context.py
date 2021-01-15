@@ -61,7 +61,7 @@ may have their own custom dependencies classes or may need a differently configu
 
 from __future__ import annotations
 from bevy.factory import FactoryAnnotation
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
 from functools import lru_cache
 import bevy
 import sys
@@ -82,7 +82,7 @@ class ConflictingTypeAddedToRepository(Exception):
         )
 
 
-class Context:
+class Context(Generic[T]):
     """Contexts are used as a factory for creating instances of classes that have their required dependencies injected.
     The context then stores the instances used to fulfill the requirements in a repository so they can be used again if
     any other class instance requires them. This allows all instances created by a context to share the same
@@ -105,7 +105,8 @@ class Context:
         self._parent = parent
         self._repository: Dict[Type[T], T] = {}
 
-        self.add(self)
+        # MyPy doesn't like adding a context instance so gonna ignore
+        self.add(self)  # type: ignore
 
     def add(self, instance: T) -> Context:
         """Adds a pre-initialized instance to the context's repository.
@@ -130,7 +131,8 @@ class Context:
         dependencies. For any dependencies not found in the repository the context will attempt to initialize them
         without any arguments."""
         if not self._can_inject(object_type):
-            return object_type(*args, **kwargs)
+            # MyPy complains that there are too many args to "object"
+            return object_type(*args, **kwargs)  # type: ignore
 
         return self._create_instance(object_type, args, kwargs)
 
@@ -158,11 +160,13 @@ class Context:
     def has(self, object_type: Type[T], *, propagate: bool = True) -> bool:
         """ Checks if an instance matching the requested type exists in the context or one of its parent contexts. """
         if self._find(object_type) is NO_VALUE:
-            return propagate and self._parent and self._parent.has(object_type)
+            return (
+                propagate and self._parent is not None and self._parent.has(object_type)
+            )
 
         return True
 
-    def find_conflicting_type(self, search_for_type: Type[T]) -> Union[Type, bool]:
+    def find_conflicting_type(self, search_for_type: Type[T]) -> Optional[Type]:
         """Finds any type that may conflict with the given type. A type is considered conflicting if it is the same
         type, a super type, or a sub type of any instance already in the repository."""
         for t in self._repository:
@@ -173,18 +177,19 @@ class Context:
             ):
                 return t
 
-        return False
+        return None
 
     def _can_inject(self, object_type: Type[T]) -> bool:
         return issubclass(object_type, bevy.Injectable)
 
     def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
-        instance = object_type.__new__(object_type, *args, **kwargs)
+        # MyPy complains that there are too many args to dunder new
+        instance = object_type.__new__(object_type, *args, **kwargs)  # type: ignore
         self._inject(instance)
         instance.__init__(*args, **kwargs)
         return instance
 
-    def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
+    def _find(self, object_type: Type[T]) -> T:
         """Finds an instance that is either of the requested type or a sub-type of that type. If it is not found
         NO_VALUE will be returned."""
         for repo_type in self._repository:
@@ -193,7 +198,6 @@ class Context:
 
         return NO_VALUE
 
-    @lru_cache()
     def _find_dependencies(self, object_type: Type) -> Dict[str, Type[T]]:
         dependencies: Dict[str, Type[T]] = {}
         for cls in reversed(object_type.mro()):
