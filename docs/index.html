@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bevy - Python Dependency Management</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300:400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/firacode/5.2.0/fira_code.min.css" integrity="sha512-MbysAYimH1hH2xYzkkMHB6MqxBqfP0megxsCLknbYqHVwXTCg9IqHbk+ZP/vnhO8UEW6PaXAkKe2vQ+SWACxxA==" crossorigin="anonymous" />
+    <link href="styles.css" rel="stylesheet" />
+</head>
+<body class="home-page">
+    <header>
+        <div class="container">
+            <h1>Bevy</h1>
+            <p>The simple Object Oriented dependency injection framework</p>
+            <a href="https://pypi.org/project/bevy/" target="_blank" class="button-get button">
+                <span>Get Bevy</span>
+            </a>
+        </div>
+    </header>
+    <div class="container section">
+        <h2><span>Features</span></h2>
+        <p>Bevy is a <strong>Dependency Injection</strong> framework for <em>Object Oriented</em> applications. It makes it easy to declare dependencies on your classes using <em>Attribute Annotations</em>.</p>
+    </div>
+    <div class="code">
+        <div class="container">
+            <pre>class Application(Bevy):
+    db: PostgresDBConnection</pre>
+        </div>
+    </div>
+    <div class="container section">
+        <p>Creating an object with all its dependencies is as simple as instantiating your class. This will create an <em>Application Context</em>, all dependencies created in the context will be shared.</p>
+    </div>
+    <div class="code">
+        <div class="container">
+            <pre>class HomePage(Bevy):
+    db: PostgresDBConnection
+
+class Application(Bevy):
+    db: PostgresDBConnection
+    home: HomePage
+
+app = Application()</pre>
+        </div>
+    </div>
+    <div class="container section">
+        <p>If you need to be able to create multiple instances of an object that share the same <strong>Application Context</strong> just use Bevy’s <em>Simple Factory</em> mechanism.</p>
+    </div>
+    <div class="code">
+        <div class="container">
+            <pre>class Application(Bevy):
+    create_player: Factory[Player]
+    ...
+
+    def add_player(self, player_name: str):
+        player = self.create_player(player_name)
+        self.players.append(player)</pre>
+        </div>
+    </div>
+    <div class="container section">
+        <p>You can get a more detailed understanding by checking out the documentation!</p>
+        <a href="https://github.com/ZechCodes/Bevy/blob/main/README.md" class="docs-link" target="_blank">Documentation <span class="fira">-&gt;</span></a>
+    </div>
+    <div class="get-bevy">
+        Get <span>Bevy</span>
+        <div class="code ">
+            <div class="container">
+                <pre>$> pip install bevy</pre>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <a href="https://github.com/ZechCodes/Bevy/">GitHub</a>
+        <a href="https://github.com/ZechCodes/Bevy/blob/main/README.md">Documentation</a>
+        <a href="https://pypi.org/project/bevy/">PyPI</a>
+        <p>©2020 Zech Zimmerman</p>
+    </footer>
+</body>
+</html>
