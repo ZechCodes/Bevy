@@ -64,8 +64,8 @@ p {
 .button {
   background: white;
   border-radius: 24px;
-  -webkit-box-shadow: 0 0 0 #6100FF40;
-          box-shadow: 0 0 0 #6100FF40;
+  -webkit-box-shadow: 0 0 0 #ffffff40;
+          box-shadow: 0 0 0 #ffffff40;
   color: #6100ff;
   display: inline-block;
   font-size: 1.2em;
@@ -80,8 +80,8 @@ p {
 }
 
 .button:hover {
-  -webkit-box-shadow: 0 8px 10px #6100FF40;
-          box-shadow: 0 8px 10px #6100FF40;
+  -webkit-box-shadow: 2px 4px 6px #ffffff40;
+          box-shadow: 2px 4px 6px #ffffff40;
 }
 
 em {
