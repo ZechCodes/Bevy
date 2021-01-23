@@ -129,6 +129,22 @@ h2 {
         font-family: "Fira Code", monospace;
         line-height: 1.5;
         text-align: left;
+
+        .py-decl {
+            color: #00A49A;
+        }
+
+        .py-name {
+            color: #FF8541;
+        }
+
+        .py-varname {
+            color: #5200FF;
+        }
+
+        .py-annotation {
+            color: #0054B7;
+        }
     }
 }
 

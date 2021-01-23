@@ -154,6 +154,22 @@ h2 span:after {
   text-align: left;
 }
 
+.code pre .py-decl {
+  color: #00A49A;
+}
+
+.code pre .py-name {
+  color: #FF8541;
+}
+
+.code pre .py-varname {
+  color: #5200FF;
+}
+
+.code pre .py-annotation {
+  color: #0054B7;
+}
+
 .docs-link {
   font-size: 1.2em;
   font-weight: 600;

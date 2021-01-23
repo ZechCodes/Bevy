@@ -26,8 +26,8 @@
     </div>
     <div class="code">
         <div class="container">
-            <pre>class Application(Bevy):
-    db: PostgresDBConnection</pre>
+            <pre><span class="py-decl">class</span> <span class="py-name">Application</span>(<span class="py-name">Injectable</span>):
+    <span class="py-varname">db</span>: <span class="py-annotation">PostgresDBConnection</span></pre>
         </div>
     </div>
     <div class="container section">
@@ -35,14 +35,14 @@
     </div>
     <div class="code">
         <div class="container">
-            <pre>class HomePage(Bevy):
-    db: PostgresDBConnection
+            <pre><span class="py-decl">class</span> <span class="py-name">HomePage</span>(<span class="py-name">Injectable</span>):
+    <span class="py-varname">db</span>: <span class="py-annotation">PostgresDBConnection</span>
 
-class Application(Bevy):
-    db: PostgresDBConnection
-    home: HomePage
+<span class="py-decl">class</span> <span class="py-name">Application</span>(<span class="py-name">Injectable</span>):
+    <span class="py-varname">db</span>: <span class="py-annotation">PostgresDBConnection</span>
+    <span class="py-varname">home</span>: <span class="py-annotation">HomePage</span>
 
-app = Application()</pre>
+<span class="py-varname">app</span> = <span class="py-name">Application</span>()</pre>
         </div>
     </div>
     <div class="container section">
@@ -50,13 +50,13 @@ app = Application()</pre>
     </div>
     <div class="code">
         <div class="container">
-            <pre>class Application(Bevy):
-    create_player: Factory[Player]
+            <pre><span class="py-decl">class</span> <span class="py-name">Application</span>(<span class="py-name">Bevy</span>):
+    <span class="py-varname">create_player</span>: <span class="py-annotation">Factory[Player]</span>
     ...
 
-    def add_player(self, player_name: str):
-        player = self.create_player(player_name)
-        self.players.append(player)</pre>
+    <span class="py-decl">def</span> <span class="py-name">add_player</span>(<span class="py-varname">self</span>, <span class="py-varname">player_name</span>: <span class="py-annotation">str</span>):
+        <span class="py-varname">player</span> = <span class="py-varname">self</span>.<span class="py-name">create_player</span>(<span class="py-varname">player_name</span>)
+        <span class="py-varname">self</span>.<span class="py-varname">players</span>.<span class="py-name">append</span>(<span class="py-varname">player</span>)</pre>
         </div>
     </div>
     <div class="container section">
