@@ -1,13 +1,11 @@
 # Bevy Documentation
 Bevy is a simple object oriented dependency injection framework for Python. It works by using class attribute annotations to identify what dependencies a class needs and injects them at instantiation from a shared dependency repository.
 ## Table of Contents
-1. Usage
-2. Documentation
-	1. Injectable
-		1. Injectable
-		2. InjectableMeta
-	2. Context
-	3. Factory
+1. [Usage](#1-usage)
+2. [Documentation](#2-documentation)
+	1. [Injectable](#2i-injectable)
+	2. [Context](#2ii-context)
+	3. [Factory](#2iii-factory)
 ## 1. Usage
 Any class that needs dependency injection should inherit from `bevy.Injectable`. Injectables can then be instantiated like normal and Bevy will handle creating a context, instantiating the dependencies, and injecting those dependencies into the new instance.
 ```py
