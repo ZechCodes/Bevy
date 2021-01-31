@@ -34,8 +34,16 @@ class Factory(Generic[T]):
     """
 
     def __init__(self, build_type: Type[T], context: bevy.context.Context):
-        self.build_type = build_type
-        self.context = context
+        self._build_type = build_type
+        self._context = context
+
+    @property
+    def build_type(self) -> Type[T]:
+        return self._build_type
+
+    @property
+    def context(self) -> bevy.context.Context:
+        return self._context
 
     def __call__(self, *args, **kwargs) -> T:
         """ Create an instance of the class using the context to inject the required dependencies. """
