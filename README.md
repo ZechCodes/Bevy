@@ -6,6 +6,8 @@ Bevy makes using *Dependency Injection* a breeze so that you can focus on creati
 pip install bevy
 ```
 
+**[Documentation](docs/documentation.md)**
+
 ## Dependency Injection
 Put simply, *Dependency Injection* is a design pattern where the objects that your class depends on are instantiated outside of the class. Those dependencies are then injected into your class when it is instantiated.
 This promotes loosely coupled code where your class doesn’t require direct knowledge of what classes it depends on or how to create them. Instead your class declares what class interface it expects and an outside framework handles the work of creating the class instances with the correct interface.
