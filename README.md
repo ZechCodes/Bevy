@@ -1,20 +1,18 @@
-# <img src="https://github.com/ZechCodes/Bevy/raw/master/res/icon.svg" width="128px" align="right" />
-
 # Bevy
-Bevy makes using *Dependency Inversion* a breeze so that you can focus on creating amazing code.
+Bevy makes using *Dependency Injection* a breeze so that you can focus on creating amazing code.
 
 ## Installation
 ```shell script
 pip install bevy
 ```
 
-## Dependency Inversion
-Put simply, *Dependency Inversion* is a design pattern where the objects that your class depends on are instantiated outside of the class. Those dependencies are then injected into your class when it is instantiated.
+## Dependency Injection
+Put simply, *Dependency Injection* is a design pattern where the objects that your class depends on are instantiated outside of the class. Those dependencies are then injected into your class when it is instantiated.
 This promotes loosely coupled code where your class doesn’t require direct knowledge of what classes it depends on or how to create them. Instead your class declares what class interface it expects and an outside framework handles the work of creating the class instances with the correct interface.
 ## Interfaces
 Python doesn’t have an actual interface implementation like many other languages. Class inheritance, however, can be used in a very similar way since sub classes will likely have the same fundamental interface as their base class. 
 ## Why Do I Care?
-*Dependency Inversion* and its reliance on abstract interfaces makes your code easier to maintain:
+*Dependency Injection* and its reliance on abstract interfaces makes your code easier to maintain:
 - Changes can be made without needing to alter implementation details in unrelated code, so long as the interface isn’t modified in a substantial way.
 - Tests can provide mock implementations of dependencies without needing to jump through hoops to inject them. They can provide the mock to the context and Bevy will make sure it is used where appropriate.
 ## How Bevy Works
