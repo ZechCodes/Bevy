@@ -61,9 +61,10 @@ may have their own custom dependencies classes or may need a differently configu
 
 from __future__ import annotations
 from bevy.factory import FactoryAnnotation
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
 import bevy
+import inspect
 import sys
 
 
@@ -82,7 +83,7 @@ class ConflictingTypeAddedToRepository(Exception):
         )
 
 
-class Context(Generic[T]):
+class Context:
     """Contexts are used as a factory for creating instances of classes that have their required dependencies injected.
     The context then stores the instances used to fulfill the requirements in a repository so they can be used again if
     any other class instance requires them. This allows all instances created by a context to share the same
@@ -105,8 +106,7 @@ class Context(Generic[T]):
         self._parent = parent
         self._repository: Dict[Type[T], T] = {}
 
-        # MyPy doesn't like adding a context instance so gonna ignore
-        self.add(self)  # type: ignore
+        self.add(self)
 
     def add(self, instance: T) -> Context:
         """Adds a pre-initialized instance to the context's repository.
@@ -131,8 +131,7 @@ class Context(Generic[T]):
         dependencies. For any dependencies not found in the repository the context will attempt to initialize them
         without any arguments."""
         if not self._can_inject(object_type):
-            # MyPy complains that there are too many args to "object"
-            return object_type(*args, **kwargs)  # type: ignore
+            return object_type(*args, **kwargs)
 
         return self._create_instance(object_type, args, kwargs)
 
@@ -160,13 +159,11 @@ class Context(Generic[T]):
     def has(self, object_type: Type[T], *, propagate: bool = True) -> bool:
         """ Checks if an instance matching the requested type exists in the context or one of its parent contexts. """
         if self._find(object_type) is NO_VALUE:
-            return (
-                propagate and self._parent is not None and self._parent.has(object_type)
-            )
+            return propagate and self._parent and self._parent.has(object_type)
 
         return True
 
-    def find_conflicting_type(self, search_for_type: Type[T]) -> Optional[Type]:
+    def find_conflicting_type(self, search_for_type: Type[T]) -> Union[Type, bool]:
         """Finds any type that may conflict with the given type. A type is considered conflicting if it is the same
         type, a super type, or a sub type of any instance already in the repository."""
         for t in self._repository:
@@ -177,19 +174,18 @@ class Context(Generic[T]):
             ):
                 return t
 
-        return None
+        return False
 
     def _can_inject(self, object_type: Type[T]) -> bool:
         return issubclass(object_type, bevy.Injectable)
 
     def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
-        # MyPy complains that there are too many args to dunder new
-        instance = object_type.__new__(object_type, *args, **kwargs)  # type: ignore
+        instance = object_type.__new__(object_type, *args, **kwargs)
         self._inject(instance)
         instance.__init__(*args, **kwargs)
         return instance
 
-    def _find(self, object_type: Type[T]) -> T:
+    def _find(self, object_type: Type[T]) -> Union[T, NO_VALUE]:
         """Finds an instance that is either of the requested type or a sub-type of that type. If it is not found
         NO_VALUE will be returned."""
         for repo_type in self._repository:
@@ -198,6 +194,7 @@ class Context(Generic[T]):
 
         return NO_VALUE
 
+    @lru_cache()
     def _find_dependencies(self, object_type: Type) -> Dict[str, Type[T]]:
         dependencies: Dict[str, Type[T]] = {}
         for cls in reversed(object_type.mro()):
@@ -225,7 +222,17 @@ class Context(Generic[T]):
     @lru_cache()
     def _resolve_dependency(self, cls: Type, annotation: Union[str, Type]) -> Type:
         if isinstance(annotation, str):
-            module = sys.modules[cls.__module__]
-            return eval(annotation, module.__dict__)
+            return self._find_dependency(cls, annotation)
 
         return annotation
+
+    def _find_dependency(self, cls: Type, annotation: Union[str, Type]) -> Type:
+        for c in reversed(inspect.getmro(cls)):
+            if (
+                hasattr(c, "__annotations__")
+                and annotation in c.__annotations__.values()
+            ):
+                module = sys.modules[c.__module__]
+                return eval(annotation, module.__dict__)
+
+        raise TypeError(f"Unable to resolve type annotation: {annotation}")
