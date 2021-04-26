@@ -79,6 +79,31 @@
         </div>
     </div>
     <div class="container section">
+        <p>The <em>Bevy Injector Protocol</em> can be used by a dependency class to customize how its instances are created when injected. This is done by defining a Bevy inject classmethod. At runtime a <strong>type error</strong> will be raised if the method is not a classmethod.
+    </div>
+    <div class="code">
+        <div class="container">
+            <pre><span class="py-decl">class</span> <span class="py-name">MyInjector</span>:
+    <span class="py-decl">def</span> <span class="py-name">__init__</span>(<span class="py-varname">self</span>, <span class="py-varname">an_arg</span>: <span class="py-annotation">str</span>):
+        ...
+
+    <span class="py-decorator">@classmethod</span>
+    <span class="py-decl">def</span> <span class="py-name">__bevy_inject__</span>(
+        <span class="py-varname">cls</span>, <span class="py-varname">context</span>: <span class="py-annotation">Context</span>, <span class="py-varname">instance</span>: <span class="py-annotation">T</span>, *<span class="py-varname">args</span>, **<span class="py-varname">kwargs</span>
+    ) -> <span class="py-annotation">MyInjector</span>:
+        <span class="py-statement">return</span> <span class="py-varname">cls</span>(<span class="py-varname">kwargs.get</span>(<span class="py-string">"a_value"</span>, <span class="py-string">"No Value"</span>)</span>)
+    ...</pre>
+        </div>
+    </div>
+    <div class="container section">
+        <p>The Bevy inject method should return an instance of that class. This instance will not be inserted into the context's repository, so will not be reused in the future. It also will not have any of it's dependencies injected by the context. If that is necessary, the context's create method can be used to build an instance that has had it's dependencies injected.</p></p>
+    </div>
+    <div class="code">
+        <div class="container">
+            <pre><span class="py-statement">return</span> <span class="py-varname">context</span>.<span class="py-varname">create</span>(<span class="py-varname">cls</span>, <span class="py-varname">kwargs.get</span>(<span class="py-string">"a_value"</span>, <span class="py-string">"No Value"</span>)</span>)</pre>
+        </div>
+    </div>
+    <div class="container section">
         <p>You can get a more detailed understanding by checking out the documentation!</p>
         <a href="https://github.com/ZechCodes/Bevy/blob/main/README.md" class="docs-link" target="_blank">Documentation <span class="fira">-&gt;</span></a>
     </div>
