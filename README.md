@@ -91,7 +91,7 @@ injectable class.  The `__bevy_inject__` method will be passed the context, the 
 arguments passed to the constructor. It should return an instance of the injector dependency class.
 ```py
 class MyInjector:
-    def __bevy_injector__(self, context: bevy.Context, instance, *args, **kwargs):
+    def __bevy_inject__(self, context: bevy.Context, instance, *args, **kwargs):
         return MyInjector()
     ...
 ```
