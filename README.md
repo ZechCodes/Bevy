@@ -85,10 +85,10 @@ class MyApp(Injectable):
 ```
 ## Injector Dependencies
 
-A dependency class object can implement the bevy.injector.InjectorProtocol by defining a __bevy_inject__ classmethod.
-The context manager will call this method when it is injecting dependencies into a new instance of an injectable class.
-The __bevy_inject__ method will be passed the context, the partial instance being built, and all arguments passed to the
-constructor. It should return an instance of the injector dependency class.
+A dependency class object can implement the `bevy.injector.InjectorProtocol` by defining a `__bevy_inject__` 
+classmethod. The context manager will call this method when it is injecting dependencies into a new instance of an
+injectable class.  The `__bevy_inject__` method will be passed the context, the partial instance being built, and all
+arguments passed to the constructor. It should return an instance of the injector dependency class.
 ```py
 class MyInjector:
     def __bevy_injector__(self, context: bevy.Context, instance, *args, **kwargs):
