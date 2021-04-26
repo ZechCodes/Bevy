@@ -57,10 +57,18 @@ It is possible to branch a context. This will allow the dependencies on the root
 context. Dependency instances created on the branch context however will not be available to the root context. This is
 useful for preventing the dependencies of a plugin, for example, from polluting the root context and other plugins which
 may have their own custom dependencies classes or may need a differently configured instance.
+
+Injector Dependencies
+
+A dependency class object can implement the bevy.injector.InjectorProtocol by defining a __bevy_inject__ classmethod.
+The context manager will call this method when it is injecting dependencies into a new instance of an injectable class.
+The __bevy_inject__ method will be passed the context, the partial instance being built, and all arguments passed to the
+constructor. It should return an instance of the injector dependency class.
 """
 
 from __future__ import annotations
 from bevy.factory import FactoryAnnotation
+from bevy.injector import is_injector
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 from functools import lru_cache
 import bevy
@@ -181,7 +189,7 @@ class Context:
 
     def _create_instance(self, object_type: Type[T], args, kwargs) -> T:
         instance = object_type.__new__(object_type, *args, **kwargs)
-        self._inject(instance)
+        self._inject(instance, args, kwargs)
         instance.__init__(*args, **kwargs)
         return instance
 
@@ -210,10 +218,12 @@ class Context:
 
         return dependencies
 
-    def _inject(self, instance: T):
+    def _inject(self, instance: T, args, kwargs):
         for name, dependency in self._find_dependencies(type(instance)).items():
             if isinstance(dependency, FactoryAnnotation):
                 value = dependency.create_factory(self)
+            elif is_injector(dependency):
+                value = dependency.__bevy_inject__(instance, *args, **kwargs)
             else:
                 value = self.get(dependency)
 
