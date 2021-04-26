@@ -170,6 +170,18 @@ h2 span:after {
   color: #0054B7;
 }
 
+.code pre .py-decorator {
+  color: #ac5afe;
+}
+
+.code pre .py-statement {
+  color: #ba4d4d;
+}
+
+.code pre .py-string {
+  color: #00c997;
+}
+
 .docs-link {
   font-size: 1.2em;
   font-weight: 600;
