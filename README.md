@@ -83,6 +83,19 @@ class MyApp(Injectable):
             plugin_instances.append(instance)
         return plugin_instances
 ```
+## Injector Dependencies
+
+A dependency class object can implement the bevy.injector.InjectorProtocol by defining a __bevy_inject__ classmethod.
+The context manager will call this method when it is injecting dependencies into a new instance of an injectable class.
+The __bevy_inject__ method will be passed the context, the partial instance being built, and all arguments passed to the
+constructor. It should return an instance of the injector dependency class.
+```py
+class MyInjector:
+    def __bevy_injector__(self, context: bevy.Context, instance, *args, **kwargs):
+        return MyInjector()
+    ...
+```
+
 ## Driving Motivations
 The motivations that drive the decisions about how Bevy is implemented are as follows.
 - It should feel like nothing has been changed from normal.
