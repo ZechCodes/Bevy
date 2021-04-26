@@ -9,7 +9,7 @@ def test_injector():
             self.instance = instance
 
         @classmethod
-        def __bevy_inject__(cls, instance, name):
+        def __bevy_inject__(cls, context, instance, name):
             return cls(name + "INJECTED", instance)
 
     class Test(Injectable):
@@ -29,7 +29,7 @@ def test_injector():
 
 def test_almost_injector():
     class Dep:
-        def __bevy_inject__(cls, instance, name):
+        def __bevy_inject__(cls, context, instance, name):
             return
 
     with raises(TypeError):

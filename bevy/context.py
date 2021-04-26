@@ -223,7 +223,7 @@ class Context:
             if isinstance(dependency, FactoryAnnotation):
                 value = dependency.create_factory(self)
             elif is_injector(dependency):
-                value = dependency.__bevy_inject__(instance, *args, **kwargs)
+                value = dependency.__bevy_inject__(self, instance, *args, **kwargs)
             else:
                 value = self.get(dependency)
 
