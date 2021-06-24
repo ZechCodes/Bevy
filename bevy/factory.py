@@ -7,24 +7,25 @@ class Factory:
     """Simple factory implementation that creates a callable bound to the constructor context and that will return the
     annotated type when called.
 
-    Example:
+    **Example**
+    ```python
+    class Thing:
+        def __init__(self, name):
+            self.name = name
 
     class Example(Injectable):
         factory: Factory[Thing]
         ...
-        self.factory(args...)
+        def create_thing(self, name: str):
+            self.factory(name)
+    ```
     """
 
     def __init__(self, item: Any):
         self._item = item
 
     def __bevy_inject__(
-        self,
-        inject_into: Any,
-        name: str,
-        constructor: bevy.Constructor,
-        *args,
-        **kwargs
+        self, inject_into: Any, name: str, constructor: bevy.Constructor
     ):
         setattr(inject_into, name, partial(constructor.construct, self._item))
 
