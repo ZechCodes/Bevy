@@ -9,7 +9,7 @@ from __future__ import annotations
 from bevy.exceptions import CanOnlyInjectIntoInjectables
 from bevy.injectable import Injectable, is_injectable
 from bevy.injector import Injector, is_injector
-from typing import Any, Generic, Optional, Type, TypeVar
+from typing import Any, Generic, Optional, Type, TypeVar, Union
 
 
 T = TypeVar("T")
@@ -49,14 +49,14 @@ class Constructor(Generic[T]):
         self._resolve_branches()
         return self.construct(self._obj, *self._args, **self._kwargs)
 
-    def construct(self, obj: Type[Injectable[T], Type[T]], *args, **kwargs) -> T:
+    def construct(self, obj: Union[Injectable[T], Type[T]], *args, **kwargs) -> T:
         """Creates an instance of a class. If the class is injectable it will use the bevy constructor class method."""
         if is_injectable(obj):
             return obj.__bevy_construct__(self, *args, **kwargs)
 
         return obj(*args, **kwargs)
 
-    def get(self, cls: Type[Injectable[T], Type[T]], *args, **kwargs) -> T:
+    def get(self, cls: Union[Injectable[T], Type[T]], *args, **kwargs) -> T:
         """Gets an instance associated with the requested type. If it is not found in the constructor's repository or
         in the repository of the parent's constructor an instance will be created using any provided args."""
         if dependency := self._find_dependency_match(cls):
@@ -80,7 +80,7 @@ class Constructor(Generic[T]):
 
     def inject(
         self,
-        dependency: Type[Injector, Type],
+        dependency: Union[Injector, Type],
         instance: Any,
         attr_name: str,
         *args,
