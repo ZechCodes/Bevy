@@ -1,7 +1,6 @@
-from bevy.injectable import Injectable
-from bevy.context import Context
+from bevy.constructor import Constructor
 from bevy.factory import Factory
+from bevy.injectable import Injectable
 
 
-__all__ = ["Injectable", "Context", "Factory"]
-__version__ = "0.3.0"
+__all__ = ("Constructor", "Factory", "Injectable")

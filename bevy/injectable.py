@@ -1,53 +1,37 @@
-""" Base classes for any Bevy injectable classes.
-
-The Injectable base class allows a class to have its dependencies created and injected at instantiation (when the class
-object is called). This is accomplished by using a metaclass to hook into the class object's dunder call method, it then
-creates a Context which is used to create an instance of the class. A metaclass is used so that subclasses of Injectable
-can provide their own custom dunder new logic without needing to worry about the internal logic of Context. Using a
-metaclass has the added benfit of allowing Bevy to inject the requested dependencies without needing to inject any of
-Bevy's own state into the object.
-
-Here is an example of how to use Injectable.
-
->>> class Dependency:
-...     def print_something(self):
-...          print("Something")
->>> class Example(Injectable):
-...     dep: Dependency
-...     def print_something(self):
-...         self.dep.print_something()
->>> example = Example()
->>> example.print_something()
-"""
-
+"""The injectable class is used to indicate that Bevy constructors can inject dependencies into the class. It provides a
+simple property for fetching the class's dependencies."""
 from __future__ import annotations
-from abc import ABCMeta
-from bevy.context import Context
-from bevy.injector import is_almost_injector
-from typing import Any, Dict, Tuple, Type
+from inspect import isclass
+from typing import Any, Generic, Type, TypeVar, get_type_hints
+import bevy
 
 
-class InjectableMeta(ABCMeta):
-    """Metaclass for hooking into the object's call logic, allowing Bevy to insert itself just before dunder init is
-    called and inject the required dependencies."""
-
-    def __new__(mcs, name, bases, attrs):
-        for a_name, a_type in attrs.get("__annotations__", {}).items():
-            if is_almost_injector(a_type):
-                raise TypeError(
-                    f"{attrs['__module__']}.{name}.{a_name} was annotated as {a_type} which appears to be a Bevy "
-                    f"injector but the __bevy_inject__ method is not a classmethod"
-                )
-
-        return super().__new__(mcs, name, bases, attrs)
-
-    def __call__(cls: Type, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Injectable:
-        """Creates a context object which is used to provide custom instantiation logic that injects the required
-        dependencies before dunder init is called."""
-        return Context().create(cls, *args, **kwargs)
+T = TypeVar("T")
 
 
-class Injectable(metaclass=InjectableMeta):
-    """ Base class that automates injection of required dependencies before dunder init is called. """
+class Injectable(Generic[T]):
+    """Classes that support the Bevy constructor's dependency injection must inherit from this class."""
 
-    pass
+    @classmethod
+    def __bevy_construct__(
+        cls: Type[T], constructor: bevy.Constructor, *args, **kwargs
+    ) -> T:
+        inst = cls.__new__(cls, *args, **kwargs)
+        for name, dependency in cls.__bevy_dependencies__.items():
+            constructor.inject(dependency, inst, name)
+        inst.__init__(*args, **kwargs)
+        return inst
+
+    @classmethod
+    @property
+    def __bevy_dependencies__(cls) -> dict[str, Any]:
+        """Dictionary of attribute names and their desired dependency type."""
+        return get_type_hints(cls)
+
+
+def is_injectable(obj) -> bool:
+    """Determine if an object instance or type supports the Bevy constructor's dependency injection."""
+    if isclass(obj):
+        return issubclass(obj, Injectable)
+
+    return isinstance(obj, Injectable)

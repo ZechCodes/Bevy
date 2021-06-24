@@ -1,138 +1,70 @@
-from pytest import fixture, raises
-from bevy.context import Context, ConflictingTypeAddedToRepository
-from bevy.injectable import Injectable
-
-
-@fixture()
-def dep():
-    class Dep(Injectable):
-        ...
-
-    return Dep
-
-
-@fixture()
-def dep_a(dep):
-    return dep()
-
-
-@fixture()
-def dep_b(dep):
-    return dep()
-
-
-@fixture()
-def app(dep):
-    class App(Injectable):
-        dependency: dep
-
-    return App
-
-
-# ###   TESTS   ### #
-
-
-def test_context_resolution(dep_a, dep):
-    c = Context().add(dep_a)
-    assert c.get(dep) is dep_a
-
-
-def test_context_creation(dep_a, app):
-    c = Context().add(dep_a)
-    a = c.create(app)
-    assert a.dependency is dep_a
-
-
-def test_instantiation(dep, app):
-    a = app()
-    assert isinstance(a.dependency, dep)
+from bevy import Constructor, Factory, Injectable
 
 
 class Dependency:
-    class SubDependency:
-        ...
+    def __init__(self, name):
+        self.name = name
 
 
-class Base(Injectable):
-    dep: "Dependency"
-    sub: "Dependency.SubDependency"
+class DependencyB:
+    def __init__(self, name):
+        self.name = f"__{name}__"
 
 
-def test_dependency_resolution():
-    d = Dependency()
-    s = Dependency.SubDependency()
-    c = Context().add(d).add(s)
-    a = c.create(Base)
-    assert a.dep is d
-    assert a.sub is s
+class BranchDep(Injectable):
+    dep: Dependency
 
 
-def test_propagated_creation():
-    class Testing:
-        ...
-
-    parent = Context()
-    child = parent.branch()
-    child_instance = child.get(Testing)
-    parent_instance = parent.get(Testing)
-    assert child_instance is not parent_instance
+class App(Injectable):
+    dep: Dependency
 
 
-def test_conflicting_types():
-    class Parent:
-        ...
+def test_construct():
+    constructor = Constructor(App)
+    constructor.add(Dependency("foobar"))
+    app = constructor.build()
 
-    class Child(Parent):
-        ...
-
-    context = Context()
-    context.add(Parent())
-
-    with raises(ConflictingTypeAddedToRepository):
-        context.add(Child())
+    assert app.dep.name == "foobar"
 
 
-def test_conflicting_same_types():
-    class TestType:
-        ...
+def test_branching_inheritance():
+    class App(Injectable):
+        dep: BranchDep
 
-    context = Context()
-    context.add(TestType())
+    constructor = Constructor(App)
+    constructor.add(Dependency("foobar"))
+    constructor.branch(BranchDep)
+    app = constructor.build()
 
-    with raises(ConflictingTypeAddedToRepository):
-        context.add(TestType())
-
-
-def test_conflicting_super_type():
-    class Parent:
-        ...
-
-    class Child(Parent):
-        ...
-
-    context = Context()
-    context.add(Child())
-
-    with raises(ConflictingTypeAddedToRepository):
-        context.add(Parent())
+    assert app.dep.dep.name == "foobar"
 
 
-def test_context_access():
-    class TestType(Injectable):
-        c: Context
+def test_branching_propagation():
+    constructor = Constructor(App)
+    constructor.add(Dependency("foobar"))
+    branch = constructor.branch(BranchDep)
+    branch.add(Dependency("hello world"))
+    app = constructor.build()
 
-    context = Context()
-    t = context.create(TestType)
-    assert t.c is context
+    assert constructor.get(BranchDep).dep.name == "hello world"
+    assert app.dep.name == "foobar"
 
 
-def test_context_access_different_type():
-    class TestContext(Context):
-        ...
+def test_add_as():
+    constructor = Constructor(App)
+    constructor.add_as(DependencyB("foobar"), Dependency)
+    app = constructor.build()
 
-    class TestType(Injectable):
-        c: TestContext
+    assert app.dep.name == "__foobar__"
 
-    context = Context()
-    with raises(Exception):
-        context.create(TestType)
+
+def test_factories():
+    class Dep:
+        def __init__(self, name):
+            self.name = f"__{name}__"
+
+    class App(Injectable):
+        factory: Factory[Dep]
+
+    app = Constructor(App).build()
+    assert app.factory("foobar").name == "__foobar__"
