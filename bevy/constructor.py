@@ -25,7 +25,7 @@ class Constructor(Generic[T]):
     ):
         self._args = args
         self._branches: dict[Type[T], Constructor[T]] = {}
-        self._dependencies: dict[Type[T], T] = {}
+        self._dependencies: dict[Type[T], T] = {Constructor: self}
         self._kwargs = kwargs
         self._obj = obj
         self._parent = parent
