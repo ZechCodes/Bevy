@@ -1,6 +1,6 @@
 from functools import partial
 from typing import Any
-import bevy
+from bevy import Constructor
 
 
 class Factory:
@@ -24,9 +24,7 @@ class Factory:
     def __init__(self, item: Any):
         self._item = item
 
-    def __bevy_inject__(
-        self, inject_into: Any, name: str, constructor: bevy.Constructor
-    ):
+    def __bevy_inject__(self, inject_into: Any, name: str, constructor: Constructor):
         setattr(inject_into, name, partial(constructor.construct, self._item))
 
     def __class_getitem__(cls, item):
