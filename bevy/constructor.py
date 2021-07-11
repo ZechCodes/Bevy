@@ -55,7 +55,7 @@ class Constructor(Generic[T]):
         if is_injectable(obj):
             return obj.__bevy_construct__(self, *args, **kwargs)
 
-        return obj(*args, **kwargs)
+        return obj(*args, **kwargs) if callable(obj) else obj
 
     def get(self, cls: Union[Injectable[T], Type[T]], *args, **kwargs) -> T:
         """Gets an instance associated with the requested type. If it is not found in the constructor's repository or
