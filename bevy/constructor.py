@@ -20,7 +20,7 @@ class Constructor(Generic[T]):
     def __init__(
         self,
         obj: Type[Injectable[T]],
-        parent: Optional[Constructor] = None,
+        parent: Optional[Constructor[T]] = None,
         *args,
         **kwargs,
     ):
