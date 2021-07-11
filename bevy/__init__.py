@@ -47,8 +47,7 @@ branch = constructor.branch(Dependency)
 ```
 """
 from bevy.constructor import Constructor
-from bevy.factory import Factory
-from bevy.injectable import Injectable
+from bevy.injectable import injectable, is_injectable
 
 
-__all__ = ("Constructor", "Factory", "Injectable")
+__all__ = ("Constructor", "injectable", "is_injectable")
