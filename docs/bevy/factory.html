@@ -59,7 +59,7 @@
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-<span class="kn">import</span> <span class="nn">bevy</span>
+<span class="kn">from</span> <span class="nn">bevy</span> <span class="kn">import</span> <span class="n">Constructor</span>
 
 
 <span class="k">class</span> <span class="nc">Factory</span><span class="p">:</span>
@@ -83,9 +83,7 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_item</span> <span class="o">=</span> <span class="n">item</span>
 
-    <span class="k">def</span> <span class="nf">__bevy_inject__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inject_into</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__bevy_inject__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inject_into</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">Constructor</span><span class="p">):</span>
         <span class="nb">setattr</span><span class="p">(</span><span class="n">inject_into</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="n">constructor</span><span class="o">.</span><span class="n">construct</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_item</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">__class_getitem__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
@@ -127,9 +125,7 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_item</span> <span class="o">=</span> <span class="n">item</span>
 
-    <span class="k">def</span> <span class="nf">__bevy_inject__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inject_into</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__bevy_inject__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inject_into</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">Constructor</span><span class="p">):</span>
         <span class="nb">setattr</span><span class="p">(</span><span class="n">inject_into</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="n">constructor</span><span class="o">.</span><span class="n">construct</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_item</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">__class_getitem__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>

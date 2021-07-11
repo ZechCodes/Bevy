@@ -40,6 +40,18 @@
 
             </li>
             <li>
+                    <a class="class" href="#BaseInjectableImplementation">BaseInjectableImplementation</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#BaseInjectableImplementation.__init__">BaseInjectableImplementation</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="function" href="#injectable">injectable</a>
+            </li>
+            <li>
                     <a class="function" href="#is_injectable">is_injectable</a>
             </li>
     </ul>
@@ -66,26 +78,48 @@ simple property for fetching the class's dependencies.</p>
             <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;The injectable class is used to indicate that Bevy constructors can inject dependencies into the class. It provides a</span>
 <span class="sd">simple property for fetching the class&#39;s dependencies.&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">isclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">get_type_hints</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Protocol</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">get_type_hints</span><span class="p">,</span>
+    <span class="n">runtime_checkable</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">import</span> <span class="nn">bevy</span>
 
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">Injectable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-    <span class="sd">&quot;&quot;&quot;Classes that support the Bevy constructor&#39;s dependency injection must inherit from this class.&quot;&quot;&quot;</span>
+<span class="nd">@runtime_checkable</span>
+<span class="k">class</span> <span class="nc">Injectable</span><span class="p">(</span><span class="n">Protocol</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;The injectable protocol should be implemented by any class that needs to have their dependencies injected. Any</span>
+<span class="sd">    class can be made to support this protocol by using the injectable decorator.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="o">...</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__bevy_dependencies__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary of attribute names and their desired dependency type.&quot;&quot;&quot;</span>
+        <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">BaseInjectableImplementation</span><span class="p">:</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__bevy_dependencies__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">constructor</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-        <span class="n">inst</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">inst</span>
+            <span class="n">constructor</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span>
 
     <span class="nd">@classmethod</span>
     <span class="nd">@property</span>
@@ -94,11 +128,33 @@ simple property for fetching the class's dependencies.</p>
         <span class="k">return</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">injectable</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.&quot;&quot;&quot;</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bevy_constructor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">custom_class</span><span class="p">)</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">custom_class</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inst</span>
+
+    <span class="n">bases</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">object</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
+        <span class="n">bases</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+
+    <span class="n">custom_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+        <span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">bases</span><span class="p">,</span> <span class="n">BaseInjectableImplementation</span><span class="p">),</span>
+        <span class="p">{</span><span class="s2">&quot;__new__&quot;</span><span class="p">:</span> <span class="n">new</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__module__</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">custom_class</span>
+
+
 <span class="k">def</span> <span class="nf">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy constructor&#39;s dependency injection.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
 </pre></div>
 
@@ -109,25 +165,78 @@ simple property for fetching the class's dependencies.</p>
                                 <div class="attr class">
         <a class="headerlink" href="#Injectable">#&nbsp;&nbsp</a>
 
-        
+                <div class="decorator">@runtime_checkable</div>
+
         <span class="def">class</span>
-        <span class="name">Injectable</span><wbr>(<span class="base">typing.Generic[~T]</span>):
+        <span class="name">Injectable</span><wbr>(<span class="base">typing.Protocol[~T]</span>):
     </div>
 
                 <details>
             <summary>View Source</summary>
-            <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Injectable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-    <span class="sd">&quot;&quot;&quot;Classes that support the Bevy constructor&#39;s dependency injection must inherit from this class.&quot;&quot;&quot;</span>
+            <div class="codehilite"><pre><span></span><span class="nd">@runtime_checkable</span>
+<span class="k">class</span> <span class="nc">Injectable</span><span class="p">(</span><span class="n">Protocol</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;The injectable protocol should be implemented by any class that needs to have their dependencies injected. Any</span>
+<span class="sd">    class can be made to support this protocol by using the injectable decorator.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="o">...</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__bevy_dependencies__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary of attribute names and their desired dependency type.&quot;&quot;&quot;</span>
+        <span class="o">...</span>
+</pre></div>
+
+        </details>
+
+            <div class="docstring"><p>The injectable protocol should be implemented by any class that needs to have their dependencies injected. Any
+class can be made to support this protocol by using the injectable decorator.</p>
+</div>
+
+
+                            <div id="Injectable.__init__" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Injectable.__init__">#&nbsp;&nbsp</a>
+
+        
+            <span class="name">Injectable</span><span class="signature">(*args, **kwargs)</span>
+    </div>
+
+                <details>
+            <summary>View Source</summary>
+            <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">_no_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_is_protocol</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Protocols cannot be instantiated&#39;</span><span class="p">)</span>
+</pre></div>
+
+        </details>
+
+    
+
+                            </div>
+                </section>
+                <section id="BaseInjectableImplementation">
+                                <div class="attr class">
+        <a class="headerlink" href="#BaseInjectableImplementation">#&nbsp;&nbsp</a>
+
+        
+        <span class="def">class</span>
+        <span class="name">BaseInjectableImplementation</span>:
+    </div>
+
+                <details>
+            <summary>View Source</summary>
+            <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">BaseInjectableImplementation</span><span class="p">:</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__bevy_dependencies__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">constructor</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-        <span class="n">inst</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">inst</span>
+            <span class="n">constructor</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span>
 
     <span class="nd">@classmethod</span>
     <span class="nd">@property</span>
@@ -138,21 +247,61 @@ simple property for fetching the class's dependencies.</p>
 
         </details>
 
-            <div class="docstring"><p>Classes that support the Bevy constructor's dependency injection must inherit from this class.</p>
-</div>
+    
 
-
-                            <div id="Injectable.__init__" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Injectable.__init__">#&nbsp;&nbsp</a>
+                            <div id="BaseInjectableImplementation.__init__" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#BaseInjectableImplementation.__init__">#&nbsp;&nbsp</a>
 
         
-            <span class="name">Injectable</span><span class="signature">()</span>
+            <span class="name">BaseInjectableImplementation</span><span class="signature">()</span>
     </div>
 
         
     
 
                             </div>
+                </section>
+                <section id="injectable">
+                            <div class="attr function"><a class="headerlink" href="#injectable">#&nbsp;&nbsp</a>
+
+        
+            <span class="def">def</span>
+            <span class="name">injectable</span><span class="signature">(cls: Type[~T]) -&gt; Type[<a href="#Injectable">bevy.injectable.Injectable</a>[~T]]</span>:
+    </div>
+
+                <details>
+            <summary>View Source</summary>
+            <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">injectable</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.&quot;&quot;&quot;</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bevy_constructor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">custom_class</span><span class="p">)</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">custom_class</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inst</span>
+
+    <span class="n">bases</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">object</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
+        <span class="n">bases</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+
+    <span class="n">custom_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+        <span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">bases</span><span class="p">,</span> <span class="n">BaseInjectableImplementation</span><span class="p">),</span>
+        <span class="p">{</span><span class="s2">&quot;__new__&quot;</span><span class="p">:</span> <span class="n">new</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__module__</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">custom_class</span>
+</pre></div>
+
+        </details>
+
+            <div class="docstring"><p>Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.</p>
+</div>
+
+
                 </section>
                 <section id="is_injectable">
                             <div class="attr function"><a class="headerlink" href="#is_injectable">#&nbsp;&nbsp</a>
@@ -166,9 +315,6 @@ simple property for fetching the class's dependencies.</p>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy constructor&#39;s dependency injection.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
 </pre></div>
 

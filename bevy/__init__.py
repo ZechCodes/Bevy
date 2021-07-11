@@ -3,7 +3,8 @@ annotations, using them to determine what dependencies a class has.
 
 **Example**
 ```py
-class Example(bevy.Injectable):
+@bevy.injectable
+class Example:
     dependency: Dependency
 ```
 Each dependency when instantiated is added to a context repository for reuse. This allows many classes to share the same
