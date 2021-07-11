@@ -26,7 +26,8 @@ annotations, using them to determine what dependencies a class has.
 
 **Example**
 ```py
-class Example(bevy.Injectable):
+@bevy.injectable
+class Example:
     dependency: Dependency
 ```
 Each dependency when instantiated is added to a context repository for reuse. This allows many classes to share the same
@@ -59,7 +60,7 @@ constructor.add(Dependency("foobar"))
 When adding an `Injectable` it is necessary to use [`Constructor.branch`](#Constructor.branch) as it will inherit all
 dependencies that are added to the constructor. Any dependencies added to the branch will not be back propagated to the
 constructor, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency
-resolution is deferred until `Constructor.build` is called, when it is assumed all dependencies with customized
+resolution defers until `Constructor.build` is called, when it is assumed all dependencies with customized
 instantiations have been added.
 
 Because `Injectables` require a special lifecycle `Constructor.branch` will accept any instantiation args that should be
