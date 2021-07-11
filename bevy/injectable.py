@@ -1,7 +1,16 @@
 """The injectable class is used to indicate that Bevy constructors can inject dependencies into the class. It provides a
 simple property for fetching the class's dependencies."""
 from __future__ import annotations
-from typing import Any, Protocol, Type, TypeVar, get_type_hints, runtime_checkable
+from functools import wraps
+from typing import (
+    Any,
+    Optional,
+    Protocol,
+    Type,
+    TypeVar,
+    get_type_hints,
+    runtime_checkable,
+)
 import bevy
 
 
@@ -17,11 +26,23 @@ class Injectable(Protocol[T]):
     def __bevy_construct__(
         cls: Type[T], constructor: bevy.Constructor, *args, **kwargs
     ) -> T:
-        inst = cls.__new__(cls, *args, **kwargs)
+        ...
+
+    @classmethod
+    @property
+    def __bevy_dependencies__(cls) -> dict[str, Any]:
+        """Dictionary of attribute names and their desired dependency type."""
+        ...
+
+
+class BaseInjectableImplementation:
+    @classmethod
+    def __bevy_construct__(
+        cls: Type[T], instance: T, constructor: bevy.Constructor, *args, **kwargs
+    ) -> T:
         for name, dependency in cls.__bevy_dependencies__.items():
-            constructor.inject(dependency, inst, name)
-        inst.__init__(*args, **kwargs)
-        return inst
+            constructor.inject(dependency, instance, name)
+        return instance
 
     @classmethod
     @property
@@ -31,17 +52,28 @@ class Injectable(Protocol[T]):
 
 
 def injectable(cls: Type[T]) -> Type[Injectable[T]]:
-    """Decorator to make a class compatible with the Injectable protocol. This is unnecessary if the class provides it's
-    own implementations of the __bevy_construct__ and __bevy_dependencies__ methods."""
-    if not hasattr(cls, "__bevy_construct__"):
-        cls.__bevy_construct__ = classmethod(Injectable.__bevy_construct__.__func__)
+    """Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic."""
 
-    if not hasattr(cls, "__bevy_dependencies__"):
-        cls.__bevy_dependencies__ = classmethod(
-            Injectable.__dict__["__bevy_dependencies__"].__func__
-        )
+    @wraps(cls.__new__)
+    def new(*args, bevy_constructor: Optional[bevy.Constructor] = None, **kwargs):
+        if not bevy_constructor:
+            return bevy.Constructor(custom_class).build()
 
-    return cls
+        inst = cls.__new__(*args, **kwargs)
+        custom_class.__bevy_construct__(inst, bevy_constructor, *args, **kwargs)
+        return inst
+
+    bases = list(cls.__bases__)
+    if object in bases:
+        bases.remove(object)
+
+    custom_class: Type[Injectable[T]] = type(
+        cls.__name__,
+        (cls, *bases, BaseInjectableImplementation),
+        {"__new__": new, "__module__": cls.__module__},
+    )
+
+    return custom_class
 
 
 def is_injectable(obj) -> bool:

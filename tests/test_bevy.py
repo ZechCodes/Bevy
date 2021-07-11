@@ -77,3 +77,14 @@ def test_factories():
 
 def test_injectable():
     assert is_injectable(App)
+
+
+def test_no_constructor():
+    class Dep:
+        ...
+
+    @injectable
+    class App:
+        dep: Dep
+
+    assert App().dep

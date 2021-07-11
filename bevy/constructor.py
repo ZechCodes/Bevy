@@ -53,7 +53,7 @@ class Constructor(Generic[T]):
     def construct(self, obj: Union[Injectable[T], Type[T]], *args, **kwargs) -> T:
         """Creates an instance of a class. If the class is injectable it will use the bevy constructor class method."""
         if is_injectable(obj):
-            return obj.__bevy_construct__(self, *args, **kwargs)
+            kwargs["bevy_constructor"] = self
 
         return obj(*args, **kwargs) if callable(obj) else obj
 
