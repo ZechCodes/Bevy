@@ -81,7 +81,7 @@ class Constructor(Generic[T]):
 
     def inject(
         self,
-        dependency: Union[Injector, Type],
+        dependency: Union[Injector[T], Type[T]],
         instance: Any,
         attr_name: str,
         *args,
