@@ -1,4 +1,5 @@
-from bevy import Constructor, Factory, Injectable
+from bevy import Constructor, injectable, is_injectable
+from bevy.factory import Factory
 
 
 class Dependency:
@@ -11,11 +12,13 @@ class DependencyB:
         self.name = f"__{name}__"
 
 
-class BranchDep(Injectable):
+@injectable
+class BranchDep:
     dep: Dependency
 
 
-class App(Injectable):
+@injectable
+class App:
     dep: Dependency
 
 
@@ -28,7 +31,8 @@ def test_construct():
 
 
 def test_branching_inheritance():
-    class App(Injectable):
+    @injectable
+    class App:
         dep: BranchDep
 
     constructor = Constructor(App)
@@ -63,8 +67,13 @@ def test_factories():
         def __init__(self, name):
             self.name = f"__{name}__"
 
-    class App(Injectable):
+    @injectable
+    class App:
         factory: Factory[Dep]
 
     app = Constructor(App).build()
     assert app.factory("foobar").name == "__foobar__"
+
+
+def test_injectable():
+    assert is_injectable(App)
