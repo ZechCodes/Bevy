@@ -120,7 +120,7 @@ class Constructor(Generic[T]):
 
         for dependency_obj, dependency in self._dependencies.items():
             is_match = getattr(
-                dependency_obj,
+                dependency,
                 "__bevy_is_match__",
                 partial(subclass_check, dependency_obj),
             )
