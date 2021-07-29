@@ -107,7 +107,9 @@ class Constructor(Generic[T]):
 
         if is_injector(dependency):
             inject = dependency.__bevy_inject__
-            if not hasattr(inject, "__self__") or type(inject.__self__) is not type:
+            if isinstance(dependency, type) and (
+                not hasattr(inject, "__self__") or not isinstance(inject.__self__, type)
+            ):
                 inject = self.get(dependency).__bevy_inject__
             inject(instance, attr_name, self, *args, **kwargs)
         else:
