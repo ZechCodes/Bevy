@@ -9,6 +9,7 @@ from __future__ import annotations
 from bevy.exceptions import CanOnlyInjectIntoInjectables
 from bevy.injectable import Injectable, is_injectable
 from bevy.injector import is_injector
+from functools import partial
 from inspect import isclass
 from typing import Any, Generic, Optional, Type, TypeVar, Union
 
@@ -104,12 +105,18 @@ class Constructor(Generic[T]):
         else:
             setattr(instance, attr_name, self.get(dependency, *args, **kwargs))
 
-    def _find_dependency_match(self, cls: Union[Type[T], T]) -> Optional[T]:
-        if not isclass(cls):
-            cls: Type[T] = type(cls)
+    def _find_dependency_match(self, obj: Any) -> Optional[T]:
+        def subclass_check(dt, o):
+            cls: Type[T] = o if isclass(o) else type(o)
+            return issubclass(cls, dt) or issubclass(dt, cls)
 
-        for dependency_type, dependency in self._dependencies.items():
-            if issubclass(cls, dependency_type) or issubclass(dependency_type, cls):
+        for dependency_obj, dependency in self._dependencies.items():
+            is_match = getattr(
+                dependency_obj,
+                "__bevy_is_match__",
+                partial(subclass_check, dependency_obj),
+            )
+            if is_match(obj):
                 return dependency
 
         return
