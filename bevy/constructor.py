@@ -8,7 +8,7 @@ object when it is initialized.
 from __future__ import annotations
 from bevy.exceptions import CanOnlyInjectIntoInjectables
 from bevy.injectable import Injectable, is_injectable
-from bevy.injector import Injector, is_injector
+from bevy.injector import is_injector
 from inspect import isclass
 from typing import Any, Generic, Optional, Type, TypeVar, Union
 
