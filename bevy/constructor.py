@@ -8,7 +8,7 @@ object when it is initialized.
 from __future__ import annotations
 from bevy.exceptions import CanOnlyInjectIntoInjectables
 from bevy.injectable import Injectable, is_injectable
-from bevy.injector import is_injector
+from bevy.injector import Injector, is_injector
 from functools import partial
 from inspect import isclass
 from typing import Any, Generic, Optional, Type, TypeVar, Union
@@ -58,7 +58,9 @@ class Constructor(Generic[T]):
 
         return obj(*args, **kwargs) if callable(obj) else obj
 
-    def get(self, cls: Union[Injectable[T], Type[T]], *args, **kwargs) -> T:
+    def get(
+        self, cls: Union[Injectable[T], Injector[T], Type[T]], *args, **kwargs
+    ) -> T:
         """Gets an instance associated with the requested type. If it is not found in the constructor's repository or
         in the repository of the parent's constructor an instance will be created using any provided args."""
         if dependency := self._find_dependency_match(cls):
