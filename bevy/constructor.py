@@ -6,6 +6,7 @@ constructed by calling the constructor object's build method. This method can ta
 object when it is initialized.
 """
 from __future__ import annotations
+from bevy.builder import Builder, is_builder
 from bevy.exceptions import CanOnlyInjectIntoInjectables
 from bevy.injectable import Injectable, is_injectable
 from bevy.injector import Injector, is_injector
@@ -51,10 +52,15 @@ class Constructor(Generic[T]):
         self._resolve_branches()
         return self.construct(self._obj, *self._args, **self._kwargs)
 
-    def construct(self, obj: Union[Injectable[T], Type[T]], *args, **kwargs) -> T:
+    def construct(
+        self, obj: Union[Injectable[T], Builder[T], Type[T]], *args, **kwargs
+    ) -> T:
         """Creates an instance of a class. If the class is injectable it will use the bevy constructor class method."""
-        if is_injectable(obj):
+        if is_injectable(obj) or is_builder(obj):
             kwargs["bevy_constructor"] = self
+
+        if is_builder(obj):
+            obj = obj.__bevy_build__
 
         return obj(*args, **kwargs) if callable(obj) else obj
 
