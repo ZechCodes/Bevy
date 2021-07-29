@@ -1,5 +1,6 @@
 from bevy import Constructor, injectable, is_injectable
 from bevy.factory import Factory
+from bevy.label import Label
 
 
 class Dependency:
@@ -88,3 +89,69 @@ def test_no_constructor():
         dep: Dep
 
     assert App().dep
+
+
+def test_label():
+    class Dep:
+        def __init__(self, value="default"):
+            self.value = value
+
+    @injectable
+    class App:
+        dep: Label[Dep:"dep"]
+
+    app = Constructor(App).build()
+    assert isinstance(app.dep, Dep)
+
+
+def test_label_same_instance():
+    class Dep:
+        def __init__(self, value="default"):
+            self.value = value
+
+    @injectable
+    class AppA:
+        dep: Label[Dep:"dep"]
+
+    @injectable
+    class AppB:
+        dep: Label[Dep:"dep"]
+
+    builder = Constructor(AppA)
+    app_b = builder.get(AppB)
+    app_a = builder.build()
+    assert app_a.dep is app_b.dep
+
+
+def test_label_different_instances():
+    class Dep:
+        def __init__(self, value="default"):
+            self.value = value
+
+    @injectable
+    class AppA:
+        dep: Label[Dep:"dep_a"]
+
+    @injectable
+    class AppB:
+        dep: Label[Dep:"dep_b"]
+
+    builder = Constructor(AppA)
+    app_b = builder.get(AppB)
+    app_a = builder.build()
+    assert app_a.dep is not app_b.dep
+
+
+def test_label_injection():
+    class Dep:
+        def __init__(self, value="default"):
+            self.value = value
+
+    @injectable
+    class App:
+        dep: Label[Dep:"dep"]
+
+    builder = Constructor(App)
+    builder.add(Label(Dep("dep"), "dep"))
+    app = builder.build()
+    assert app.dep.value == "dep"
