@@ -66,10 +66,7 @@ def injectable(cls: Type[T]) -> Type[Injectable[T]]:
 
     @wraps(cls.__new__)
     def new(cls_, *args, **kwargs):
-        constructor = kwargs.pop("__bevy_constructor__", None)
-        if not constructor:
-            constructor = bevy.Constructor(cls_)
-
+        constructor = kwargs.pop("__bevy_constructor__", None) or bevy.Constructor(cls_)
         inst = cls.__new__(cls_, *args, **kwargs)
         cls_.__bevy_construct__(inst, constructor, *args, **kwargs)
         return inst
