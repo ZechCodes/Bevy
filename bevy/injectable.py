@@ -52,28 +52,40 @@ class BaseInjectableImplementation:
 
 
 def injectable(cls: Type[T]) -> Type[Injectable[T]]:
-    """Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic."""
+    """Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.
+
+    The goal is to add injection logic to the classes without changing how classes function. It shouldn't be possible
+    for someone to unintentionally break the injection system by adding a dunder init/new/etc. method of their own. It
+    also means that no Bevy args should be required when writing standard methods like dunder init and dunder new.
+
+    This decorator accomplishes that by creating a new class object that mimics the decorated class. It uses the same
+    attributes, bases, and name. It then overrides the dunder new and dunder init methods. The dunder new handles
+    calling the Bevy construction code, it then removes the Bevy args and calls the original implementation of dunder
+    new. Similarly the dunder init removes the Bevy args and calls the original implementation.
+    """
 
     @wraps(cls.__new__)
-    def new(*args, bevy_constructor: Optional[bevy.Constructor] = None, **kwargs):
-        if not bevy_constructor:
-            return bevy.Constructor(custom_class).build()
-
-        inst = cls.__new__(*args, **kwargs)
-        custom_class.__bevy_construct__(inst, bevy_constructor, *args, **kwargs)
+    def new(cls_, *args, **kwargs):
+        constructor = kwargs.pop("__bevy_constructor__", None) or bevy.Constructor(cls_)
+        inst = cls.__new__(cls_, *args, **kwargs)
+        cls_.__bevy_construct__(inst, constructor, *args, **kwargs)
         return inst
+
+    @wraps(cls.__init__)
+    def init(self_, *args, **kwargs):
+        kwargs.pop("__bevy_constructor__", None)
+        cls.__init__(self_, *args, **kwargs)
+
+    attrs = dict(vars(cls))
+    attrs["__new__"] = new
+    attrs["__init__"] = init
 
     bases = list(cls.__bases__)
     if object in bases:
         bases.remove(object)
+    bases.append(BaseInjectableImplementation)
 
-    custom_class: Type[Injectable[T]] = type(
-        cls.__name__,
-        (cls, *bases, BaseInjectableImplementation),
-        {"__new__": new, "__module__": cls.__module__},
-    )
-
-    return custom_class
+    return type(cls.__name__, tuple(bases), attrs)
 
 
 def is_injectable(obj) -> bool:
