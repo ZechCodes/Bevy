@@ -8,6 +8,7 @@ readme = "README.md"
 homepage = "https://github.com/ZechCodes/Bevy"
 repository = "https://github.com/ZechCodes/Bevy"
 documentation = "https://github.com/ZechCodes/Bevy/blob/master/README.md"
+include = ["bevy/*.py"]
 keywords = ["dependency", "injection", "annotations", "types"]
 classifiers = [
     "Development Status :: 4 - Beta",
