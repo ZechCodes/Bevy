@@ -32,6 +32,18 @@ def test_simple_construction():
     Testing()
 
 
+def test_for_double_init():
+    @injectable
+    class Testing:
+        msg = "only once"
+
+        def __init__(self):
+            assert Testing.msg == "only once"
+            Testing.msg = "called twice"
+
+    Testing()
+
+
 def test_construct():
     constructor = Constructor(App)
     constructor.add(Dependency("foobar"))
