@@ -56,11 +56,11 @@ class Constructor(Generic[T]):
         self, obj: Union[Injectable[T], Builder[T], Type[T]], *args, **kwargs
     ) -> T:
         """Creates an instance of a class. If the class is injectable it will use the bevy constructor class method."""
-        if is_injectable(obj) or is_builder(obj):
-            kwargs["bevy_constructor"] = self
+        if is_injectable(obj):
+            obj = partial(obj, __bevy_constructor__=self)
 
-        if is_builder(obj):
-            obj = obj.__bevy_build__
+        elif is_builder(obj):
+            obj = partial(obj.__bevy_build__, self)
 
         return obj(*args, **kwargs) if callable(obj) else obj
 
