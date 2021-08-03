@@ -1,4 +1,4 @@
-from bevy.extensions.config.loader import Loader
+from bevy.config.loader import Loader
 from typing import Any
 
 

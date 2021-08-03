@@ -1,4 +1,4 @@
-from bevy.extensions.config.resolver import Reader
+from bevy.config.resolver import Reader
 from typing import Any, Protocol, runtime_checkable
 
 

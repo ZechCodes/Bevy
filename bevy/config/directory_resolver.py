@@ -1,4 +1,4 @@
-from bevy.extensions.config.file_reader import FileReader
+from bevy.config.file_reader import FileReader
 from pathlib import Path
 from typing import Optional, Union
 

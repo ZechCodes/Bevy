@@ -1,5 +1,5 @@
 from bevy import Constructor, injectable
-from bevy.extensions.config import Config, DirectoryResolver, JSONLoader
+from bevy.config import Config, DirectoryResolver, JSONLoader
 from pathlib import Path
 
 

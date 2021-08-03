@@ -1,8 +1,8 @@
-from bevy.extensions.config.loader import Loader
-from bevy.extensions.config.config_file import ConfigFile
-from bevy.extensions.config.exceptions import NoLoadersRegistered, NoResolversRegistered
-from bevy.extensions.config.resolver import Resolver, Reader
-from bevy.extensions.config.section_loader import SectionLoader
+from bevy.config.loader import Loader
+from bevy.config.config_file import ConfigFile
+from bevy.config.exceptions import NoLoadersRegistered, NoResolversRegistered
+from bevy.config.resolver import Resolver, Reader
+from bevy.config.section_loader import SectionLoader
 from typing import Optional, Sequence, Type
 
 

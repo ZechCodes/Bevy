@@ -1,6 +1,6 @@
-from bevy.extensions.config.resolver import Reader
+from bevy.config.resolver import Reader
 from json import loads, dumps
-from typing import Any, Protocol, runtime_checkable
+from typing import Any
 
 
 class JSONLoader:
@@ -14,7 +14,3 @@ class JSONLoader:
 
     def save(self, data: dict[str, Any]):
         self.reader.save(dumps(data))
-
-
-def is_loader(obj):
-    return isinstance(obj, Loader)

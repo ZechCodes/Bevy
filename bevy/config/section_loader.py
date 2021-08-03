@@ -1,6 +1,6 @@
 from bevy import Constructor
+import bevy.config.config as config
 from typing import Any, Optional
-import bevy.extensions.config.config as config
 
 
 class SectionLoader:
