@@ -9,7 +9,7 @@ homepage = "https://github.com/ZechCodes/Bevy"
 repository = "https://github.com/ZechCodes/Bevy"
 documentation = "https://github.com/ZechCodes/Bevy/blob/master/README.md"
 packages = [
-    { include = "bevy/config" }
+    { include = "bevy/config/*.py" }
 ]
 keywords = ["dependency", "injection", "annotations", "types"]
 classifiers = [
