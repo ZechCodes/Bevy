@@ -23,6 +23,15 @@ class App:
     dep: Dependency
 
 
+def test_simple_construction():
+    @injectable
+    class Testing:
+        def __init__(self):
+            ...
+
+    Testing()
+
+
 def test_construct():
     constructor = Constructor(App)
     constructor.add(Dependency("foobar"))

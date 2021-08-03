@@ -63,6 +63,12 @@ def injectable(cls: Type[T]) -> Type[Injectable[T]]:
         custom_class.__bevy_construct__(inst, bevy_constructor, *args, **kwargs)
         return inst
 
+    @wraps(cls.__init__)
+    def init(
+        self_, *args, bevy_constructor: Optional[bevy.Constructor] = None, **kwargs
+    ):
+        cls.__init__(self_, *args, **kwargs)
+
     bases = list(cls.__bases__)
     if object in bases:
         bases.remove(object)
@@ -70,7 +76,7 @@ def injectable(cls: Type[T]) -> Type[Injectable[T]]:
     custom_class: Type[Injectable[T]] = type(
         cls.__name__,
         (cls, *bases, BaseInjectableImplementation),
-        {"__new__": new, "__module__": cls.__module__},
+        {"__new__": new, "__init__": init, "__module__": cls.__module__},
     )
 
     return custom_class
