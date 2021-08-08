@@ -66,6 +66,12 @@
 
 
 <span class="k">class</span> <span class="nc">Injector</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Protocol that allows a class to modify how and what it injects into another class.</span>
+
+<span class="sd">    When a class is being instantiated and having it&#39;s dependencies injected, Bevy will check if the dependency</span>
+<span class="sd">    implements the injector protocol. If it does the __bevy_inject__ method will be called and should handle injecting</span>
+<span class="sd">    into the class. This should include constructing whatever dependency is being injected.&quot;&quot;&quot;</span>
+
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__bevy_inject__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -97,6 +103,12 @@
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Injector</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Protocol that allows a class to modify how and what it injects into another class.</span>
+
+<span class="sd">    When a class is being instantiated and having it&#39;s dependencies injected, Bevy will check if the dependency</span>
+<span class="sd">    implements the injector protocol. If it does the __bevy_inject__ method will be called and should handle injecting</span>
+<span class="sd">    into the class. This should include constructing whatever dependency is being injected.&quot;&quot;&quot;</span>
+
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__bevy_inject__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -111,37 +123,11 @@
 
         </details>
 
-            <div class="docstring"><p>Base class for protocol classes.</p>
+            <div class="docstring"><p>Protocol that allows a class to modify how and what it injects into another class.</p>
 
-<p>Protocol classes are defined as::</p>
-
-<pre><code>class Proto(Protocol):
-    def meth(self) -&gt; int:
-        ...
-</code></pre>
-
-<p>Such classes are primarily used with static type checkers that recognize
-structural subtyping (static duck-typing), for example::</p>
-
-<pre><code>class C:
-    def meth(self) -&gt; int:
-        return 0
-
-def func(x: Proto) -&gt; int:
-    return x.meth()
-
-func(C())  # Passes static type check
-</code></pre>
-
-<p>See PEP 544 for details. Protocol classes decorated with
-@typing.runtime_checkable act as simple-minded runtime protocols that check
-only the presence of given attributes, ignoring their type signatures.
-Protocol classes can be generic, they are defined as::</p>
-
-<pre><code>class GenProto(Protocol[T]):
-    def meth(self) -&gt; T:
-        ...
-</code></pre>
+<p>When a class is being instantiated and having it's dependencies injected, Bevy will check if the dependency
+implements the injector protocol. If it does the __bevy_inject__ method will be called and should handle injecting
+into the class. This should include constructing whatever dependency is being injected.</p>
 </div>
 
 

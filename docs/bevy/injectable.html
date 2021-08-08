@@ -129,28 +129,40 @@ simple property for fetching the class's dependencies.</p>
 
 
 <span class="k">def</span> <span class="nf">injectable</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.</span>
+
+<span class="sd">    The goal is to add injection logic to the classes without changing how classes function. It shouldn&#39;t be possible</span>
+<span class="sd">    for someone to unintentionally break the injection system by adding a dunder init/new/etc. method of their own. It</span>
+<span class="sd">    also means that no Bevy args should be required when writing standard methods like dunder init and dunder new.</span>
+
+<span class="sd">    This decorator accomplishes that by creating a new class object that mimics the decorated class. It uses the same</span>
+<span class="sd">    attributes, bases, and name. It then overrides the dunder new and dunder init methods. The dunder new handles</span>
+<span class="sd">    calling the Bevy construction code, it then removes the Bevy args and calls the original implementation of dunder</span>
+<span class="sd">    new. Similarly the dunder init removes the Bevy args and calls the original implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">bevy_constructor</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">custom_class</span><span class="p">)</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
-
-        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">custom_class</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">constructor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inst</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;__new__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;__init__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">init</span>
 
     <span class="n">bases</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">object</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
         <span class="n">bases</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="n">bases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BaseInjectableImplementation</span><span class="p">)</span>
 
-    <span class="n">custom_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-        <span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">bases</span><span class="p">,</span> <span class="n">BaseInjectableImplementation</span><span class="p">),</span>
-        <span class="p">{</span><span class="s2">&quot;__new__&quot;</span><span class="p">:</span> <span class="n">new</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__module__</span><span class="p">},</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">custom_class</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">bases</span><span class="p">),</span> <span class="n">attrs</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -272,33 +284,54 @@ class can be made to support this protocol by using the injectable decorator.</p
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">injectable</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.</span>
+
+<span class="sd">    The goal is to add injection logic to the classes without changing how classes function. It shouldn&#39;t be possible</span>
+<span class="sd">    for someone to unintentionally break the injection system by adding a dunder init/new/etc. method of their own. It</span>
+<span class="sd">    also means that no Bevy args should be required when writing standard methods like dunder init and dunder new.</span>
+
+<span class="sd">    This decorator accomplishes that by creating a new class object that mimics the decorated class. It uses the same</span>
+<span class="sd">    attributes, bases, and name. It then overrides the dunder new and dunder init methods. The dunder new handles</span>
+<span class="sd">    calling the Bevy construction code, it then removes the Bevy args and calls the original implementation of dunder</span>
+<span class="sd">    new. Similarly the dunder init removes the Bevy args and calls the original implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">bevy_constructor</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">custom_class</span><span class="p">)</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
-
-        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">custom_class</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">bevy_constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">constructor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inst</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;__new__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;__init__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">init</span>
 
     <span class="n">bases</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">object</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
         <span class="n">bases</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="n">bases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BaseInjectableImplementation</span><span class="p">)</span>
 
-    <span class="n">custom_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-        <span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">bases</span><span class="p">,</span> <span class="n">BaseInjectableImplementation</span><span class="p">),</span>
-        <span class="p">{</span><span class="s2">&quot;__new__&quot;</span><span class="p">:</span> <span class="n">new</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__module__</span><span class="p">},</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">custom_class</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">bases</span><span class="p">),</span> <span class="n">attrs</span><span class="p">)</span>
 </pre></div>
 
         </details>
 
             <div class="docstring"><p>Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.</p>
+
+<p>The goal is to add injection logic to the classes without changing how classes function. It shouldn't be possible
+for someone to unintentionally break the injection system by adding a dunder init/new/etc. method of their own. It
+also means that no Bevy args should be required when writing standard methods like dunder init and dunder new.</p>
+
+<p>This decorator accomplishes that by creating a new class object that mimics the decorated class. It uses the same
+attributes, bases, and name. It then overrides the dunder new and dunder init methods. The dunder new handles
+calling the Bevy construction code, it then removes the Bevy args and calls the original implementation of dunder
+new. Similarly the dunder init removes the Bevy args and calls the original implementation.</p>
 </div>
 
 
