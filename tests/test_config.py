@@ -1,4 +1,4 @@
-from bevy import Constructor, injectable
+from bevy import Context, injectable
 from bevy.config import Config, DirectoryResolver, JSONLoader
 from pathlib import Path
 
@@ -8,7 +8,7 @@ def test_config():
     class App:
         config: Config["app"]
 
-    builder = Constructor(App)
+    builder = Context(App)
     builder.add(
         Config(
             loaders=[JSONLoader],

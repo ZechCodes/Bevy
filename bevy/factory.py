@@ -1,10 +1,10 @@
 from functools import partial
 from typing import Any
-from bevy import Constructor
+from bevy import Context
 
 
 class Factory:
-    """Simple factory implementation that creates a callable bound to the constructor context and that will return the
+    """Simple factory implementation that creates a callable bound to the context context and that will return the
     annotated type when called.
 
     **Example**
@@ -24,8 +24,8 @@ class Factory:
     def __init__(self, item: Any):
         self._item = item
 
-    def __bevy_inject__(self, inject_into: Any, name: str, constructor: Constructor):
-        setattr(inject_into, name, partial(constructor.construct, self._item))
+    def __bevy_inject__(self, inject_into: Any, name: str, context: Context):
+        setattr(inject_into, name, partial(context.construct, self._item))
 
     def __class_getitem__(cls, item):
         return Factory(item)

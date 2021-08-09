@@ -15,7 +15,7 @@ class Injector(Protocol):
         cls,
         inject_into: Any,
         name: str,
-        constructor: bevy.Constructor,
+        context: bevy.Context,
         *args,
         **kwargs,
     ):

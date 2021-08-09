@@ -1,4 +1,4 @@
-from bevy import Constructor, injectable, is_injectable
+from bevy import Context, injectable, is_injectable
 from bevy.factory import Factory
 from bevy.label import Label
 
@@ -45,9 +45,9 @@ def test_for_double_init():
 
 
 def test_construct():
-    constructor = Constructor(App)
-    constructor.add(Dependency("foobar"))
-    app = constructor.build()
+    context = Context(App)
+    context.add(Dependency("foobar"))
+    app = context.build()
 
     assert app.dep.name == "foobar"
 
@@ -57,29 +57,29 @@ def test_branching_inheritance():
     class App:
         dep: BranchDep
 
-    constructor = Constructor(App)
-    constructor.add(Dependency("foobar"))
-    constructor.branch(BranchDep)
-    app = constructor.build()
+    context = Context(App)
+    context.add(Dependency("foobar"))
+    context.branch(BranchDep)
+    app = context.build()
 
     assert app.dep.dep.name == "foobar"
 
 
 def test_branching_propagation():
-    constructor = Constructor(App)
-    constructor.add(Dependency("foobar"))
-    branch = constructor.branch(BranchDep)
+    context = Context(App)
+    context.add(Dependency("foobar"))
+    branch = context.branch(BranchDep)
     branch.add(Dependency("hello world"))
-    app = constructor.build()
+    app = context.build()
 
-    assert constructor.get(BranchDep).dep.name == "hello world"
+    assert context.get(BranchDep).dep.name == "hello world"
     assert app.dep.name == "foobar"
 
 
 def test_add_as():
-    constructor = Constructor(App)
-    constructor.add_as(DependencyB("foobar"), Dependency)
-    app = constructor.build()
+    context = Context(App)
+    context.add_as(DependencyB("foobar"), Dependency)
+    app = context.build()
 
     assert app.dep.name == "__foobar__"
 
@@ -93,7 +93,7 @@ def test_factories():
     class App:
         factory: Factory[Dep]
 
-    app = Constructor(App).build()
+    app = Context(App).build()
     assert app.factory("foobar").name == "__foobar__"
 
 
@@ -101,7 +101,7 @@ def test_injectable():
     assert is_injectable(App)
 
 
-def test_no_constructor():
+def test_no_context():
     class Dep:
         ...
 
@@ -121,7 +121,7 @@ def test_label():
     class App:
         dep: Label[Dep:"dep"]
 
-    app = Constructor(App).build()
+    app = Context(App).build()
     assert isinstance(app.dep, Dep)
 
 
@@ -138,7 +138,7 @@ def test_label_same_instance():
     class AppB:
         dep: Label[Dep:"dep"]
 
-    builder = Constructor(AppA)
+    builder = Context(AppA)
     app_b = builder.get(AppB)
     app_a = builder.build()
     assert app_a.dep is app_b.dep
@@ -157,7 +157,7 @@ def test_label_different_instances():
     class AppB:
         dep: Label[Dep:"dep_b"]
 
-    builder = Constructor(AppA)
+    builder = Context(AppA)
     app_b = builder.get(AppB)
     app_a = builder.build()
     assert app_a.dep is not app_b.dep
@@ -172,7 +172,7 @@ def test_label_injection():
     class App:
         dep: Label[Dep:"dep"]
 
-    builder = Constructor(App)
+    builder = Context(App)
     builder.add(Label(Dep("dep"), "dep"))
     app = builder.build()
     assert app.dep.value == "dep"
