@@ -69,13 +69,13 @@
                     <h1 class="modulename">
 <a href="./../bevy.html">bevy</a><wbr>.injectable    </h1>
 
-                        <div class="docstring"><p>The injectable class is used to indicate that Bevy constructors can inject dependencies into the class. It provides a
+                        <div class="docstring"><p>The injectable class is used to indicate that Bevy contexts can inject dependencies into the class. It provides a
 simple property for fetching the class's dependencies.</p>
 </div>
 
                         <details>
             <summary>View Source</summary>
-            <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;The injectable class is used to indicate that Bevy constructors can inject dependencies into the class. It provides a</span>
+            <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;The injectable class is used to indicate that Bevy contexts can inject dependencies into the class. It provides a</span>
 <span class="sd">simple property for fetching the class&#39;s dependencies.&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
@@ -100,9 +100,7 @@ simple property for fetching the class's dependencies.</p>
 <span class="sd">    class can be made to support this protocol by using the injectable decorator.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="o">...</span>
 
     <span class="nd">@classmethod</span>
@@ -115,10 +113,10 @@ simple property for fetching the class's dependencies.</p>
 <span class="k">class</span> <span class="nc">BaseInjectableImplementation</span><span class="p">:</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__bevy_dependencies__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">constructor</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">instance</span>
 
     <span class="nd">@classmethod</span>
@@ -143,14 +141,14 @@ simple property for fetching the class's dependencies.</p>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">constructor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_context__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inst</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_context__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span>
@@ -166,7 +164,7 @@ simple property for fetching the class's dependencies.</p>
 
 
 <span class="k">def</span> <span class="nf">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy constructor&#39;s dependency injection.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy context&#39;s dependency injection.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
 </pre></div>
 
@@ -191,9 +189,7 @@ simple property for fetching the class's dependencies.</p>
 <span class="sd">    class can be made to support this protocol by using the injectable decorator.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="o">...</span>
 
     <span class="nd">@classmethod</span>
@@ -244,10 +240,10 @@ class can be made to support this protocol by using the injectable decorator.</p
             <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">BaseInjectableImplementation</span><span class="p">:</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__bevy_construct__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">constructor</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__bevy_dependencies__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">constructor</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">dependency</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">instance</span>
 
     <span class="nd">@classmethod</span>
@@ -298,14 +294,14 @@ class can be made to support this protocol by using the injectable decorator.</p
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">constructor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_context__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inst</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_context__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span>
@@ -347,13 +343,13 @@ new. Similarly the dunder init removes the Bevy args and calls the original impl
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy constructor&#39;s dependency injection.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy context&#39;s dependency injection.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
 </pre></div>
 
         </details>
 
-            <div class="docstring"><p>Determine if an object instance or type supports the Bevy constructor's dependency injection.</p>
+            <div class="docstring"><p>Determine if an object instance or type supports the Bevy context's dependency injection.</p>
 </div>
 
 

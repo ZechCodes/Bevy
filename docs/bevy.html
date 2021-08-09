@@ -30,7 +30,7 @@
 
                     <h2>Contents</h2>
                     <ul>
-  <li><a href="#bevy-constructors">Bevy Constructors</a>
+  <li><a href="#bevy-contexts">Bevy Contexts</a>
   <ul>
     <li><a href="#configuring-dependencies">Configuring Dependencies</a></li>
   </ul></li>
@@ -41,34 +41,34 @@
                     <h2>API Documentation</h2>
                         <ul class="memberlist">
             <li>
-                    <a class="class" href="#Constructor">Constructor</a>
+                    <a class="class" href="#Context">Context</a>
                             <ul class="memberlist">
                         <li>
-                                <a class="function" href="#Constructor.__init__">Constructor</a>
+                                <a class="function" href="#Context.__init__">Context</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.add">add</a>
+                                <a class="function" href="#Context.add">add</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.add_as">add_as</a>
+                                <a class="function" href="#Context.add_as">add_as</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.branch">branch</a>
+                                <a class="function" href="#Context.branch">branch</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.build">build</a>
+                                <a class="function" href="#Context.build">build</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.construct">construct</a>
+                                <a class="function" href="#Context.construct">construct</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.get">get</a>
+                                <a class="function" href="#Context.get">get</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.has">has</a>
+                                <a class="function" href="#Context.has">has</a>
                         </li>
                         <li>
-                                <a class="function" href="#Constructor.inject">inject</a>
+                                <a class="function" href="#Context.inject">inject</a>
                         </li>
                 </ul>
 
@@ -108,42 +108,42 @@ annotations, using them to determine what dependencies a class has.</p>
 instance of each dependency. This is handy for sharing things like database connections, config files, or authenticated
 API sessions.</p>
 
-<h2 id="bevy-constructors">Bevy Constructors</h2>
+<h2 id="bevy-contexts">Bevy Contexts</h2>
 
 <p>To instantiate classes and have Bevy inject their dependencies it is necessary to use a
-<a href="#Constructor"><code><a href="#Constructor">bevy.Constructor</a></code></a>. The constructor takes a <a href="#Injectable"><code><a href="#Injectable">bevy.Injectable</a></code></a> and any args necessary to
-instantiate it. Calling <a href="#<a href="#Constructor.build">Constructor.build</a>"><code><a href="#Constructor.build">Constructor.build</a></code></a> on the constructor will then create an instance of the
+<a href="#Context"><code><a href="#Context">bevy.Context</a></code></a>. The context takes a <a href="#Injectable"><code><a href="#Injectable">bevy.Injectable</a></code></a> and any args necessary to
+instantiate it. Calling <a href="#<a href="#Context.build">Context.build</a>"><code><a href="#Context.build">Context.build</a></code></a> on the context will then create an instance of the
 <code>Injectable</code> with all dependencies injected.</p>
 
 <p><strong>Example</strong></p>
 
-<div class="codehilite"><pre><span></span><code><span class="n">constructor</span> <span class="o">=</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">Example</span><span class="p">)</span>
-<span class="n">example</span> <span class="o">=</span> <span class="n">constructor</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+<div class="codehilite"><pre><span></span><code><span class="n">context</span> <span class="o">=</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">Example</span><span class="p">)</span>
+<span class="n">example</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
 </code></pre></div>
 
 <h3 id="configuring-dependencies">Configuring Dependencies</h3>
 
-<p>When the <code><a href="#Constructor">Constructor</a></code> encounters a dependency that is not in the context repository it will attempt to create the
+<p>When the <code><a href="#Context">Context</a></code> encounters a dependency that is not in the context repository it will attempt to create the
 dependency. The approach is very naive, it will just call the dependency with no arguments. If it succeeds it will be
 added to the repository for later use and injected into the class.</p>
 
-<p>This behavior can be changed by passing an instantiated dependency to <a href="#<a href="#Constructor.add">Constructor.add</a>"><code><a href="#Constructor.add">Constructor.add</a></code></a>.
+<p>This behavior can be changed by passing an instantiated dependency to <a href="#<a href="#Context.add">Context.add</a>"><code><a href="#Context.add">Context.add</a></code></a>.
 <strong>Example</strong></p>
 
-<div class="codehilite"><pre><span></span><code><span class="n">constructor</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dependency</span><span class="p">(</span><span class="s2">&quot;foobar&quot;</span><span class="p">))</span>
+<div class="codehilite"><pre><span></span><code><span class="n">context</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dependency</span><span class="p">(</span><span class="s2">&quot;foobar&quot;</span><span class="p">))</span>
 </code></pre></div>
 
-<p>When adding an <code>Injectable</code> it is necessary to use <a href="#<a href="#Constructor.branch">Constructor.branch</a>"><code><a href="#Constructor.branch">Constructor.branch</a></code></a> as it will inherit all
-dependencies that are added to the constructor. Any dependencies added to the branch will not be back propagated to the
-constructor, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency
-resolution is deferred until <code><a href="#Constructor.build">Constructor.build</a></code> is called, when it is assumed all dependencies with customized
+<p>When adding an <code>Injectable</code> it is necessary to use <a href="#<a href="#Context.branch">Context.branch</a>"><code><a href="#Context.branch">Context.branch</a></code></a> as it will inherit all
+dependencies that are added to the context. Any dependencies added to the branch will not be back propagated to the
+context, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency
+resolution is deferred until <code><a href="#Context.build">Context.build</a></code> is called, when it is assumed all dependencies with customized
 instantiations have been added.</p>
 
-<p>Because <code>Injectables</code> require a special lifecycle <code><a href="#Constructor.branch">Constructor.branch</a></code> will accept any instantiation args that should be
+<p>Because <code>Injectables</code> require a special lifecycle <code><a href="#Context.branch">Context.branch</a></code> will accept any instantiation args that should be
 passed to the class when it is constructed.
 <strong>Example</strong></p>
 
-<div class="codehilite"><pre><span></span><code><span class="n">branch</span> <span class="o">=</span> <span class="n">constructor</span><span class="o">.</span><span class="n">branch</span><span class="p">(</span><span class="n">Dependency</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><code><span class="n">branch</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">branch</span><span class="p">(</span><span class="n">Dependency</span><span class="p">)</span>
 </code></pre></div>
 </div>
 
@@ -162,93 +162,93 @@ passed to the class when it is constructed.
 <span class="sd">instance of each dependency. This is handy for sharing things like database connections, config files, or authenticated</span>
 <span class="sd">API sessions.</span>
 
-<span class="sd">## Bevy Constructors</span>
+<span class="sd">## Bevy Contexts</span>
 
 <span class="sd">To instantiate classes and have Bevy inject their dependencies it is necessary to use a</span>
-<span class="sd">[`bevy.Constructor`](#Constructor). The constructor takes a [`bevy.Injectable`](#Injectable) and any args necessary to</span>
-<span class="sd">instantiate it. Calling [`Constructor.build`](#Constructor.build) on the constructor will then create an instance of the</span>
+<span class="sd">[`bevy.Context`](#Context). The context takes a [`bevy.Injectable`](#Injectable) and any args necessary to</span>
+<span class="sd">instantiate it. Calling [`Context.build`](#Context.build) on the context will then create an instance of the</span>
 <span class="sd">`Injectable` with all dependencies injected.</span>
 
 <span class="sd">**Example**</span>
 <span class="sd">```py</span>
-<span class="sd">constructor = bevy.Constructor(Example)</span>
-<span class="sd">example = constructor.build()</span>
+<span class="sd">context = bevy.Context(Example)</span>
+<span class="sd">example = context.build()</span>
 <span class="sd">```</span>
 <span class="sd">### Configuring Dependencies</span>
 
-<span class="sd">When the `Constructor` encounters a dependency that is not in the context repository it will attempt to create the</span>
+<span class="sd">When the `Context` encounters a dependency that is not in the context repository it will attempt to create the</span>
 <span class="sd">dependency. The approach is very naive, it will just call the dependency with no arguments. If it succeeds it will be</span>
 <span class="sd">added to the repository for later use and injected into the class.</span>
 
-<span class="sd">This behavior can be changed by passing an instantiated dependency to [`Constructor.add`](#Constructor.add).</span>
+<span class="sd">This behavior can be changed by passing an instantiated dependency to [`Context.add`](#Context.add).</span>
 <span class="sd">**Example**</span>
 <span class="sd">```py</span>
-<span class="sd">constructor.add(Dependency(&quot;foobar&quot;))</span>
+<span class="sd">context.add(Dependency(&quot;foobar&quot;))</span>
 <span class="sd">```</span>
-<span class="sd">When adding an `Injectable` it is necessary to use [`Constructor.branch`](#Constructor.branch) as it will inherit all</span>
-<span class="sd">dependencies that are added to the constructor. Any dependencies added to the branch will not be back propagated to the</span>
-<span class="sd">constructor, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency</span>
-<span class="sd">resolution is deferred until `Constructor.build` is called, when it is assumed all dependencies with customized</span>
+<span class="sd">When adding an `Injectable` it is necessary to use [`Context.branch`](#Context.branch) as it will inherit all</span>
+<span class="sd">dependencies that are added to the context. Any dependencies added to the branch will not be back propagated to the</span>
+<span class="sd">context, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency</span>
+<span class="sd">resolution is deferred until `Context.build` is called, when it is assumed all dependencies with customized</span>
 <span class="sd">instantiations have been added.</span>
 
-<span class="sd">Because `Injectables` require a special lifecycle `Constructor.branch` will accept any instantiation args that should be</span>
+<span class="sd">Because `Injectables` require a special lifecycle `Context.branch` will accept any instantiation args that should be</span>
 <span class="sd">passed to the class when it is constructed.</span>
 <span class="sd">**Example**</span>
 <span class="sd">```py</span>
-<span class="sd">branch = constructor.branch(Dependency)</span>
+<span class="sd">branch = context.branch(Dependency)</span>
 <span class="sd">```</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">bevy.constructor</span> <span class="kn">import</span> <span class="n">Constructor</span>
+<span class="kn">from</span> <span class="nn">bevy.context</span> <span class="kn">import</span> <span class="n">Context</span>
 <span class="kn">from</span> <span class="nn">bevy.injectable</span> <span class="kn">import</span> <span class="n">injectable</span><span class="p">,</span> <span class="n">is_injectable</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Constructor&quot;</span><span class="p">,</span> <span class="s2">&quot;injectable&quot;</span><span class="p">,</span> <span class="s2">&quot;is_injectable&quot;</span><span class="p">)</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Context&quot;</span><span class="p">,</span> <span class="s2">&quot;injectable&quot;</span><span class="p">,</span> <span class="s2">&quot;is_injectable&quot;</span><span class="p">)</span>
 </pre></div>
 
         </details>
 
             </section>
-                <section id="Constructor">
+                <section id="Context">
                                 <div class="attr class">
-        <a class="headerlink" href="#Constructor">#&nbsp;&nbsp</a>
+        <a class="headerlink" href="#Context">#&nbsp;&nbsp</a>
 
         
         <span class="def">class</span>
-        <span class="name">Constructor</span><wbr>(<span class="base">typing.Generic[~T]</span>):
+        <span class="name">Context</span><wbr>(<span class="base">typing.Generic[~T]</span>):
     </div>
 
                 <details>
             <summary>View Source</summary>
-            <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Constructor</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+            <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">obj</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span>
-        <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Constructor</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_args</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Constructor</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">Constructor</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Context</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">Context</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="n">parent</span>
 
     <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dependency</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Stores an instance in the constructor repository.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Stores an instance in the context repository.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">dependency</span><span class="p">)]</span> <span class="o">=</span> <span class="n">dependency</span>
 
     <span class="k">def</span> <span class="nf">add_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dependency</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">adding_as</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-        <span class="sd">&quot;&quot;&quot;Stores an instance in the constructor repository that will be used for types of the provided type.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Stores an instance in the context repository that will be used for types of the provided type.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">[</span><span class="n">adding_as</span><span class="p">]</span> <span class="o">=</span> <span class="n">dependency</span>
 
-    <span class="k">def</span> <span class="nf">branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Constructor</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Creates a child constructor for the given injectable type.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">Constructor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Context</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a child context for the given injectable type.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Builds an instance of the object that was passed to the constructor. This will also resolve the branches and</span>
+        <span class="sd">&quot;&quot;&quot;Builds an instance of the object that was passed to the context. This will also resolve the branches and</span>
 <span class="sd">        add them to the repository.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_branches</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="p">)</span>
@@ -256,9 +256,9 @@ passed to the class when it is constructed.
     <span class="k">def</span> <span class="nf">construct</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Builder</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Creates an instance of a class. If the class is injectable it will use the bevy constructor class method.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Creates an instance of a class. If the class is injectable it will use the bevy context class method.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">__bevy_constructor__</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">__bevy_context__</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">is_builder</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">__bevy_build__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
@@ -271,8 +271,8 @@ passed to the class when it is constructed.
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Injector</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Gets an instance associated with the requested type. If it is not found in the constructor&#39;s repository or</span>
-<span class="sd">        in the repository of the parent&#39;s constructor an instance will be created using any provided args.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Gets an instance associated with the requested type. If it is not found in the context&#39;s repository or</span>
+<span class="sd">        in the repository of the parent&#39;s context an instance will be created using any provided args.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">dependency</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_dependency_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">dependency</span>
 
@@ -284,8 +284,8 @@ passed to the class when it is constructed.
         <span class="k">return</span> <span class="n">dependency</span>
 
     <span class="k">def</span> <span class="nf">has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">check_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Checks if a matching dependency exists in the constructor&#39;s repository or optionally in the repository of the</span>
-<span class="sd">        parent constructor.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a matching dependency exists in the context&#39;s repository or optionally in the repository of the</span>
+<span class="sd">        parent context.&quot;&quot;&quot;</span>
         <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_dependency_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">check_parent</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
@@ -302,7 +302,7 @@ passed to the class when it is constructed.
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Will attempt to inject the dependency into the injectable. If the instance being injected into is not an</span>
 <span class="sd">        injectable an CanOnlyInjectIntoInjectables exception will be raised. If the dependency supports the injector</span>
-<span class="sd">        protocol it will use the dependency&#39;s inject method, otherwise the constructor will get an instance of the</span>
+<span class="sd">        protocol it will use the dependency&#39;s inject method, otherwise the context will get an instance of the</span>
 <span class="sd">        dependency and set it as an attribute.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_injectable</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">CanOnlyInjectIntoInjectables</span><span class="p">(</span>
@@ -363,13 +363,13 @@ For example, a generic mapping type might be defined as::</p>
 </div>
 
 
-                            <div id="Constructor.__init__" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.__init__">#&nbsp;&nbsp</a>
+                            <div id="Context.__init__" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.__init__">#&nbsp;&nbsp</a>
 
         
-            <span class="name">Constructor</span><span class="signature">(
+            <span class="name">Context</span><span class="signature">(
     obj: Type[<a href="bevy/injectable.html#Injectable">bevy.injectable.Injectable</a>[~T]],
-    parent: Optional[<a href="bevy/constructor.html#Constructor">bevy.constructor.Constructor</a>[~T]] = None,
+    parent: Optional[<a href="bevy/context.html#Context">bevy.context.Context</a>[~T]] = None,
     *args,
     **kwargs
 )</span>
@@ -380,13 +380,13 @@ For example, a generic mapping type might be defined as::</p>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">obj</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span>
-        <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Constructor</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_args</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Constructor</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">Constructor</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Context</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">Context</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="n">parent</span>
@@ -397,8 +397,8 @@ For example, a generic mapping type might be defined as::</p>
     
 
                             </div>
-                            <div id="Constructor.add" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.add">#&nbsp;&nbsp</a>
+                            <div id="Context.add" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.add">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -408,19 +408,19 @@ For example, a generic mapping type might be defined as::</p>
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dependency</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Stores an instance in the constructor repository.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Stores an instance in the context repository.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">dependency</span><span class="p">)]</span> <span class="o">=</span> <span class="n">dependency</span>
 </pre></div>
 
         </details>
 
-            <div class="docstring"><p>Stores an instance in the constructor repository.</p>
+            <div class="docstring"><p>Stores an instance in the context repository.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.add_as" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.add_as">#&nbsp;&nbsp</a>
+                            <div id="Context.add_as" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.add_as">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -430,19 +430,19 @@ For example, a generic mapping type might be defined as::</p>
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">add_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dependency</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">adding_as</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-        <span class="sd">&quot;&quot;&quot;Stores an instance in the constructor repository that will be used for types of the provided type.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Stores an instance in the context repository that will be used for types of the provided type.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies</span><span class="p">[</span><span class="n">adding_as</span><span class="p">]</span> <span class="o">=</span> <span class="n">dependency</span>
 </pre></div>
 
         </details>
 
-            <div class="docstring"><p>Stores an instance in the constructor repository that will be used for types of the provided type.</p>
+            <div class="docstring"><p>Stores an instance in the context repository that will be used for types of the provided type.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.branch" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.branch">#&nbsp;&nbsp</a>
+                            <div id="Context.branch" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.branch">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -451,26 +451,26 @@ For example, a generic mapping type might be defined as::</p>
     cls: Type[<a href="bevy/injectable.html#Injectable">bevy.injectable.Injectable</a>[~T]],
     *args,
     **kwargs
-) -&gt; <a href="bevy/constructor.html#Constructor">bevy.constructor.Constructor</a>[~T]</span>:
+) -&gt; <a href="bevy/context.html#Context">bevy.context.Context</a>[~T]</span>:
     </div>
 
                 <details>
             <summary>View Source</summary>
-            <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Constructor</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Creates a child constructor for the given injectable type.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">Constructor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Context</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a child context for the given injectable type.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_branches</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span>
 </pre></div>
 
         </details>
 
-            <div class="docstring"><p>Creates a child constructor for the given injectable type.</p>
+            <div class="docstring"><p>Creates a child context for the given injectable type.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.build" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.build">#&nbsp;&nbsp</a>
+                            <div id="Context.build" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.build">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -480,7 +480,7 @@ For example, a generic mapping type might be defined as::</p>
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Builds an instance of the object that was passed to the constructor. This will also resolve the branches and</span>
+        <span class="sd">&quot;&quot;&quot;Builds an instance of the object that was passed to the context. This will also resolve the branches and</span>
 <span class="sd">        add them to the repository.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_branches</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="p">)</span>
@@ -488,14 +488,14 @@ For example, a generic mapping type might be defined as::</p>
 
         </details>
 
-            <div class="docstring"><p>Builds an instance of the object that was passed to the constructor. This will also resolve the branches and
+            <div class="docstring"><p>Builds an instance of the object that was passed to the context. This will also resolve the branches and
 add them to the repository.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.construct" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.construct">#&nbsp;&nbsp</a>
+                            <div id="Context.construct" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.construct">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -512,9 +512,9 @@ add them to the repository.</p>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">construct</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Builder</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Creates an instance of a class. If the class is injectable it will use the bevy constructor class method.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Creates an instance of a class. If the class is injectable it will use the bevy context class method.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">__bevy_constructor__</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">__bevy_context__</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">is_builder</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">__bevy_build__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
@@ -527,13 +527,13 @@ add them to the repository.</p>
 
         </details>
 
-            <div class="docstring"><p>Creates an instance of a class. If the class is injectable it will use the bevy constructor class method.</p>
+            <div class="docstring"><p>Creates an instance of a class. If the class is injectable it will use the bevy context class method.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.get" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.get">#&nbsp;&nbsp</a>
+                            <div id="Context.get" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.get">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -550,8 +550,8 @@ add them to the repository.</p>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Injectable</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Injector</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Gets an instance associated with the requested type. If it is not found in the constructor&#39;s repository or</span>
-<span class="sd">        in the repository of the parent&#39;s constructor an instance will be created using any provided args.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Gets an instance associated with the requested type. If it is not found in the context&#39;s repository or</span>
+<span class="sd">        in the repository of the parent&#39;s context an instance will be created using any provided args.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">dependency</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_dependency_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">dependency</span>
 
@@ -565,14 +565,14 @@ add them to the repository.</p>
 
         </details>
 
-            <div class="docstring"><p>Gets an instance associated with the requested type. If it is not found in the constructor's repository or
-in the repository of the parent's constructor an instance will be created using any provided args.</p>
+            <div class="docstring"><p>Gets an instance associated with the requested type. If it is not found in the context's repository or
+in the repository of the parent's context an instance will be created using any provided args.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.has" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.has">#&nbsp;&nbsp</a>
+                            <div id="Context.has" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.has">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -582,8 +582,8 @@ in the repository of the parent's constructor an instance will be created using 
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span>    <span class="k">def</span> <span class="nf">has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">check_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Checks if a matching dependency exists in the constructor&#39;s repository or optionally in the repository of the</span>
-<span class="sd">        parent constructor.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a matching dependency exists in the context&#39;s repository or optionally in the repository of the</span>
+<span class="sd">        parent context.&quot;&quot;&quot;</span>
         <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_dependency_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">check_parent</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
@@ -593,14 +593,14 @@ in the repository of the parent's constructor an instance will be created using 
 
         </details>
 
-            <div class="docstring"><p>Checks if a matching dependency exists in the constructor's repository or optionally in the repository of the
-parent constructor.</p>
+            <div class="docstring"><p>Checks if a matching dependency exists in the context's repository or optionally in the repository of the
+parent context.</p>
 </div>
 
 
                             </div>
-                            <div id="Constructor.inject" class="classattr">
-                                        <div class="attr function"><a class="headerlink" href="#Constructor.inject">#&nbsp;&nbsp</a>
+                            <div id="Context.inject" class="classattr">
+                                        <div class="attr function"><a class="headerlink" href="#Context.inject">#&nbsp;&nbsp</a>
 
         
             <span class="def">def</span>
@@ -626,7 +626,7 @@ parent constructor.</p>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Will attempt to inject the dependency into the injectable. If the instance being injected into is not an</span>
 <span class="sd">        injectable an CanOnlyInjectIntoInjectables exception will be raised. If the dependency supports the injector</span>
-<span class="sd">        protocol it will use the dependency&#39;s inject method, otherwise the constructor will get an instance of the</span>
+<span class="sd">        protocol it will use the dependency&#39;s inject method, otherwise the context will get an instance of the</span>
 <span class="sd">        dependency and set it as an attribute.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_injectable</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">CanOnlyInjectIntoInjectables</span><span class="p">(</span>
@@ -648,7 +648,7 @@ parent constructor.</p>
 
             <div class="docstring"><p>Will attempt to inject the dependency into the injectable. If the instance being injected into is not an
 injectable an CanOnlyInjectIntoInjectables exception will be raised. If the dependency supports the injector
-protocol it will use the dependency's inject method, otherwise the constructor will get an instance of the
+protocol it will use the dependency's inject method, otherwise the context will get an instance of the
 dependency and set it as an attribute.</p>
 </div>
 
@@ -680,14 +680,14 @@ dependency and set it as an attribute.</p>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">constructor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Constructor</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_context__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bevy</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">cls_</span><span class="p">)</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">cls_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">constructor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cls_</span><span class="o">.</span><span class="n">__bevy_construct__</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inst</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_constructor__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;__bevy_context__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span>
@@ -729,13 +729,13 @@ new. Similarly the dunder init removes the Bevy args and calls the original impl
                 <details>
             <summary>View Source</summary>
             <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">is_injectable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy constructor&#39;s dependency injection.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Determine if an object instance or type supports the Bevy context&#39;s dependency injection.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Injectable</span><span class="p">)</span>
 </pre></div>
 
         </details>
 
-            <div class="docstring"><p>Determine if an object instance or type supports the Bevy constructor's dependency injection.</p>
+            <div class="docstring"><p>Determine if an object instance or type supports the Bevy context's dependency injection.</p>
 </div>
 
 
