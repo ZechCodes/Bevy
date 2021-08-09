@@ -17,7 +17,8 @@ for package in packages:
         print(f"\u001b[31mERROR: {package_toml} was not found\u001b[0m")
         continue
 
-    (path / "pyproject.toml").unlink()
+    if (path / "pyproject.toml").exists():
+        (path / "pyproject.toml").unlink()
     package_toml.link_to(path / "pyproject.toml")
     process = Popen(
         [
