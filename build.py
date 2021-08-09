@@ -20,18 +20,20 @@ for package in packages:
     if (path / "pyproject.toml").exists():
         (path / "pyproject.toml").unlink()
     package_toml.link_to(path / "pyproject.toml")
-    process = Popen(
-        [
-            "poetry",
-            "publish",
-            "--build",
-            "-u",
-            getenv("PYPI_USERNAME"),
-            "-p",
-            getenv("PYPI_PASSWORD"),
-        ],
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-    )
-    process.wait()
+
+    if input(f"Publish {package}? [Y|N]").casefold() == "Y":
+        process = Popen(
+            [
+                "poetry",
+                "publish",
+                "--build",
+                "-u",
+                getenv("PYPI_USERNAME"),
+                "-p",
+                getenv("PYPI_PASSWORD"),
+            ],
+            stdout=stdout,
+            stderr=stderr,
+            stdin=stdin,
+        )
+        process.wait()
