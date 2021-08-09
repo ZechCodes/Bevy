@@ -11,44 +11,44 @@ Each dependency when instantiated is added to a context repository for reuse. Th
 instance of each dependency. This is handy for sharing things like database connections, config files, or authenticated
 API sessions.
 
-## Bevy Constructors
+## Bevy Contexts
 
 To instantiate classes and have Bevy inject their dependencies it is necessary to use a
-[`bevy.Constructor`](#Constructor). The constructor takes a [`bevy.Injectable`](#Injectable) and any args necessary to
-instantiate it. Calling [`Constructor.build`](#Constructor.build) on the constructor will then create an instance of the
+[`bevy.Context`](#Context). The context takes a [`bevy.Injectable`](#Injectable) and any args necessary to
+instantiate it. Calling [`Context.build`](#Context.build) on the context will then create an instance of the
 `Injectable` with all dependencies injected.
 
 **Example**
 ```py
-constructor = bevy.Constructor(Example)
-example = constructor.build()
+context = bevy.Context(Example)
+example = context.build()
 ```
 ### Configuring Dependencies
 
-When the `Constructor` encounters a dependency that is not in the context repository it will attempt to create the
+When the `Context` encounters a dependency that is not in the context repository it will attempt to create the
 dependency. The approach is very naive, it will just call the dependency with no arguments. If it succeeds it will be
 added to the repository for later use and injected into the class.
 
-This behavior can be changed by passing an instantiated dependency to [`Constructor.add`](#Constructor.add).
+This behavior can be changed by passing an instantiated dependency to [`Context.add`](#Context.add).
 **Example**
 ```py
-constructor.add(Dependency("foobar"))
+context.add(Dependency("foobar"))
 ```
-When adding an `Injectable` it is necessary to use [`Constructor.branch`](#Constructor.branch) as it will inherit all
-dependencies that are added to the constructor. Any dependencies added to the branch will not be back propagated to the
-constructor, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency
-resolution is deferred until `Constructor.build` is called, when it is assumed all dependencies with customized
+When adding an `Injectable` it is necessary to use [`Context.branch`](#Context.branch) as it will inherit all
+dependencies that are added to the context. Any dependencies added to the branch will not be back propagated to the
+context, allowing for dependency isolation. Because branches inherit but do not propagate, their dependency
+resolution is deferred until `Context.build` is called, when it is assumed all dependencies with customized
 instantiations have been added.
 
-Because `Injectables` require a special lifecycle `Constructor.branch` will accept any instantiation args that should be
+Because `Injectables` require a special lifecycle `Context.branch` will accept any instantiation args that should be
 passed to the class when it is constructed.
 **Example**
 ```py
-branch = constructor.branch(Dependency)
+branch = context.branch(Dependency)
 ```
 """
-from bevy.constructor import Constructor
+from bevy.context import Context
 from bevy.injectable import injectable, is_injectable
 
 
-__all__ = ("Constructor", "injectable", "is_injectable")
+__all__ = ("Context", "injectable", "is_injectable")

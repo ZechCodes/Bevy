@@ -9,13 +9,11 @@ T = TypeVar("T")
 
 @runtime_checkable
 class Builder(Protocol[T]):
-    """The builder protocol should be implemented by any class that needs the constructor to build instances of a
+    """The builder protocol should be implemented by any class that needs the context to build instances of a
     class."""
 
     @classmethod
-    def __bevy_build__(
-        cls: Type[T], bevy_constructor: bevy.Constructor, *args, **kwargs
-    ) -> T:
+    def __bevy_build__(cls: Type[T], bevy_context: bevy.Context, *args, **kwargs) -> T:
         ...
 
 

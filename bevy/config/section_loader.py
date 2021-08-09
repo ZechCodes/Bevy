@@ -1,4 +1,4 @@
-from bevy import Constructor
+from bevy import Context
 import bevy.config.config as config
 from typing import Any, Optional
 
@@ -8,6 +8,6 @@ class SectionLoader:
         self.section_name = section_name
         self.filename = filename
 
-    def __bevy_build__(self, bevy_constructor: Constructor, *args, **kwargs) -> Any:
-        config_manager = bevy_constructor.get(config.Config)
+    def __bevy_build__(self, bevy_context: Context, *args, **kwargs) -> Any:
+        config_manager = bevy_context.get(config.Config)
         return config_manager.get_section(self.section_name, self.filename)

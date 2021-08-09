@@ -1,4 +1,4 @@
-"""The injectable class is used to indicate that Bevy constructors can inject dependencies into the class. It provides a
+"""The injectable class is used to indicate that Bevy contexts can inject dependencies into the class. It provides a
 simple property for fetching the class's dependencies."""
 from __future__ import annotations
 from functools import wraps
@@ -23,9 +23,7 @@ class Injectable(Protocol[T]):
     class can be made to support this protocol by using the injectable decorator."""
 
     @classmethod
-    def __bevy_construct__(
-        cls: Type[T], constructor: bevy.Constructor, *args, **kwargs
-    ) -> T:
+    def __bevy_construct__(cls: Type[T], context: bevy.Context, *args, **kwargs) -> T:
         ...
 
     @classmethod
@@ -38,10 +36,10 @@ class Injectable(Protocol[T]):
 class BaseInjectableImplementation:
     @classmethod
     def __bevy_construct__(
-        cls: Type[T], instance: T, constructor: bevy.Constructor, *args, **kwargs
+        cls: Type[T], instance: T, context: bevy.Context, *args, **kwargs
     ) -> T:
         for name, dependency in cls.__bevy_dependencies__.items():
-            constructor.inject(dependency, instance, name)
+            context.inject(dependency, instance, name)
         return instance
 
     @classmethod
@@ -66,14 +64,14 @@ def injectable(cls: Type[T]) -> Type[Injectable[T]]:
 
     @wraps(cls.__new__)
     def new(cls_, *args, **kwargs):
-        constructor = kwargs.pop("__bevy_constructor__", None) or bevy.Constructor(cls_)
+        context = kwargs.pop("__bevy_context__", None) or bevy.Context(cls_)
         inst = cls.__new__(cls_, *args, **kwargs)
-        cls_.__bevy_construct__(inst, constructor, *args, **kwargs)
+        cls_.__bevy_construct__(inst, context, *args, **kwargs)
         return inst
 
     @wraps(cls.__init__)
     def init(self_, *args, **kwargs):
-        kwargs.pop("__bevy_constructor__", None)
+        kwargs.pop("__bevy_context__", None)
         cls.__init__(self_, *args, **kwargs)
 
     attrs = dict(vars(cls))
@@ -89,5 +87,5 @@ def injectable(cls: Type[T]) -> Type[Injectable[T]]:
 
 
 def is_injectable(obj) -> bool:
-    """Determine if an object instance or type supports the Bevy constructor's dependency injection."""
+    """Determine if an object instance or type supports the Bevy context's dependency injection."""
     return isinstance(obj, Injectable)
