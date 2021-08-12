@@ -21,7 +21,7 @@ for package in packages:
         (path / "pyproject.toml").unlink()
     package_toml.link_to(path / "pyproject.toml")
 
-    if input(f"Publish {package}? [Y|N]").casefold() == "Y":
+    if input(f"Publish {package}? [Y|N]").casefold() == "y":
         process = Popen(
             [
                 "poetry",
