@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Bevy.config"
-version = "0.1.1"
+version = "0.1.2"
 description = "A config loader designed to be used with the Bevy dependency injection framework."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
