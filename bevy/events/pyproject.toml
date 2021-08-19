@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "Bevy.events"
-version = "0.1.2"
+version = "0.1.3"
 description = "An event dispatch framework designed to be used with the Bevy dependency injection framework."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
-readme = "README.md"
-homepage = "https://github.com/ZechCodes/Bevy"
+readme = "bevy/events/README.md"
+homepage = "https://github.com/ZechCodes/Bevy/bevy/events/README.md"
 repository = "https://github.com/ZechCodes/Bevy"
-documentation = "https://github.com/ZechCodes/Bevy/blob/master/README.md"
+documentation = "https://github.com/ZechCodes/Bevy/blob/master/bevy/events/README.md"
 packages = [
     { include = "bevy/events/*.py" }
 ]
