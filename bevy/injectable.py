@@ -49,7 +49,7 @@ class BaseInjectableImplementation:
         return get_type_hints(cls)
 
 
-def injectable(cls: Type[T]) -> Type[Injectable[T]]:
+def injectable(cls: Type[T]) -> Type[T]:
     """Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.
 
     The goal is to add injection logic to the classes without changing how classes function. It shouldn't be possible
