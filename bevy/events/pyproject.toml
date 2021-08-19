@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Bevy.events"
-version = "0.1.1"
+version = "0.1.2"
 description = "An event dispatch framework designed to be used with the Bevy dependency injection framework."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
