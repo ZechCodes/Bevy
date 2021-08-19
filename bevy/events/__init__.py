@@ -1,4 +1,4 @@
-from bevy.events.events import Dispatch, Event
+from bevy.events.dispatch import EventDispatch
 
 
-__all__ = ["Dispatch", "Event"]
+__all__ = ["EventDispatch"]
