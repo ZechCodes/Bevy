@@ -17,6 +17,9 @@ class LabelAnnotation(Generic[T]):
         bevy_context.add(label)
         return label
 
+    def __call__(self, *args, **kwargs) -> LabelAnnotation:
+        return self
+
     def __bevy_inject__(
         self,
         inject_into: Any,
