@@ -21,7 +21,7 @@ T = TypeVar("T")
 class Context(Generic[T]):
     def __init__(
         self,
-        obj: Type[Injectable[T]],
+        obj: Injectable[Type[T]],
         parent: Optional[Context[T]] = None,
         *args,
         **kwargs,
@@ -37,7 +37,7 @@ class Context(Generic[T]):
         """Stores an instance in the context repository."""
         self._dependencies[type(dependency)] = dependency
 
-    def add_as(self, dependency: Any, adding_as: Type[T]):
+    def add_as(self, dependency: Any, adding_as: Union[Type[T], Injectable[Type[T]]]):
         """Stores an instance in the context repository that will be used for types of the provided type."""
         self._dependencies[adding_as] = dependency
 
