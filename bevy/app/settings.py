@@ -160,4 +160,6 @@ class ExtensionSettings(UserDict):
         super().__setitem__(key, value)
 
     def __repr__(self):
-        return f"{type(self).__name__}({self.name!r}, {super().__repr__()})"
+        settings = dict(self)
+        settings.setdefault("enabled", self.enabled)
+        return f"{type(self).__name__}({self.name!r}, {settings})"
