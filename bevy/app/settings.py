@@ -65,20 +65,11 @@ class AppSettings:
                 options["extension_directory"]
             )
 
-        if "extension_loader" in options:
-            options["extension_loader"] = self._get_module_attr_from_string(
-                options["extension_loader"]
-            )
-
         self._options = {
             "extension_directory": self.path,
             "extension_load_policy": ExtensionLoadPolicy.AUTO_ENABLE,
-            "extension_loader": self._extension_loader,
         }
         self.options.update(options)
-
-    def _extension_loader(self):
-        ...
 
     def _resolve_extension_directory(self, directory: str) -> Path:
         path = Path(directory)
