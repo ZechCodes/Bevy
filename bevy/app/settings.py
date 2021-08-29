@@ -1,6 +1,5 @@
 from __future__ import annotations
 from bevy import injectable
-from bevy.label import Label
 from bevy.config import Config
 from collections import UserDict
 from enum import Enum
@@ -21,10 +20,9 @@ class ExtensionLoadPolicy(str, Enum):
 
 @injectable
 class AppSettings:
-    path: Label[Path:"app"]
     loader: Config
 
-    def __init__(self):
+    def __init__(self, working_directory: Path):
         self._config = self.loader.get_config_file()
         self._extensions: Optional[list[ExtensionSettings]] = None
         self._options: Optional[dict[str, Any]] = None
@@ -46,7 +44,7 @@ class AppSettings:
     def _create_extension_settings(self):
         self._extensions = [
             ExtensionSettings(
-                name, value if isinstance(value, dict) else {"enabled": value}
+                name, value if isinstance(value, dict) else {"enabled": bool(value)}
             )
             for name, value in self._config.get_section("extensions").items()
         ]
@@ -57,13 +55,6 @@ class AppSettings:
             options["extension_load_policy"] = ExtensionLoadPolicy(
                 options["extension_load_policy"].upper()
             )
-
-        if "app_class" in options:
-            options["app_class"] = self._get_module_attr_from_string(
-                options["app_class"]
-            )
-        else:
-            options["app_class"] = self._get_module_attr_from_path("app", "App")
 
         if "extension_directory" in options:
             options["extension_directory"] = self._resolve_extension_directory(
@@ -76,15 +67,11 @@ class AppSettings:
             )
 
         self._options = {
-            "app_class": self._app_factory,
             "extension_directory": self.path,
             "extension_load_policy": ExtensionLoadPolicy.AUTO_ENABLE,
             "extension_loader": self._extension_loader,
         }
         self.options.update(options)
-
-    def _app_factory(self):
-        ...
 
     def _extension_loader(self):
         ...
