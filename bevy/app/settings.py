@@ -3,10 +3,8 @@ from bevy import injectable
 from bevy.config import Config
 from collections import UserDict
 from enum import Enum
-from importlib import import_module, machinery, util
 from pathlib import Path
 from typing import Any, Optional
-import sys
 
 
 class ExtensionLoadPolicy(str, Enum):
@@ -76,43 +74,6 @@ class AppSettings:
         if not path.is_absolute():
             path = self.path / path
         return path.resolve()
-
-    def _get_module_attr_from_string(self, lookup: str) -> Any:
-        module_name, attr_name = map(str.strip, lookup.split(":"))
-        module = self._import_module(module_name)
-        return getattr(module, attr_name)
-
-    def _get_module_attr_from_path(self, module_name: str, attr_name: str) -> Any:
-        path = self._get_module_path(module_name)
-        module = self._import_module_from_path(module_name)
-        return getattr(module, attr_name)
-
-    def _get_module_path(self, module_name: str) -> Path:
-        path = self.path / f"{module_name}.py"
-        if not path.exists():
-            path = path / module_name / "__init__.py"
-        return path.resolve()
-
-    def _import_module(self, module_name: str):
-        return import_module(module_name)
-
-    def _import_module_from_path(self, module: str):
-        finder = machinery.FileFinder(
-            str(self.path),
-            (
-                machinery.SourceFileLoader,
-                [".py"],
-            ),
-        )
-        spec = finder.find_spec(module)
-        if spec.name in sys.modules:
-            return sys.modules[spec.name]
-
-        module = util.module_from_spec(spec)
-        sys.modules[spec.name] = module
-
-        spec.loader.exec_module(module)
-        return module
 
 
 class ExtensionSettings(UserDict):
