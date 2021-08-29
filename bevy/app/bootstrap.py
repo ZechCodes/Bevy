@@ -3,8 +3,10 @@ from bevy.injectable import Injectable
 from bevy.app.app import App
 from bevy.app.settings import AppSettings
 from bevy.config import Config, DirectoryResolver, JSONLoader
+from bevy.config.loader import Loader
+from bevy.config.resolver import Resolver
 from pathlib import Path
-from typing import Generic, Type, TypeVar, Union
+from typing import Generic, Sequence, Type, TypeVar, Union
 
 
 __all__ = ["Bootstrap"]
@@ -18,7 +20,11 @@ class Bootstrap(Generic[AppType]):
         self,
         app_class: Injectable[Type[AppType]] = App,
         working_directory: Union[Path, str] = Path().resolve(),
+        config_loaders: Sequence[Type[Loader]] = (JSONLoader,),
+        config_resolvers: Sequence[Type[Resolver]] = (DirectoryResolver,),
     ):
+        self._config_loaders = config_loaders
+        self._config_resolvers = config_resolvers
         self._context = Context(app_class)
         self._working_directory = working_directory
 
@@ -35,8 +41,11 @@ class Bootstrap(Generic[AppType]):
         self.context.add(
             Config(
                 default_filename="app.settings",
-                loaders=(JSONLoader,),
-                resolvers=(DirectoryResolver(self._get_app_working_directory()),),
+                loaders=self._config_loaders,
+                resolvers=tuple(
+                    resolver(self._get_app_working_directory())
+                    for resolver in self._config_resolvers
+                ),
             )
         )
 
