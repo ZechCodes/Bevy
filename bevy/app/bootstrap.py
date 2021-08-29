@@ -1,56 +1,60 @@
-from bevy import Context, injectable
+from bevy import Context
+from bevy.injectable import Injectable
 from bevy.app.app import App
 from bevy.app.settings import AppSettings
 from bevy.config import Config, DirectoryResolver, JSONLoader
-from bevy.label import Label
 from pathlib import Path
-from typing import Union
+from typing import Generic, Type, TypeVar, Union
 
 
-__all__ = ["main"]
+__all__ = ["Bootstrap"]
 
 
-@injectable
-class Bootstrap:
-    context: Context
-    path: Label[Path:"app"]
-    settings: AppSettings
+AppType = TypeVar("AppType", bound=App)
 
-    def run(self):
-        app = self.create_app()
-        self.load_extensions()
+
+class Bootstrap(Generic[AppType]):
+    def __init__(
+        self,
+        app_class: Injectable[Type[AppType]] = App,
+        working_directory: Union[Path, str] = Path().resolve(),
+    ):
+        self._context = Context(app_class)
+        self._working_directory = working_directory
+
+    @property
+    def context(self) -> Context[AppType]:
+        return self._context
+
+    def build(self) -> AppType:
+        self.build_config()
+        self.build_settings()
+        return self.context.build()
+
+    def build_config(self):
+        self.context.add(
+            Config(
+                default_filename="app.settings",
+                loaders=(JSONLoader,),
+                resolvers=(DirectoryResolver(self._get_app_working_directory()),),
+            )
+        )
+
+    def build_settings(self):
+        settings = self.context.construct(
+            AppSettings, self._get_app_working_directory()
+        )
+        self.context.add(settings)
 
     def create_app(self):
-        app = self.context.construct(self.settings.options["app_class"])
+        app = self.context.build()
         self.context.add_as(app, App)
         return app
 
+    def _get_app_working_directory(self) -> Path:
+        path = Path(self._working_directory)
+        # Handle if __file__ was passed
+        if path.is_file():
+            path = path.parent
 
-def main(app_path: Union[str, Path]):
-    app_directory = get_app_path(app_path)
-    config_loader = get_config_loader(app_directory)
-    bootstrap = create_bootstrap(app_directory, config_loader)
-    bootstrap.run()
-
-
-def create_bootstrap(path: Path, loader: Config) -> Bootstrap:
-    context = Context(Bootstrap)
-    context.add(Label(path, "app_path"))
-    context.add(loader)
-    return context.build()
-
-
-def get_app_path(app_path: Union[str, Path]) -> Path:
-    path = Path(app_path)
-    # Handle if __file__ was passed
-    if path.is_file():
-        path = path.parent
-    return path.resolve()
-
-
-def get_config_loader(app_directory: Path) -> Config:
-    return Config(
-        default_filename="app.settings",
-        loaders=(JSONLoader,),
-        resolvers=(DirectoryResolver(app_directory),),
-    )
+        return path
