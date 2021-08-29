@@ -7,9 +7,9 @@ import pytest
 
 @pytest.fixture()
 def working_directory():
-    return pathlib.Path(__file__).parent / "app" / "extensions"
+    return pathlib.Path(__file__).parent / "app"
 
 
 def test_app_creation(working_directory):
-    app = Bootstrap(working_directory).build()
+    app = Bootstrap(working_directory=working_directory).build()
     assert isinstance(app, App)
