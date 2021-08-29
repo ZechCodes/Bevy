@@ -49,7 +49,7 @@ class AppSettings:
         self._extensions = [
             ExtensionSettings(
                 name,
-                value if isinstance(value, dict) else {"enabled": value},
+                value if isinstance(value, dict) else {},
                 load_policy,
             )
             for name, value in self._config.get_section("extensions").items()
@@ -145,10 +145,9 @@ class ExtensionSettings(UserDict):
         return self._name
 
     def _is_enabled(self) -> bool:
-        return {
-            ExtensionLoadPolicy.AUTO_ENABLE: lambda status: status is not False,
-            ExtensionLoadPolicy.ENABLED_ONLY: lambda status: status is True,
-        }[self._load_policy](self.get("enabled"))
+        return bool(
+            self.get("enabled", self._load_policy == ExtensionLoadPolicy.AUTO_ENABLE)
+        )
 
     def __setitem__(self, key, value):
         if self._locked:

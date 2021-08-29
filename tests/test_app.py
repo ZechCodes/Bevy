@@ -23,9 +23,7 @@ def test_extension_load_policy_enabled_only():
     disabled = ExtensionSettings(
         "testing", {"enabled": False}, ExtensionLoadPolicy.ENABLED_ONLY
     )
-    not_set = ExtensionSettings(
-        "testing", {"enabled": None}, ExtensionLoadPolicy.ENABLED_ONLY
-    )
+    not_set = ExtensionSettings("testing", {}, ExtensionLoadPolicy.ENABLED_ONLY)
     assert enabled.enabled is True
     assert disabled.enabled is False
     assert not_set.enabled is False
@@ -38,9 +36,7 @@ def test_extension_load_policy_auto_load():
     disabled = ExtensionSettings(
         "testing", {"enabled": False}, ExtensionLoadPolicy.AUTO_ENABLE
     )
-    not_set = ExtensionSettings(
-        "testing", {"enabled": None}, ExtensionLoadPolicy.AUTO_ENABLE
-    )
+    not_set = ExtensionSettings("testing", {}, ExtensionLoadPolicy.AUTO_ENABLE)
     assert enabled.enabled is True
     assert disabled.enabled is False
     assert not_set.enabled is True
