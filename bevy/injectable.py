@@ -33,22 +33,6 @@ class Injectable(Protocol[T]):
         ...
 
 
-class BaseInjectableImplementation:
-    @classmethod
-    def __bevy_construct__(
-        cls: Type[T], instance: T, context: bevy.Context, *args, **kwargs
-    ) -> T:
-        for name, dependency in cls.__bevy_dependencies__.items():
-            context.inject(dependency, instance, name)
-        return instance
-
-    @classmethod
-    @property
-    def __bevy_dependencies__(cls) -> dict[str, Any]:
-        """Dictionary of attribute names and their desired dependency type."""
-        return get_type_hints(cls)
-
-
 def injectable(cls: Type[T]) -> Injectable[Type[T]]:
     """Decorator to make a class compatible with the Injectable protocol and implement the necessary injection logic.
 
@@ -62,28 +46,49 @@ def injectable(cls: Type[T]) -> Injectable[Type[T]]:
     new. Similarly the dunder init removes the Bevy args and calls the original implementation.
     """
 
-    @wraps(cls.__new__)
+    old_new = cls.__new__
+
+    @wraps(old_new)
     def new(cls_, *args, **kwargs):
         context = kwargs.pop("__bevy_context__", None) or bevy.Context(cls_)
-        inst = cls.__new__(cls_, *args, **kwargs)
+        inst = old_new(cls_, *args, **kwargs)
         cls_.__bevy_construct__(inst, context, *args, **kwargs)
         return inst
 
-    @wraps(cls.__init__)
+    cls.__new__ = new
+
+    old_init = cls.__init__
+
+    @wraps(old_init)
     def init(self_, *args, **kwargs):
         kwargs.pop("__bevy_context__", None)
-        cls.__init__(self_, *args, **kwargs)
+        old_init(self_, *args, **kwargs)
 
-    attrs = dict(vars(cls))
-    attrs["__new__"] = new
-    attrs["__init__"] = init
+    cls.__init__ = init
 
-    bases = list(cls.__bases__)
-    if object in bases:
-        bases.remove(object)
-    bases.append(BaseInjectableImplementation)
+    if not hasattr(cls, "__bevy_construct__"):
 
-    return type(cls.__name__, tuple(bases), attrs)
+        @classmethod
+        def __bevy_construct__(
+            cls: Type[T], instance: T, context: bevy.Context, *args, **kwargs
+        ) -> T:
+            for name, dependency in cls.__bevy_dependencies__.items():
+                context.inject(dependency, instance, name)
+            return instance
+
+        cls.__bevy_construct__ = __bevy_construct__
+
+    if not hasattr(cls, "__bevy_dependencies__"):
+
+        @classmethod
+        @property
+        def __bevy_dependencies__(cls) -> dict[str, Any]:
+            """Dictionary of attribute names and their desired dependency type."""
+            return get_type_hints(cls)
+
+        cls.__bevy_dependencies__ = __bevy_dependencies__
+
+    return cls
 
 
 def is_injectable(obj) -> bool:
