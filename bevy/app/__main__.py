@@ -1,4 +1,6 @@
-from bevy.app.bootstrap import main
+from bevy.app.bootstrap import Bootstrap
+from bevy.app.app import App
+from pathlib import Path
 
 
-main(".")
+Bootstrap(App, Path().resolve()).build().run()
