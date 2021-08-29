@@ -51,7 +51,11 @@ def injectable(cls: Type[T]) -> Injectable[Type[T]]:
     @wraps(old_new)
     def new(cls_, *args, **kwargs):
         context = kwargs.pop("__bevy_context__", None) or bevy.Context(cls_)
-        inst = old_new(cls_, *args, **kwargs)
+        inst = (
+            old_new(cls_)
+            if old_new.__self__ is object
+            else old_new(cls_, *args, **kwargs)
+        )
         cls_.__bevy_construct__(inst, context, *args, **kwargs)
         return inst
 
