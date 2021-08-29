@@ -1,13 +1,13 @@
 {
   "extensions":{
-    "testing": false,
-    "test": {
+    "ext_no_settings": true,
+    "ext_with_settings": {
       "enabled": true,
       "name": "Hello World"
     }
   },
   "options": {
     "extension_directory": "extensions",
-    "_app_class": "extensions.test_app:TestApp"
+    "extension_load_policy": "ENABLED_ONLY"
   }
 }

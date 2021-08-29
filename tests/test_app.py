@@ -40,3 +40,13 @@ def test_extension_load_policy_auto_load():
     assert enabled.enabled is True
     assert disabled.enabled is False
     assert not_set.enabled is True
+
+
+def test_extensions_loaded(working_directory):
+    app = Bootstrap(working_directory=working_directory).build()
+    extensions = {extension.name: extension.enabled for extension in app.extensions}
+    assert {
+        "ext_with_settings": True,
+        "ext_disabled": False,
+        "ext_no_settings": True,
+    } == extensions

@@ -22,12 +22,12 @@ class AppSettings:
 
     def __init__(self, working_directory: Path):
         self._config = self.loader.get_config_file()
-        self._extensions: Optional[list[ExtensionSettings]] = None
+        self._extensions: Optional[dict[str, ExtensionSettings]] = None
         self._options: Optional[dict[str, Any]] = None
         self._path = working_directory
 
     @property
-    def extensions(self) -> list[ExtensionSettings]:
+    def extensions(self) -> dict[str, ExtensionSettings]:
         if self._extensions is None:
             self._create_extension_settings()
 
@@ -45,15 +45,13 @@ class AppSettings:
         return self._path
 
     def _create_extension_settings(self):
-        load_policy = self.options["extension_load_policy"]
-        self._extensions = [
-            ExtensionSettings(
-                name,
-                value if isinstance(value, dict) else {},
-                load_policy,
-            )
+        self._extensions = {
+            name: self.create_extension_settings(name, value)
             for name, value in self._config.get_section("extensions").items()
-        ]
+        }
+
+    def create_extension_settings(self, name: str, value: Any) -> ExtensionSettings:
+        return ExtensionSettings(name, value, self.options["extension_load_policy"])
 
     def _create_options(self):
         options = self._config.get_section("options") or {}
@@ -127,13 +125,11 @@ class AppSettings:
 
 
 class ExtensionSettings(UserDict):
-    def __init__(
-        self, name: str, settings: dict[str, Any], load_policy: ExtensionLoadPolicy
-    ):
+    def __init__(self, name: str, settings: Any, load_policy: ExtensionLoadPolicy):
         self._name = name
         self._load_policy = load_policy
         self._locked = False
-        super().__init__(settings)
+        super().__init__(self._process_settings(settings))
         self._locked = True
 
     @property
@@ -148,6 +144,15 @@ class ExtensionSettings(UserDict):
         return bool(
             self.get("enabled", self._load_policy == ExtensionLoadPolicy.AUTO_ENABLE)
         )
+
+    def _process_settings(self, settings: Any) -> dict[str, Any]:
+        if isinstance(settings, bool):
+            return {"enabled": settings}
+
+        if isinstance(settings, dict):
+            return settings
+
+        return {}
 
     def __setitem__(self, key, value):
         if self._locked:
