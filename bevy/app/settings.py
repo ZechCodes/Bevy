@@ -24,6 +24,7 @@ class AppSettings:
         self._config = self.loader.get_config_file()
         self._extensions: Optional[list[ExtensionSettings]] = None
         self._options: Optional[dict[str, Any]] = None
+        self._path = working_directory
 
     @property
     def extensions(self) -> list[ExtensionSettings]:
@@ -38,6 +39,10 @@ class AppSettings:
             self._create_options()
 
         return self._options
+
+    @property
+    def path(self) -> Path:
+        return self._path
 
     def _create_extension_settings(self):
         load_policy = self.options["extension_load_policy"]
