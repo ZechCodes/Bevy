@@ -18,6 +18,9 @@ def is_reader(obj):
 
 @runtime_checkable
 class Resolver(Protocol):
+    def __init__(self, directory):
+        ...
+
     def get_file_reader(
         self, filename: str, file_types: tuple[str]
     ) -> Optional[Reader]:
