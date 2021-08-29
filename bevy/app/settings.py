@@ -32,6 +32,10 @@ class AppSettings:
         return self._extensions
 
     @property
+    def extensions_path(self) -> Path:
+        return self.options["extension_directory"]
+
+    @property
     def options(self) -> dict[str, Any]:
         if self._options is None:
             self._create_options()

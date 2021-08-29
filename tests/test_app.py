@@ -6,6 +6,16 @@ import pathlib
 import pytest
 
 
+async def clear_tasks():
+    await asyncio.gather(
+        *(
+            task
+            for task in asyncio.all_tasks()
+            if not task.get_coro().__qualname__.startswith("test_")
+        )
+    )
+
+
 @pytest.fixture()
 def working_directory():
     return pathlib.Path(__file__).parent / "app"
@@ -42,11 +52,17 @@ def test_extension_load_policy_auto_load():
     assert not_set.enabled is True
 
 
-def test_extensions_loaded(working_directory):
+def test_extensions_found(working_directory):
     app = Bootstrap(working_directory=working_directory).build()
-    extensions = {extension.name: extension.enabled for extension in app.extensions}
+    extensions = {extension.name: extension.enabled for extension in app.all_extensions}
     assert {
         "ext_with_settings": True,
         "ext_disabled": False,
         "ext_no_settings": True,
     } == extensions
+
+
+def test_extensions_loaded(working_directory):
+    app = Bootstrap(working_directory=working_directory).build()
+    extensions = {extension.name for extension in app.extensions}
+    assert {"ext_with_settings", "ext_no_settings"} == extensions

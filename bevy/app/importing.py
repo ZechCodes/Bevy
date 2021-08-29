@@ -12,7 +12,7 @@ def get_module_attr_from_path(path: Path, module_name: str, attr_name: str) -> A
 
 def import_module_from_path(path: Path, module: str):
     finder = machinery.FileFinder(
-        path.resolve(),
+        str(path.resolve()),
         (
             machinery.SourceFileLoader,
             [".py"],
