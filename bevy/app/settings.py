@@ -11,10 +11,8 @@ import sys
 
 class ExtensionLoadPolicy(str, Enum):
     # The extension will not be loaded unless enabled is set to true in the app.settings file
-    EXPLICIT_ENABLE = "EXPLICIT_ENABLE"
+    ENABLED_ONLY = "EXPLICIT_ENABLE"
     # The extension will be loaded unless enabled is set to false in the app.settings file
-    EXPLICIT_DISABLE = "EXPLICIT_DISABLE"
-    # The extension will be loaded only if it is in the app.settings file and enabled isn't set to false
     AUTO_ENABLE = "AUTO_ENABLE"
 
 
