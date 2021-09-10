@@ -88,11 +88,21 @@ def injectable(cls: Type[T]) -> Injectable[Type[T]]:
         @property
         def __bevy_dependencies__(cls) -> dict[str, Any]:
             """Dictionary of attribute names and their desired dependency type."""
-            return get_type_hints(cls)
+            return get_dependencies(cls)
 
         cls.__bevy_dependencies__ = __bevy_dependencies__
 
     return cls
+
+
+def get_dependencies(cls):
+    """Gets the type annotations which should be used as the class dependencies. This will include all annotations names
+    that haven't been assigned to."""
+    return {
+        name: annotation
+        for name, annotation in get_type_hints(cls).items()
+        if not hasattr(cls, name)
+    }
 
 
 def is_injectable(obj) -> bool:

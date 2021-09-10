@@ -176,3 +176,18 @@ def test_label_injection():
     builder.add(Label(Dep("dep"), "dep"))
     app = builder.build()
     assert app.dep.value == "dep"
+
+
+def test_ignoring_assigned_annotations():
+    class Dep:
+        def __init__(self, value="default"):
+            self.value = value
+
+    @injectable
+    class App:
+        dep: Dep = Dep()
+
+    builder = Context(App)
+    builder.add(Dep("dep2"))
+    app = builder.build()
+    assert app.dep.value == "default"
