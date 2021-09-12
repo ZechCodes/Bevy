@@ -11,7 +11,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from weakref import WeakKeyDictionary
+from bevy.instance_dict import InstanceDict
 
 
 T = TypeVar("T")
@@ -19,7 +19,7 @@ T = TypeVar("T")
 
 class Injectable(ABC):
     def __init__(self):
-        self._instances = WeakKeyDictionary()
+        self._instances = InstanceDict()
 
     def __call__(self) -> Injectable:
         return self
