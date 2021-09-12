@@ -1,4 +1,4 @@
-from bevy import Context, dependencies, Inject, Injectable
+from bevy import Context, dependencies, Inject
 from bevy.factory import Factory
 
 
