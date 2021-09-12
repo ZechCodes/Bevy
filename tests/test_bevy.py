@@ -1,7 +1,5 @@
 from bevy import Context, dependencies, Inject
-from bevy.inject import NotBoundToAContext
 from bevy.factory import Factory
-from pytest import raises
 
 
 def test_no_context():
@@ -12,8 +10,7 @@ def test_no_context():
     class Testing:
         test: Inject[Dep]
 
-    with raises(NotBoundToAContext):
-        assert isinstance(Testing().test, Dep)
+    assert isinstance(Testing().test, Dep)
 
 
 def test_inject_dependencies():

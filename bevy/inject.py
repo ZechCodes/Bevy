@@ -44,11 +44,11 @@ class Injectable(ABC):
         ...
 
     def _get_context(self, instance) -> Context:
-        context = getattr(instance, "__bevy_context__", None)
-        if not context:
-            raise NotBoundToAContext(f"{instance} is not bound to a Bevy context.")
-
-        return context
+        try:
+            return instance.__bevy_context__
+        except AttributeError:
+            instance.__bevy_context__ = Context()
+            return instance.__bevy_context__
 
 
 class Inject(Injectable, Generic[T]):
@@ -98,7 +98,3 @@ def _get_dependencies(cls):
     except AttributeError:
         cls.__bevy_dependencies__ = set()
         return cls.__bevy_dependencies__
-
-
-class NotBoundToAContext(BaseException):
-    """Raised when no Bevy context is found on an object."""
