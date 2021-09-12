@@ -131,7 +131,7 @@ class ContextInstanceWrapper(Generic[T]):
         ) and self._labels == self._clean_labels(labels)
 
     def __eq__(self, other):
-        return self._as_type is other and other.labels
+        return self._as_type is other and self.labels == other.labels
 
     def __hash__(self):
         return hash(self._as_type)
