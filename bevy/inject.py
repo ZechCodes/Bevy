@@ -21,6 +21,9 @@ class Injectable(ABC):
     def __init__(self):
         self._instances = WeakKeyDictionary()
 
+    def __call__(self) -> Injectable:
+        return self
+
     def __get__(self, instance, owner):
         if not instance:
             return self
@@ -86,7 +89,9 @@ def dependencies(cls):
     deps = _get_dependencies(cls)
     for name, annotation in get_type_hints(cls).items():
         if isinstance(annotation, Injectable) and not hasattr(cls, name):
-            setattr(cls, name, annotation)
+            setattr(
+                cls, name, annotation() if isinstance(annotation, type) else annotation
+            )
             deps.add(annotation)
 
     return cls
