@@ -1,31 +1,25 @@
-from functools import partial
-from typing import Any
-from bevy import Context
+from __future__ import annotations
+from bevy.context import Context
+from bevy.inject import Injectable
+from typing import Callable, Generic, Type, TypeVar
 
 
-class Factory:
-    """Simple factory implementation that creates a callable bound to the context context and that will return the
-    annotated type when called.
+T = TypeVar("T")
+MAKE_TYPE = TypeVar("MAKE_TYPE")
 
-    **Example**
-    ```python
-    class Thing:
-        def __init__(self, name):
-            self.name = name
 
-    class Example(Injectable):
-        factory: Factory[Thing]
-        ...
-        def create_thing(self, name: str):
-            self.factory(name)
-    ```
-    """
+class Factory(Injectable, Generic[MAKE_TYPE]):
+    def __init__(self, make_type: Type[MAKE_TYPE]):
+        super().__init__()
+        self._make_type = make_type
 
-    def __init__(self, item: Any):
-        self._item = item
+    def __class_getitem__(cls, make_type: Type[MAKE_TYPE]) -> Factory[MAKE_TYPE]:
+        return Factory(make_type)
 
-    def __bevy_inject__(self, inject_into: Any, name: str, context: Context):
-        setattr(inject_into, name, partial(context.construct, self._item))
+    def __bevy_inject__(
+        self, instance: T, context: Context
+    ) -> Callable[..., MAKE_TYPE]:
+        def build(*args, **kwargs) -> MAKE_TYPE:
+            return context.build(self._make_type, *args, **kwargs)
 
-    def __class_getitem__(cls, item):
-        return Factory(item)
+        return build
