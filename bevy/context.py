@@ -1,139 +1,140 @@
-"""The context object handles the creation of a context in which an object will be constructed.
-
-The context should be initialized with the object that the context is being built for. It can optionally take a
-parent context that it can inherit dependencies from. Once all dependencies have been configured the object can be
-constructed by calling the context object's build method. This method can take any args that should be passed to the
-object when it is initialized.
-"""
 from __future__ import annotations
-from bevy.builder import Builder, is_builder
-from bevy.exceptions import CanOnlyInjectIntoInjectables
-from bevy.injectable import Injectable, is_injectable
-from bevy.injector import Injector, is_injector
-from functools import partial
-from inspect import isclass
-from typing import Any, Generic, Optional, Type, TypeVar, Union
+from typing import Any, Generic, Optional, Sequence, Type, TypeVar, Union
+from weakref import WeakKeyDictionary
+
+
+__all__ = ("Context",)
 
 
 T = TypeVar("T")
+NOT_SET = object()
 
 
-class Context(Generic[T]):
-    def __init__(
+class Context:
+    __slots__ = ("_parent", "_repository")
+
+    def __init__(self, parent: Optional[Context] = None):
+        self._parent = parent or NullContext()
+        self._repository: set[ContextInstanceWrapper] = set()
+
+    @property
+    def parent(self) -> Optional[Context]:
+        return self._parent
+
+    def add(
         self,
-        obj: Injectable[Type[T]],
-        parent: Optional[Context[T]] = None,
-        *args,
-        **kwargs,
+        instance: T,
+        *,
+        as_type: Optional[Type] = None,
+        labels: Sequence[str] = tuple()
     ):
-        self._args = args
-        self._branches: dict[Type[T], Context[T]] = {}
-        self._dependencies: dict[Type[T], T] = {Context: self}
-        self._kwargs = kwargs
-        self._obj = obj
-        self._parent = parent
+        self._repository.add(
+            ContextInstanceWrapper(instance, as_type or type(instance), labels)
+        )
 
-    def add(self, dependency: Any):
-        """Stores an instance in the context repository."""
-        self._dependencies[type(dependency)] = dependency
+    def branch(self) -> Context:
+        return Context(self)
 
-    def add_as(self, dependency: Any, adding_as: Union[Type[T], Injectable[Type[T]]]):
-        """Stores an instance in the context repository that will be used for types of the provided type."""
-        self._dependencies[adding_as] = dependency
-
-    def branch(self, cls: Type[Injectable[T]], *args, **kwargs) -> Context[T]:
-        """Creates a child context for the given injectable type."""
-        self._branches[cls] = Context(cls, self, *args, **kwargs)
-        return self._branches[cls]
-
-    def build(self) -> T:
-        """Builds an instance of the object that was passed to the context. This will also resolve the branches and
-        add them to the repository."""
-        self._resolve_branches()
-        return self.construct(self._obj, *self._args, **self._kwargs)
-
-    def construct(
-        self, obj: Union[Injectable[T], Builder[T], Type[T]], *args, **kwargs
-    ) -> T:
-        """Creates an instance of a class. If the class is injectable it will use the bevy context class method."""
-        if is_injectable(obj):
-            obj = partial(obj, __bevy_context__=self)
-
-        elif is_builder(obj):
-            obj = partial(obj.__bevy_build__, self)
-
-        if is_builder(obj):
-            obj = obj.__bevy_build__
-
-        return obj(*args, **kwargs) if callable(obj) else obj
+    def build(self, build_type: Type[T], *args, **kwargs) -> T:
+        instance = build_type.__new__(build_type, *args, **kwargs)
+        self._add_context(instance)
+        self._build_dependencies(instance)
+        instance.__init__(*args, **kwargs)
+        return instance
 
     def get(
-        self, cls: Union[Injectable[T], Injector[T], Type[T]], *args, **kwargs
-    ) -> T:
-        """Gets an instance associated with the requested type. If it is not found in the context's repository or
-        in the repository of the parent's context an instance will be created using any provided args."""
-        if dependency := self._find_dependency_match(cls):
-            return dependency
-
-        if self._parent and self._parent.has(cls):
-            return self._parent.get(cls)
-
-        dependency = self.construct(cls, *args, **kwargs)
-        self.add(dependency)
-        return dependency
-
-    def has(self, cls: Type[T], check_parent: bool = True) -> bool:
-        """Checks if a matching dependency exists in the context's repository or optionally in the repository of the
-        parent context."""
-        match = self._find_dependency_match(cls)
-        if match is None and check_parent and self._parent:
-            return self._parent.has(cls)
-
-        return match is not None
-
-    def inject(
         self,
-        dependency: Union[Injectable[T], Type[T]],
-        instance: Any,
-        attr_name: str,
-        *args,
-        **kwargs,
+        lookup_type: Type[T],
+        *,
+        propagate: bool = True,
+        default: Any = NOT_SET,
+        labels: Optional[set[str]] = None
+    ) -> Optional[T]:
+        match = self._find_match(lookup_type, labels or set(), propagate)
+        if match:
+            return match
+
+        if default is NOT_SET:
+            return None
+
+        return default
+
+    def has(self, lookup_type: Type[T], *, propagate: bool = True) -> bool:
+        return bool(self._find_match(lookup_type, propagate))
+
+    def _add_context(self, instance):
+        if not hasattr(type(instance), "__bevy_context__"):
+            type(instance).__bevy_context__ = ContextDescriptor()
+        instance.__bevy_context__ = self
+
+    def _build_dependencies(self, instance):
+        for dependency in getattr(instance, "__bevy_dependencies__", []):
+            dependency.get(instance)
+
+    def _find_match(
+        self, lookup_type: Type[T], labels: set[str], propagate: bool
+    ) -> Optional[T]:
+        for wrapper in self._repository:
+            if wrapper.matches(lookup_type, labels):
+                return wrapper.instance
+
+        return self._parent.get(lookup_type) if propagate else None
+
+
+class NullContext(Context):
+    def __init__(self):
+        pass
+
+    def get(
+        self, lookup_type: Type[T], *, propagate: bool = True, default: Any = NOT_SET
+    ) -> Optional[T]:
+        return None
+
+    def has(self, lookup_type: Type[T], *, propagate: bool = True) -> bool:
+        return False
+
+
+class ContextDescriptor:
+    def __init__(self):
+        self._contexts = WeakKeyDictionary()
+
+    def __get__(self, inst, owner):
+        if not inst:
+            return self
+        return self._contexts.get(inst)
+
+    def __set__(self, inst, value):
+        if inst:
+            self._contexts[inst] = value
+
+
+class ContextInstanceWrapper(Generic[T]):
+    def __init__(
+        self, instance: T, as_type: Union[Type[T], Type], labels: Sequence[str]
     ):
-        """Will attempt to inject the dependency into the injectable. If the instance being injected into is not an
-        injectable an CanOnlyInjectIntoInjectables exception will be raised. If the dependency supports the injector
-        protocol it will use the dependency's inject method, otherwise the context will get an instance of the
-        dependency and set it as an attribute."""
-        if not is_injectable(instance):
-            raise CanOnlyInjectIntoInjectables(
-                f"Attempted to inject into {instance}, it is not an instance of {Injectable}"
-            )
+        self._instance = instance
+        self._as_type = as_type
+        self._labels = self._clean_labels(labels)
 
-        if is_injector(dependency):
-            inject = dependency.__bevy_inject__
-            if isinstance(dependency, type) and (
-                not hasattr(inject, "__self__") or not isinstance(inject.__self__, type)
-            ):
-                inject = self.get(dependency).__bevy_inject__
-            inject(instance, attr_name, self, *args, **kwargs)
-        else:
-            setattr(instance, attr_name, self.get(dependency, *args, **kwargs))
+    @property
+    def instance(self) -> T:
+        return self._instance
 
-    def _find_dependency_match(self, obj: Any) -> Optional[T]:
-        def subclass_check(dt, o):
-            cls: Type[T] = o if isclass(o) else type(o)
-            return issubclass(cls, dt) or issubclass(dt, cls)
+    @property
+    def labels(self) -> set[str]:
+        return self._labels
 
-        for dependency_obj, dependency in self._dependencies.items():
-            is_match = getattr(
-                dependency,
-                "__bevy_is_match__",
-                partial(subclass_check, dependency_obj),
-            )
-            if is_match(obj):
-                return dependency
+    def matches(self, match_type: Type, labels: Optional[set[str]] = None) -> bool:
+        return (
+            issubclass(match_type, self._as_type)
+            or issubclass(self._as_type, match_type)
+        ) and self._labels == self._clean_labels(labels)
 
-        return
+    def __eq__(self, other):
+        return self._as_type is other and other.labels
 
-    def _resolve_branches(self):
-        for cls, branch in self._branches.items():
-            self.add_as(branch.build(), cls)
+    def __hash__(self):
+        return hash(self._as_type)
+
+    def _clean_labels(self, labels) -> set[str]:
+        return {label.casefold() for label in labels}
