@@ -60,12 +60,11 @@ class Inject(Injectable, Generic[T]):
         store: bool = True,
         as_type: Optional[Type] = None,
     ):
+        super().__init__()
         self._type = dependency_type
         self._as_type = as_type or dependency_type
         self._store = store
         self._labels = labels
-
-        self._instances = WeakKeyDictionary()
 
     def __class_getitem__(
         cls, item: Union[Type[T], tuple[Type[T], Sequence[str]]]
