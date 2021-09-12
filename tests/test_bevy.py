@@ -46,6 +46,23 @@ def test_shared_dependencies():
     assert instA.test is instB.test
 
 
+def test_inherited_dependencies():
+    class Dep:
+        ...
+
+    @dependencies
+    class TestingA:
+        test: Inject[Dep]
+
+    class TestingB(TestingA):
+        ...
+
+    context = Context()
+    inst = context.build(TestingB)
+
+    assert isinstance(inst.test, Dep)
+
+
 def test_branching_same_dependencies():
     class Dep:
         ...
