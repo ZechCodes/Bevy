@@ -28,8 +28,9 @@ context.add(MyDependency("foo", "bar"))
 example = context.create(Example)
 ```
 **Dependencies will only be drawn from attribute annotations that have no assigned value**
+
 ```py
-class Example(bevy.Injectable):
+class Example(bevy.Injector):
     dependency: MyDependency
     not_a_dependency: MyThing = MyThing()
 ```
@@ -73,10 +74,12 @@ Checks if any instance in the repository matches the search type, is a subclass 
 ### 2.iii Factory
 #### `class bevy.Factory`
 `Factory` is an annotation that takes a type. Bevy will then create a factory function which creates instances of that type which have their dependencies injected at instantiation.
+
 ```py
-class Example(bevy.Injectable):
+class Example(bevy.Injector):
     create_instance: bevy.Factory[MyClass]
     ...
+
     def get_instance(arg) -> MyClass:
         return self.create_instance(arg)
 ```

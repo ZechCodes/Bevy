@@ -17,11 +17,11 @@ from bevy.instance_dict import InstanceDict
 T = TypeVar("T")
 
 
-class Injectable(ABC):
+class Injector(ABC):
     def __init__(self):
         self._instances = InstanceDict()
 
-    def __call__(self) -> Injectable:
+    def __call__(self) -> Injector:
         return self
 
     def __get__(self, instance, owner):
@@ -54,7 +54,7 @@ class Injectable(ABC):
             return instance.__bevy_context__
 
 
-class Inject(Injectable, Generic[T]):
+class Inject(Injector, Generic[T]):
     def __init__(
         self,
         dependency_type: Type[T],
@@ -88,7 +88,7 @@ class Inject(Injectable, Generic[T]):
 def dependencies(cls):
     deps = _get_dependencies(cls)
     for name, annotation in get_type_hints(cls).items():
-        if isinstance(annotation, Injectable) and not hasattr(cls, name):
+        if isinstance(annotation, Injector) and not hasattr(cls, name):
             setattr(
                 cls, name, annotation() if isinstance(annotation, type) else annotation
             )
