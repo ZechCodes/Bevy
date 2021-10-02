@@ -1,11 +1,12 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from bevy.context import Context
+from bevy.context import Context, ContextDescriptor
 from typing import (
     Any,
     Generic,
     get_type_hints,
     Optional,
+    Protocol,
     Sequence,
     Type,
     TypeVar,
@@ -15,6 +16,16 @@ from bevy.instance_dict import InstanceDict
 
 
 T = TypeVar("T")
+
+
+class Injectable(Protocol):
+    """Protocol for any instance that has been/can be injected into. This protocol can alternatively be used as a base
+    class that creates a context descriptor when the class object is created."""
+
+    __bevy_context__: ContextDescriptor
+
+    def __init_subclass__(cls, **kwargs):
+        cls.__bevy_context__ = ContextDescriptor()
 
 
 class Injector(ABC):
