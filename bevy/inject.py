@@ -18,9 +18,9 @@ from bevy.instance_dict import InstanceDict
 T = TypeVar("T")
 
 
-class Injectable(Protocol):
-    """Protocol for any instance that has been/can be injected into. This protocol can alternatively be used as a base
-    class that creates a context descriptor when the class object is created."""
+class Injectable:
+    """Baseclass for any instance that can be injected into. This isn't necessary but is good for type checking if it's
+    necessary to access the Bevy context."""
 
     __bevy_context__: ContextDescriptor
 
