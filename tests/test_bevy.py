@@ -1,189 +1,52 @@
-from bevy import Context, dependencies, Inject
-from bevy.factory import Factory
+from bevy import AutoInject, Context, Inject
+from bevy.builder import Builder
 
 
-def test_no_context():
-    class Dep:
-        ...
-
-    @dependencies
-    class Testing:
-        test: Inject[Dep]
-
-    assert isinstance(Testing().test, Dep)
+class Dep:
+    ...
 
 
-def test_inject_dependencies():
-    class Dep:
-        ...
+def test_dependency_detection():
+    class Testing(AutoInject, auto_detect=True):
+        test: Dep
 
-    @dependencies
-    class Testing:
-        test: Inject[Dep]
-
-    context = Context()
-    inst = context.build(Testing)
-
+    inst = Testing()
     assert isinstance(inst.test, Dep)
+
+
+def test_independent_dependencies():
+    class Testing(AutoInject, auto_detect=True):
+        test: Dep
+
+    inst_a = Testing()
+    inst_b = Testing()
+    assert inst_a.test is not inst_b.test
 
 
 def test_shared_dependencies():
-    class Dep:
-        ...
-
-    @dependencies
-    class TestingA:
-        test: Inject[Dep]
-
-    @dependencies
-    class TestingB:
-        test: Inject[Dep]
+    class Testing(AutoInject, auto_detect=True):
+        test: Dep
 
     context = Context()
-    instA = context.build(TestingA)
-    instB = context.build(TestingB)
+    builder = context.bind(Testing)
+    inst_a = builder()
+    inst_b = builder()
 
-    assert instA.test is instB.test
+    assert inst_a.test is inst_b.test
 
 
-def test_inherited_dependencies():
-    class Dep:
-        ...
+def test_manual_inject():
+    class Testing(AutoInject, auto_detect=True):
+        test = Inject(Dep)
 
-    @dependencies
-    class TestingA:
-        test: Inject[Dep]
-
-    class TestingB(TestingA):
-        ...
-
-    context = Context()
-    inst = context.build(TestingB)
-
+    inst = Testing()
     assert isinstance(inst.test, Dep)
 
 
-def test_branching_same_dependencies():
-    class Dep:
-        ...
+def test_builder():
+    class Testing(AutoInject, auto_detect=True):
+        builder: Builder[Dep]
 
-    @dependencies
-    class TestingA:
-        test: Inject[Dep]
-
-    @dependencies
-    class TestingB:
-        test: Inject[Dep]
-
-    context = Context()
-    branch = context.branch()
-    instA = context.build(TestingA)
-    instB = branch.build(TestingB)
-
-    assert instA.test is instB.test
-
-
-def test_branching_different_dependencies():
-    class Dep:
-        ...
-
-    @dependencies
-    class TestingA:
-        test: Inject[Dep]
-
-    @dependencies
-    class TestingB:
-        test: Inject[Dep]
-
-    context = Context()
-    branch = context.branch()
-    instB = branch.build(TestingB)
-    instA = context.build(TestingA)
-
-    assert instA.test is not instB.test
-
-
-def test_branching_different_dependencies():
-    class Dep:
-        ...
-
-    @dependencies
-    class TestingA:
-        test: Inject[Dep]
-
-    @dependencies
-    class TestingB:
-        test: Inject[Dep]
-
-    context = Context()
-    branch = context.branch()
-    instB = branch.build(TestingB)
-    instA = context.build(TestingA)
-
-    assert instA.test is not instB.test
-
-
-def test_dependencies_matching_labels():
-    class Dep:
-        ...
-
-    @dependencies
-    class TestingA:
-        test: Inject[Dep, "testing"]
-
-    @dependencies
-    class TestingB:
-        test: Inject[Dep, "testing"]
-
-    context = Context()
-    instA = context.build(TestingA)
-    instB = context.build(TestingB)
-
-    assert instA.test is instB.test
-
-
-def test_dependencies_nonmatching_labels():
-    class Dep:
-        ...
-
-    @dependencies
-    class TestingA:
-        test: Inject[Dep, "testingA"]
-
-    @dependencies
-    class TestingB:
-        test: Inject[Dep, "testingB"]
-
-    context = Context()
-    instA = context.build(TestingA)
-    instB = context.build(TestingB)
-
-    assert instA.test is instB.test
-
-
-def test_factory():
-    class Dep:
-        ...
-
-    @dependencies
-    class Testing:
-        test: Factory[Dep]
-
-    context = Context()
-    inst = context.build(Testing)
-
-    assert isinstance(inst.test(), Dep)
-
-
-def test_factory_unique():
-    class Dep:
-        ...
-
-    @dependencies
-    class Testing:
-        test: Factory[Dep]
-
-    context = Context()
-    inst = context.build(Testing)
-
-    assert inst.test() is not inst.test()
+    inst = Testing()
+    assert isinstance(inst.builder(), Dep)
+    assert inst.builder() is not inst.builder()
