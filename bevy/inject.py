@@ -57,7 +57,10 @@ class ContextDescriptor:
 class AutoInject:
     __bevy_context__: bevy.context.Context = ContextDescriptor()
 
-    def __init_subclass__(cls, *, auto_detect: bool = False, **kwargs):
-        if auto_detect:
-            for name, value in cls.__annotations__.items():
-                setattr(cls, name, injector_factory(value, cls))
+
+def detect_dependencies(cls):
+    """Class decorator that converts annotation attributes into the appropriate Inject/AnnotationInject assignments."""
+    for name, value in cls.__annotations__.items():
+        setattr(cls, name, injector_factory(value, cls))
+
+    return cls

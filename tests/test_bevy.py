@@ -1,4 +1,4 @@
-from bevy import AutoInject, Context, Inject
+from bevy import AutoInject, Context, Inject, detect_dependencies
 from bevy.builder import Builder
 
 
@@ -7,7 +7,8 @@ class Dep:
 
 
 def test_dependency_detection():
-    class Testing(AutoInject, auto_detect=True):
+    @detect_dependencies
+    class Testing(AutoInject):
         test: Dep
 
     inst = Testing()
@@ -15,7 +16,8 @@ def test_dependency_detection():
 
 
 def test_independent_dependencies():
-    class Testing(AutoInject, auto_detect=True):
+    @detect_dependencies
+    class Testing(AutoInject):
         test: Dep
 
     inst_a = Testing()
@@ -24,7 +26,8 @@ def test_independent_dependencies():
 
 
 def test_shared_dependencies():
-    class Testing(AutoInject, auto_detect=True):
+    @detect_dependencies
+    class Testing(AutoInject):
         test: Dep
 
     context = Context()
@@ -36,7 +39,8 @@ def test_shared_dependencies():
 
 
 def test_manual_inject():
-    class Testing(AutoInject, auto_detect=True):
+    @detect_dependencies
+    class Testing(AutoInject):
         test = Inject(Dep)
 
     inst = Testing()
@@ -44,7 +48,8 @@ def test_manual_inject():
 
 
 def test_builder():
-    class Testing(AutoInject, auto_detect=True):
+    @detect_dependencies
+    class Testing(AutoInject):
         builder: Builder[Dep]
 
     inst = Testing()
