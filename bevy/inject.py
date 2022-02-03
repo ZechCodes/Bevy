@@ -19,7 +19,7 @@ class Inject(Generic[T]):
         return self._type
 
     def __get__(self, instance: Injectable, owner) -> T:
-        return instance.__bevy_context__.get_or_create(self.type)
+        return instance.__bevy_context__.get_or_create(self.type, propagate=True)
 
 
 class AnnotationInject(Inject):

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from bevy.exception import BevyBaseException
 from bevy.binder import Binder
 from bevy.injector import Injector
@@ -8,7 +9,8 @@ P = ParamSpec("P")
 
 
 class Context:
-    def __init__(self):
+    def __init__(self, parent: Context | None = None):
+        self._parent = parent
         self._repository: list[Dependency] = []
         self._lookup_cache: dict[Type[T] | Injector[T], T] = {}
 
@@ -34,7 +36,13 @@ class Context:
 
         return builder
 
-    def get(self, instance_type: Type[T] | Injector[T]) -> T | None:
+    def branch(self) -> Context:
+        """Creates a context that inherits from the current context's repository."""
+        return type(self)(self)
+
+    def get(
+        self, instance_type: Type[T] | Injector[T], *, propagate: bool = True
+    ) -> T | None:
         """Gets an instance matching the given type."""
         if hasattr(instance_type, "__bevy_create__"):
             return instance_type.__bevy_create__(self)
@@ -44,12 +52,17 @@ class Context:
         ):
             self._lookup_cache[instance_type] = match
 
+        if propagate and self._parent and instance_type not in self._lookup_cache:
+            return self._parent.get(instance_type)
+
         return self._lookup_cache.get(instance_type, None)
 
-    def get_or_create(self, instance_type: Type[T] | Injector[T]) -> T | None:
+    def get_or_create(
+        self, instance_type: Type[T] | Injector[T], *, propagate: bool = False
+    ) -> T | None:
         """Gets an instance for the given type, if it isn't found an instance will be created and added to the
         repository."""
-        if not (match := self.get(instance_type)):
+        if not (match := self.get(instance_type, propagate=propagate)):
             match = self.bind(instance_type)()
             self.add(match)
 

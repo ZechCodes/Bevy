@@ -84,3 +84,59 @@ def test_slots():
 
     inst = Testing()
     assert isinstance(inst.test, Dep)
+
+
+def test_non_branching():
+    @detect_dependencies
+    class Child(AutoInject):
+        test: Dep
+
+    @detect_dependencies
+    class Testing(AutoInject):
+        test: Dep
+        child: Child
+
+    parent = Testing()
+    assert parent.test is parent.child.test
+
+
+def test_branching():
+    @detect_dependencies
+    class Child(AutoInject):
+        test: Dep
+
+    @detect_dependencies
+    class Testing(AutoInject):
+        test: Dep
+        child: Child
+
+    context = Context()
+    child_context = context.branch()
+    parent = context.bind(Testing)()
+    child = child_context.bind(Child)()
+    child_context.add(Dep())
+    context.add(child)
+
+    assert parent.child is child
+    assert parent.test is not parent.child.test
+
+
+def test_branching_inheritance():
+    @detect_dependencies
+    class Child(AutoInject):
+        test: Dep
+
+    @detect_dependencies
+    class Testing(AutoInject):
+        test: Dep
+        child: Child
+
+    context = Context()
+    child_context = context.branch()
+    parent = context.bind(Testing)()
+    context.add(Dep())
+    child = child_context.bind(Child)()
+    context.add(child)
+
+    assert parent.child is child
+    assert parent.test is parent.child.test
