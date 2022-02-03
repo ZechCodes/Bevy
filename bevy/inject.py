@@ -47,11 +47,9 @@ def injector_factory(annotation, cls: type) -> Inject:
 
 
 class ContextDescriptor:
-    def __init__(self):
-        self._contexts = defaultdict(bevy.context.Context)
-
     def __get__(self, instance, owner):
-        return self._contexts[instance]
+        setattr(instance, "__bevy_context__", bevy.context.Context())
+        return instance.__bevy_context__
 
 
 class AutoInject:
