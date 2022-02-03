@@ -1,6 +1,5 @@
 from __future__ import annotations
 from bevy.injectable import Injectable
-from collections import defaultdict
 from sys import modules
 from typing import Generic, Type, TypeVar
 import bevy.context
