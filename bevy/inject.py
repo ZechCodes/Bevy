@@ -2,6 +2,7 @@ from __future__ import annotations
 from bevy.injectable import Injectable
 from sys import modules
 from typing import Generic, Type, TypeVar
+from collections.abc import Mapping
 import bevy.context
 
 
@@ -44,7 +45,7 @@ class AnnotationInject(Inject):
 
 def injector_factory(annotation, cls: Type[T]) -> Inject[T]:
     if isinstance(annotation, str):
-        return AnnotationInject(annotation, modules[cls.__module__])
+        return AnnotationInject(annotation, vars(modules[cls.__module__]))
 
     return Inject(annotation)
 
