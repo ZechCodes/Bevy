@@ -52,7 +52,11 @@ class Context:
         ):
             self._lookup_cache[instance_type] = match
 
-        if propagate and self._parent and instance_type not in self._lookup_cache:
+        if (
+            propagate
+            and self._parent
+            and not self._lookup_cache.get(instance_type, None)
+        ):
             return self._parent.get(instance_type)
 
         return self._lookup_cache.get(instance_type, None)
