@@ -1,6 +1,7 @@
 from __future__ import annotations
 from bevy.exception import BevyBaseException
 from bevy.binder import Binder
+from bevy.constructor import Constructor
 from bevy.injector import Injector
 from typing import Callable, Generic, Type, TypeVar, ParamSpec
 
@@ -8,7 +9,12 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class Context:
+class ContextMetaclass(type):
+    def __rmatmul__(self, other):
+        return Constructor(other)
+
+
+class Context(metaclass=ContextMetaclass):
     def __init__(self, parent: Context | None = None):
         self._parent = parent
         self._repository: list[Dependency] = []
@@ -34,6 +40,9 @@ class Context:
         self, instance: T, *, use_as: type | None = None, ignore_hierarchy: bool = False
     ):
         """Adds an instance to the context repository."""
+        if isinstance(instance, Constructor):
+            instance = instance.create(self)
+
         self._repository.append(
             Dependency(instance, use_as=use_as, ignore_hierarchy=ignore_hierarchy)
         )

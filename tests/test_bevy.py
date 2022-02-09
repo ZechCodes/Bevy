@@ -1,5 +1,6 @@
 from bevy import AutoInject, Context, Inject, detect_dependencies
 from bevy.builder import Builder
+from bevy.constructor import Constructor
 
 
 class Dep:
@@ -140,3 +141,28 @@ def test_branching_inheritance():
 
     assert parent.child is child
     assert parent.test is parent.child.test
+
+
+def test_constructor():
+    class TestDep:
+        def __init__(self, test):
+            self.test_attr = test
+
+    @detect_dependencies
+    class Testing(AutoInject):
+        test: TestDep
+
+    context = Context.new()
+    inst = Testing @ context
+    context << Constructor(TestDep, "test")
+    assert inst.test.test_attr == "test"
+
+
+def test_chained_context_injection():
+    @detect_dependencies
+    class Testing(AutoInject):
+        test: Dep
+
+    dep = Dep()
+    context = Context.new() << Testing @ Context << dep
+    assert (Testing << context).test is dep
