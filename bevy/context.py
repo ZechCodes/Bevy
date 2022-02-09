@@ -14,11 +14,11 @@ class Context:
         self._repository: list[Dependency] = []
         self._lookup_cache: dict[Type[T] | Injector[T], T] = {}
 
-    def __rrshift__(self, instance: T) -> T:
-        """Syntactic sugar for adding an instance to a context, returns the unchanged instance.
-        >>> instance = ExampleClass() >> context"""
+    def __lshift__(self, instance: T) -> Context:
+        """Syntactic sugar for adding multiple instances into the context. Returns the context to allow for chaining.
+        >>> context << ExampleClass() << AnotherClass()"""
         self.add(instance)
-        return instance
+        return self
 
     def __rlshift__(self, instance_type: Type[T]) -> T | None:
         """Syntactic sugar for the get method.
