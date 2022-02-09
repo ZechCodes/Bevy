@@ -95,6 +95,12 @@ class Context:
 
         return None
 
+    @classmethod
+    def new(cls, context: Context | None = None, *, parent: Context | None = None):
+        """Convenience function for getting a new context. If a context is passed in this will return that context,
+        otherwise it will return a new context."""
+        return context if isinstance(context, Context) else cls(parent)
+
 
 class Dependency(Generic[T]):
     """Wraps each instance that has been added to the dependency repository. Handles determining matches."""
