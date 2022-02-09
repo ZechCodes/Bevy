@@ -14,6 +14,22 @@ class Context:
         self._repository: list[Dependency] = []
         self._lookup_cache: dict[Type[T] | Injector[T], T] = {}
 
+    def __rrshift__(self, instance: T) -> T:
+        """Syntactic sugar for adding an instance to a context, returns the unchanged instance.
+        >>> instance = ExampleClass() >> context"""
+        self.add(instance)
+        return instance
+
+    def __rlshift__(self, instance_type: Type[T]) -> T | None:
+        """Syntactic sugar for the get method.
+        >>> bound_instance = ExampleClass << context"""
+        return self.get(instance_type)
+
+    def __rmatmul__(self, instance_type: Type[T] | Binder[T]) -> T:
+        """Syntactic sugar for creating a bound instance of a type.
+        >>> bound_instance = ExampleClass @ context"""
+        return self.bind(instance_type)()
+
     def add(
         self, instance: T, *, use_as: type | None = None, ignore_hierarchy: bool = False
     ):
