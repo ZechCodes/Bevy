@@ -13,7 +13,7 @@ Put simply, *Dependency Injection* is a design pattern where the objects that yo
 This promotes loosely coupled code where your class doesn’t require direct knowledge of what classes it depends on or how to create them. Instead your class declares what class interface it expects and an outside framework handles the work of creating the class instances with the correct interface.
 
 ## Interfaces
-Python doesn’t have an actual interface implementation like many other languages. Class inheritance, however, can be used in a very similar way since sub classes will likely have the same fundamental interface as their base class. 
+Python doesn’t have an actual interface implementation like many other languages. Class inheritance, however, can be used in a very similar way since subclasses will likely have the same fundamental interface as their base class. 
 
 ## Why Do I Care?
 *Dependency Injection* and its reliance on abstract interfaces makes your code easier to maintain:
@@ -26,6 +26,7 @@ annotations, using them to determine what dependencies a class has.
 
 **Example**
 ```py
+from bevy.injection import AutoInject, detect_dependencies
 @detect_dependencies
 class Example(AutoInject):
     dependency: Dependency
@@ -37,11 +38,12 @@ API sessions.
 ## Bevy Constructors
 
 To instantiate classes and have Bevy inject their dependencies it is necessary to bind them to a 
-`bevy.Context`. This will give a callable that will build instances that are bound to the context.
+`bevy.injection.Context`. This will give a callable that will build instances that are bound to the context.
 
 **Example**
 ```py
-context = bevy.Context()
+import bevy.injection
+context = bevy.injection.Context()
 builder = context.bind(Example)
 example = builder()  # An instance of Example will be created
 ```

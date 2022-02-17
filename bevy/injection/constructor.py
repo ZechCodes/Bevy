@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Generic, ParamSpec, Type, TypeVar
-import bevy
+import bevy.injection as bevy
 
 
 T = TypeVar("T")

@@ -1,6 +1,6 @@
-from bevy import AutoInject, Context, Inject, detect_dependencies
-from bevy.builder import Builder
-from bevy.constructor import Constructor
+from bevy.injection import AutoInject, Context, Inject, detect_dependencies
+from bevy.injection.builder import Builder
+from bevy.injection.constructor import Constructor
 
 
 class Dep:

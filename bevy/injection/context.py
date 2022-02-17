@@ -1,8 +1,8 @@
 from __future__ import annotations
-from bevy.exception import BevyBaseException
-from bevy.binder import Binder
-from bevy.constructor import Constructor
-from bevy.injector import Injector
+from bevy.injection.exception import BevyBaseException
+from bevy.injection.binder import Binder
+from bevy.injection.constructor import Constructor
+from bevy.injection.injector import Injector
 from typing import Callable, Generic, Type, TypeVar, ParamSpec
 
 T = TypeVar("T")

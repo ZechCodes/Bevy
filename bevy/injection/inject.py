@@ -1,9 +1,8 @@
 from __future__ import annotations
-from bevy.injectable import Injectable
+from bevy.injection.injectable import Injectable
 from sys import modules
 from typing import Generic, Type, TypeVar
-from collections.abc import Mapping
-import bevy.context
+import bevy.injection.context
 
 
 T = TypeVar("T")
@@ -51,8 +50,8 @@ def injector_factory(annotation, cls: Type[T]) -> Inject[T]:
 
 
 class ContextDescriptor:
-    def __get__(self, instance, owner) -> bevy.context.Context:
-        setattr(instance, "__bevy_context__", bevy.context.Context())
+    def __get__(self, instance, owner) -> bevy.injection.context.Context:
+        setattr(instance, "__bevy_context__", bevy.injection.context.Context())
         return instance.__bevy_context__
 
 
