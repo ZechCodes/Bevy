@@ -55,8 +55,8 @@ class Context(metaclass=ContextMetaclass):
             instance.__init__(*args, **kwargs)
             return instance
 
-        if hasattr(instance_type, "__bevy_builder__"):
-            builder = instance_type.__bevy_builder__(self)
+        if hasattr(instance_type, "__bevy_create_builder__"):
+            builder = instance_type.__bevy_create_builder__(self)
 
         return builder
 
