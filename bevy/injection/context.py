@@ -13,10 +13,25 @@ class ContextMetaclass(type):
         return Constructor(other)
 
 
+class Repository(Generic[T]):
+    def __init__(self):
+        self._repository = []
+
+    def add(self, item):
+        self._repository.append(item)
+
+    def __getitem__(self, item):
+        try:
+            index = self._repository.index(item)
+            return self._repository[index]
+        except ValueError:
+            return None
+
+
 class Context(metaclass=ContextMetaclass):
     def __init__(self, parent: Context | None = None):
         self._parent = parent
-        self._repository: list[Dependency] = []
+        self._repository: Repository[Dependency] = Repository()
         self._lookup_cache: dict[Type[T] | Injector[T], T] = {}
 
     def __lshift__(self, instance: T) -> Context:
@@ -42,7 +57,7 @@ class Context(metaclass=ContextMetaclass):
         if isinstance(instance, Constructor):
             instance = instance.create(self)
 
-        self._repository.append(
+        self._repository.add(
             Dependency(instance, use_as=use_as, ignore_hierarchy=ignore_hierarchy)
         )
 
@@ -97,11 +112,7 @@ class Context(metaclass=ContextMetaclass):
         return match
 
     def _get_match(self, instance_type: Type[T] | Injector[T]) -> T | None:
-        for dependency in self._repository:
-            if dependency.is_match(instance_type):
-                return dependency.instance
-
-        return None
+        return dep.instance if (dep := self._repository[instance_type]) else None
 
     @classmethod
     def new(cls, context: Context | None = None, *, parent: Context | None = None):
@@ -124,7 +135,7 @@ class Dependency(Generic[T]):
     def instance(self) -> T:
         return self._instance
 
-    def is_match(self, search: type | Injector) -> bool:
+    def __eq__(self, search: type | Injector) -> bool:
         """Checks if the instance's type matches the search. If the search implements the Injector prototype it will
         use its __bevy_matches__ method."""
         if hasattr(search, "__bevy_matches__"):
