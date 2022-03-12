@@ -23,9 +23,10 @@ class Repository(Generic[T]):
     def __getitem__(self, item):
         try:
             index = self._repository.index(item)
-            return self._repository[index]
         except ValueError:
             return None
+        else:
+            return self._repository[index]
 
 
 class Context(metaclass=ContextMetaclass):
