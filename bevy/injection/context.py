@@ -1,6 +1,5 @@
 from __future__ import annotations
 from bevy.injection.exception import BevyBaseException
-from bevy.injection.binder import Binder
 from bevy.injection.constructor import Constructor
 from bevy.injection.injector import Injector
 from typing import Callable, Generic, Type, TypeVar, ParamSpec
@@ -31,7 +30,7 @@ class Context(metaclass=ContextMetaclass):
         >>> bound_instance = ExampleClass << context"""
         return self.get(instance_type)
 
-    def __rmatmul__(self, instance_type: Type[T] | Binder[T]) -> T:
+    def __rmatmul__(self, instance_type: Type[T]) -> T:
         """Syntactic sugar for creating a bound instance of a type.
         >>> bound_instance = ExampleClass @ context"""
         return self.bind(instance_type)()
@@ -47,7 +46,7 @@ class Context(metaclass=ContextMetaclass):
             Dependency(instance, use_as=use_as, ignore_hierarchy=ignore_hierarchy)
         )
 
-    def bind(self, instance_type: Type[T] | Binder[T]) -> Callable[[P], T]:
+    def bind(self, instance_type: Type[T]) -> Callable[[P], T]:
         """Creates a callable that returns instances of the given type that are bound to the context."""
 
         def builder(*args, **kwargs):
