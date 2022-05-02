@@ -1,168 +1,32 @@
-from bevy.injection import AutoInject, Context, Inject, detect_dependencies
-from bevy.injection.builder import Builder
-from bevy.injection.constructor import Constructor
+from bevy.injection import Context, Inject, Dependencies
 
 
-class Dep:
-    ...
+class Dependency:
+    def __init__(self, value=-1):
+        self.value = value
 
 
-def test_dependency_detection():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-
-    inst = Testing()
-    assert isinstance(inst.test, Dep)
+def test_dependency_creation():
+    context = Context()
+    assert isinstance(context.get_provider_for(Dependency).get_instance(), Dependency)
 
 
-def test_independent_dependencies():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-
-    inst_a = Testing()
-    inst_b = Testing()
-    assert inst_a.test is not inst_b.test
-
-
-def test_shared_dependencies():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
+def test_injection():
+    class TestClass(Dependencies):
+        dependency: Inject[Dependency]
 
     context = Context()
-    builder = context.bind(Testing)
-    inst_a = builder()
-    inst_b = builder()
-
-    assert inst_a.test is inst_b.test
+    dep_provider = context.get_provider_for(Dependency)
+    test_provider = context.get_provider_for(TestClass)
+    assert dep_provider.get_instance() is test_provider.get_instance().dependency
 
 
-def test_manual_inject():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test = Inject(Dep)
-
-    inst = Testing()
-    assert isinstance(inst.test, Dep)
-
-
-def test_builder():
-    @detect_dependencies
-    class Testing(AutoInject):
-        builder: Builder[Dep]
-
-    inst = Testing()
-    assert isinstance(inst.builder(), Dep)
-    assert inst.builder() is not inst.builder()
-
-
-def test_single_context_instance():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-
-    inst = Testing()
-    assert inst.__bevy_context__ is inst.__bevy_context__
-
-
-def test_multiple_contexts():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-
-    inst_a = Testing()
-    inst_b = Testing()
-    assert inst_a.__bevy_context__ is not inst_b.__bevy_context__
-
-
-def test_slots():
-    @detect_dependencies
-    class Testing(AutoInject):
-        __slots__ = []
-        test: Dep
-
-    inst = Testing()
-    assert isinstance(inst.test, Dep)
-
-
-def test_non_branching():
-    @detect_dependencies
-    class Child(AutoInject):
-        test: Dep
-
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-        child: Child
-
-    parent = Testing()
-    assert parent.test is parent.child.test
-
-
-def test_branching():
-    @detect_dependencies
-    class Child(AutoInject):
-        test: Dep
-
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-        child: Child
+def test_inheritance():
+    class TestClass(Dependencies):
+        dependency: Inject[Dependency]
 
     context = Context()
-    child_context = context.branch()
-    parent = context.bind(Testing)()
-    child = child_context.bind(Child)()
-    child_context.add(Dep())
-    context.add(child)
-
-    assert parent.child is child
-    assert parent.test is not parent.child.test
-
-
-def test_branching_inheritance():
-    @detect_dependencies
-    class Child(AutoInject):
-        test: Dep
-
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-        child: Child
-
-    context = Context()
-    child_context = context.branch()
-    parent = context.bind(Testing)()
-    context.add(Dep())
-    child = child_context.bind(Child)()
-    context.add(child)
-
-    assert parent.child is child
-    assert parent.test is parent.child.test
-
-
-def test_constructor():
-    class TestDep:
-        def __init__(self, test):
-            self.test_attr = test
-
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: TestDep
-
-    context = Context.new()
-    inst = Testing @ context
-    context << Constructor(TestDep, "test")
-    assert inst.test.test_attr == "test"
-
-
-def test_chained_context_injection():
-    @detect_dependencies
-    class Testing(AutoInject):
-        test: Dep
-
-    dep = Dep()
-    context = Context.new() << Testing @ Context << dep
-    assert (Testing << context).test is dep
+    branch_context = context.branch()
+    context_provider = context.get_provider_for(Dependency)
+    branch_provider = branch_context.get_provider_for(Dependency)
+    assert context_provider.get_instance() is branch_provider.get_instance()
