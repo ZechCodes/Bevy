@@ -31,6 +31,16 @@ def test_injection_from_context():
     assert dep is test.dependency
 
 
+def test_context_has():
+    class Dep2:
+        ...
+
+    context = Context()
+    context.get(Dependency)
+    assert context.has(Dependency)
+    assert not context.has(Dep2)
+
+
 def test_inheritance():
     class TestClass(Dependencies):
         dependency: Inject[Dependency]

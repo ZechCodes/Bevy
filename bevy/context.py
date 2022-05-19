@@ -77,6 +77,16 @@ class Context(BaseContext):
         provider = self.get_provider_for(type_, propagate=propagate, provider_type=provider_type)
         return provider.get_instance(*args or [], **kwargs or {})
 
+    def has(
+        self,
+        type_: Type[T],
+        *,
+        propagate: bool = True,
+        provider_type: Type[Provider] = SharedInstanceProvider,
+    ) -> T:
+        lookup_provider = provider_type(type_, self)
+        return self.has_provider(lookup_provider, propagate=propagate)
+
     def _find_provider(self, provider: Provider[T]) -> Provider[T] | None:
         for p in self._providers:
             if p == provider:
