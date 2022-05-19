@@ -21,6 +21,16 @@ def test_injection():
     assert dep_provider.get_instance() is test_provider.get_instance().dependency
 
 
+def test_injection_from_context():
+    class TestClass(Dependencies):
+        dependency: Inject[Dependency]
+
+    context = Context()
+    dep = context.get(Dependency)
+    test = context.get(TestClass)
+    assert dep is test.dependency
+
+
 def test_inheritance():
     class TestClass(Dependencies):
         dependency: Inject[Dependency]
