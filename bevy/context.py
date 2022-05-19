@@ -60,7 +60,7 @@ class Context(BaseContext):
         type_: Type[T],
         *,
         propagate: bool = True,
-        provider_type: Type[Provider] = SharedInstanceProvider
+        provider_type: Protocol[Provider] = SharedInstanceProvider
     ) -> Provider[T]:
         lookup_provider = provider_type(type_, self)
         return self.get_provider(lookup_provider, propagate=propagate)
@@ -70,7 +70,7 @@ class Context(BaseContext):
         type_: Type[T],
         *,
         propagate: bool = True,
-        provider_type: Type[Provider] = SharedInstanceProvider,
+        provider_type: Protocol[Provider] = SharedInstanceProvider,
         args: list | None = None,
         kwargs: dict | None = None
     ) -> T:
@@ -82,7 +82,7 @@ class Context(BaseContext):
         type_: Type[T],
         *,
         propagate: bool = True,
-        provider_type: Type[Provider] = SharedInstanceProvider,
+        provider_type: Protocol[Provider] = SharedInstanceProvider,
     ) -> T:
         lookup_provider = provider_type(type_, self)
         return self.has_provider(lookup_provider, propagate=propagate)
