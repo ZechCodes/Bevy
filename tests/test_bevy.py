@@ -41,6 +41,21 @@ def test_context_has():
     assert not context.has(Dep2)
 
 
+def test_context_use_for():
+    class Dep2:
+        ...
+
+    context = Context()
+    context.use_for(Dep2(), Dependency)
+    assert isinstance(context.get(Dependency), Dep2)
+
+
+def test_context_use_for_instance():
+    context = Context()
+    context.use_for(Dependency(10))
+    assert context.get(Dependency).value == 10
+
+
 def test_inheritance():
     class TestClass(Dependencies):
         dependency: Inject[Dependency]
