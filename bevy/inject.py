@@ -1,7 +1,7 @@
 from functools import cache, wraps
 from typing import Annotated, Generic, overload, Type, TypeVar, get_type_hints, get_args, get_origin
 
-from bevy.injection.context import Context
+from bevy.context import Context
 
 T = TypeVar("T")
 

@@ -7,9 +7,9 @@ with. When a class created by the context
 from __future__ import annotations
 from typing import Type, TypeVar
 
-from bevy.injection.base_context import BaseContext
-from bevy.injection.null_context import NullContext
-from bevy.injection.provider import Provider, SharedInstanceProvider
+from bevy.base_context import BaseContext
+from bevy.null_context import NullContext
+from bevy.provider import Provider, SharedInstanceProvider
 
 
 T = TypeVar("T")

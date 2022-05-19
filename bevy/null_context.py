@@ -1,6 +1,6 @@
 from typing import Literal
 
-from bevy.injection.base_context import BaseContext
+from bevy.base_context import BaseContext
 
 
 class NullContext(BaseContext):

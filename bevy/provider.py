@@ -2,8 +2,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Callable, Generic, Type, TypeVar
 
-import bevy.injection.base_context as b
-from bevy.injection.sentinel import sentinel
+import bevy.base_context as b
+from bevy.sentinel import sentinel
 
 
 T = TypeVar("T")

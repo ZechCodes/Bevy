@@ -1,3 +1,3 @@
-from bevy.injection.context import Context
-from bevy.injection.inject import Inject
-from bevy.injection.inject import Dependencies
+from bevy.context import Context
+from bevy.inject import Inject
+from bevy.inject import Dependencies

@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Type, TypeVar
 
-import bevy.injection.provider as p
+import bevy.provider as p
 
 
 T = TypeVar("T")

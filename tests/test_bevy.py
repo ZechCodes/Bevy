@@ -1,4 +1,4 @@
-from bevy.injection import Context, Inject, Dependencies
+from bevy import Context, Inject, Dependencies
 
 
 class Dependency:
