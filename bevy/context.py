@@ -56,11 +56,11 @@ class Context(BaseContext):
         return bool(found)
 
     def get_provider_for(
-            self,
-            type_: Type[T],
-            *,
-            propagate: bool = True,
-            provider_type: Type[Provider] = SharedInstanceProvider
+        self,
+        type_: Type[T],
+        *,
+        propagate: bool = True,
+        provider_type: Type[Provider] = SharedInstanceProvider
     ) -> Provider[T]:
         lookup_provider = provider_type(type_, self)
         return self.get_provider(lookup_provider, propagate=propagate)
