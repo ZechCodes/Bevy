@@ -1,7 +1,8 @@
+from __future__ import annotations
 from functools import cache, wraps
 from typing import Annotated, Generic, overload, Type, TypeVar, get_type_hints, get_args, get_origin
 
-from bevy.context import Context
+import bevy.context as context
 
 T = TypeVar("T")
 
@@ -11,12 +12,12 @@ class ContextAlreadySet(RuntimeError): ...
 
 class ContextAccessor:
     def __init__(self):
-        self._context: Context | None = None
+        self._context: context.Context | None = None
 
     @property
-    def context(self) -> Context:
+    def context(self) -> context.Context:
         if not self._context:
-            self._context = Context()
+            self._context = context.Context()
 
         return self._context
 
