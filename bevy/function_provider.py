@@ -19,6 +19,9 @@ class FunctionProvider(Provider):
         self._use = use
         self._bound_function = None
 
+    def create(self, func: Callable[P, T], *_, **__) -> Callable[P, T]:
+        return self.get_instance()
+
     def get_instance(self) -> Callable[P, T]:
         if self._use:
             return self._use
@@ -71,6 +74,9 @@ class FunctionProvider(Provider):
 
     def bind_to(self, context: BaseContext) -> FunctionProvider:
         return type(self)(self._func, context, use=self._use)
+
+    def __eq__(self, other):
+        return other.is_matching_provider_type(type(self)) and other.is_matching_type(self._func)
 
     def __repr__(self):
         return f"{type(self).__name__}<{self._func!r}, bound={bool(self._context)}, use={self._use}>"

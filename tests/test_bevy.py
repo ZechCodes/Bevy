@@ -1,4 +1,5 @@
 from bevy import Context, Inject, Dependencies
+from bevy.function_provider import FunctionProvider
 
 
 class Dependency:
@@ -76,3 +77,28 @@ def test_function_providers():
     func = context.bind(function)
 
     assert func() == 10
+
+
+def test_getting_a_function():
+    def function(dep: Dependency = Inject) -> int:
+        return dep.value
+
+    context = Context()
+    context.use_for(Dependency(10))
+    context.add_provider(FunctionProvider(function))
+
+    assert context.get(function, provider_type=FunctionProvider)() == 10
+
+
+def test_getting_a_function_with_matching_signature():
+    def dep_function(dep: Dependency = Inject) -> int:
+        return dep.value + 10
+
+    def function(dep: Dependency = Inject) -> int:
+        return dep.value
+
+    context = Context()
+    context.use_for(Dependency(10))
+    context.add_provider(FunctionProvider(dep_function))
+
+    assert context.get(function, provider_type=FunctionProvider)() == 20

@@ -47,7 +47,10 @@ class Provider(Generic[T], ABC):
         return provider_type is cls or issubclass(provider_type, cls) or issubclass(cls, provider_type)
 
     def is_matching_type(self, type_: Type) -> bool:
-        return type_ is self._type or issubclass(type_, self._type) or issubclass(self._type, type_)
+        try:
+            return type_ is self._type or issubclass(type_, self._type) or issubclass(self._type, type_)
+        except TypeError:
+            return False
 
     def __eq__(self, other):
         return other.is_matching_provider_type(type(self)) and other.is_matching_type(self._type)
