@@ -16,6 +16,9 @@ class NullContext(BaseContext):
     def get_provider_for(self, *_, **__) -> None:
         return None
 
+    def get(self, *_, **__) -> None:
+        return None
+
     def has_provider(self, *_, **__) -> Literal[False]:
         return False
 

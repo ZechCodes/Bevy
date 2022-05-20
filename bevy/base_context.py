@@ -26,5 +26,9 @@ class BaseContext(ABC):
         ...
 
     @abstractmethod
+    def get(self, type_: Type[T], *, propagate: bool = True) -> T | None:
+        ...
+
+    @abstractmethod
     def has_provider(self, provider: p.Provider[T], *, propagate: bool) -> bool:
         ...
