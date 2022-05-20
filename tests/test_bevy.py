@@ -69,9 +69,10 @@ def test_inheritance():
 
 def test_function_providers():
     def function(dep: Dependency = Inject):
-        assert dep.value == 10
+        return dep.value
 
     context = Context()
     context.use_for(Dependency(10))
     func = context.bind(function)
-    func()
+
+    assert func() == 10
