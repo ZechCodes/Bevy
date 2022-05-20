@@ -65,3 +65,13 @@ def test_inheritance():
     context_provider = context.get_provider_for(Dependency)
     branch_provider = branch_context.get_provider_for(Dependency)
     assert context_provider.get_instance() is branch_provider.get_instance()
+
+
+def test_function_providers():
+    def function(dep: Dependency = Inject):
+        assert dep.value == 10
+
+    context = Context()
+    context.use_for(Dependency(10))
+    func = context.bind(function)
+    func()

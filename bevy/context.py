@@ -5,13 +5,15 @@ Most fundamentally it uses a repository to store all instances that have been in
 with. When a class created by the context
 """
 from __future__ import annotations
-from typing import Protocol, Type, TypeVar
+from typing import Callable, ParamSpec, Protocol, Type, TypeVar
 
 from bevy.base_context import BaseContext
 from bevy.null_context import NullContext
 from bevy.provider import Provider, SharedInstanceProvider
+from bevy.function_provider import FunctionProvider
 
 
+P = ParamSpec("P")
 T = TypeVar("T")
 
 
@@ -64,6 +66,16 @@ class Context(BaseContext):
     ) -> Provider[T]:
         lookup_provider = provider_type(type_, self)
         return self.get_provider(lookup_provider, propagate=propagate)
+
+    def bind(
+        self,
+        func: Callable[P, T],
+        *,
+        propagate: bool = True,
+        provider_type: Protocol[Provider] = FunctionProvider
+    ) -> Callable[P, T]:
+        provider = self.get_provider_for(func, propagate=propagate, provider_type=provider_type)
+        return provider.get_instance()
 
     def get(
         self,
