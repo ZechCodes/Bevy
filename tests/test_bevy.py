@@ -69,7 +69,7 @@ def test_inheritance():
 
 
 def test_function_providers():
-    def function(dep: Dependency = Inject):
+    def function(dep: Dependency = Inject) -> int:
         return dep.value
 
     context = Context()
