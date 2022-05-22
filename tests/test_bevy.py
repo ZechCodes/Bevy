@@ -1,5 +1,6 @@
 from bevy import Context, Inject, Dependencies
 from bevy.function_provider import FunctionProvider
+from pytest import raises
 
 
 class Dependency:
@@ -112,6 +113,10 @@ def test_deferred_injector_creation():
     global Dep
     class Dep:
         ...
+
+    # If this ever fails to raise the AttributeError, then we can likely remove the deferred injector builder.
+    with raises(AttributeError):
+        assert not isinstance(Test.dep, Inject)
 
     context = Context()
     test = context.get(Test)
