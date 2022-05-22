@@ -51,7 +51,7 @@ class ContextInjector:
         instance.__bevy__.context = value
 
 
-class Dependencies(Generic[T]):
+class Dependencies:
     __bevy__ = ContextInjector()
 
     def __init_subclass__(cls, **kwargs):
