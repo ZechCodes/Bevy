@@ -105,15 +105,13 @@ def test_getting_a_function_with_matching_signature():
 
 
 def test_deferred_injector_creation():
-    global Dep
-
     class Test(Dependencies):
         dep: "Inject[Dep]"
 
-    class Dep_:
+    # Need to hoist the dependency into the global namespace so that it can be found by inspect.get_annotations
+    global Dep
+    class Dep:
         ...
-
-    Dep = Dep_
 
     context = Context()
     test = context.get(Test)
