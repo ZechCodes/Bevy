@@ -118,3 +118,18 @@ def test_deferred_injector_creation():
     context = Context()
     test = context.get(Test)
     assert isinstance(test.dep, Dep)
+
+
+def test_inherited_dependencies():
+    class TestParent(Dependencies):
+        dep: Inject[Dependency]
+
+    class TestChild(TestParent):
+        ...
+
+    context = Context()
+    parent = context.get(TestParent)
+    inst = context.get(TestChild)
+    assert isinstance(parent.dep, Dependency)
+    assert isinstance(inst.dep, Dependency)
+    assert inst.dep is parent.dep
