@@ -118,6 +118,15 @@ def test_deferred_injector_creation():
     assert isinstance(test.dep, Dep)
 
 
+def test_early_injector_creation():
+    class Test(Dependencies):
+        dep_a: Inject[Dependency]
+        dep_b: "Inject[Dependency]"
+
+    assert isinstance(Test.dep_a, Inject)
+    assert isinstance(Test.dep_b, Inject)
+
+
 def test_inherited_dependencies():
     class TestParent(Dependencies):
         dep: Inject[Dependency]
