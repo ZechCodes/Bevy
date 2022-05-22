@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cache, wraps
-from typing import Annotated, Generic, overload, Type, TypeVar, get_type_hints, get_args, get_origin
+from typing import Generic, overload, Type, TypeVar
 from inspect import get_annotations
 
 import bevy.context as context
