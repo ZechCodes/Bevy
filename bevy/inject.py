@@ -1,6 +1,7 @@
 from __future__ import annotations
 from functools import cache, wraps
 from typing import Annotated, Generic, overload, Type, TypeVar, get_type_hints, get_args, get_origin
+from inspect import get_annotations
 
 import bevy.context as context
 
@@ -55,15 +56,7 @@ class Dependencies:
     __bevy__ = ContextInjector()
 
     def __init_subclass__(cls, **kwargs):
-        init = cls.__init__
-
-        @wraps(init)
-        def new_init(*args):
-            _build_injectors(cls)
-            cls.__init__ = init
-            cls.__init__(*args)
-
-        cls.__init__ = new_init
+        _try_early_injector_creation(cls)
 
 
 class Inject(Generic[T]):
@@ -77,7 +70,26 @@ class Inject(Generic[T]):
         return Inject(item)
 
 
+def _try_early_injector_creation(cls):
+    try:
+        _build_injectors(cls)
+    except Exception:
+        _inject_deferred_injector_builder(cls)
+
+
+def _inject_deferred_injector_builder(cls):
+    init = cls.__init__
+
+    @wraps(init)
+    def new_init(*args):
+        _build_injectors(cls)
+        cls.__init__ = init
+        cls.__init__(*args)
+
+    cls.__init__ = new_init
+
+
 def _build_injectors(cls):
-    for name, annotation in get_type_hints(cls).items():
+    for name, annotation in get_annotations(cls, eval_str=True).items():
         if isinstance(annotation, Inject):
             setattr(cls, name, annotation)

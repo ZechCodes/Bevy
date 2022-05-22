@@ -102,3 +102,19 @@ def test_getting_a_function_with_matching_signature():
     context.add_provider(FunctionProvider(dep_function))
 
     assert context.get(function, provider_type=FunctionProvider)() == 20
+
+
+def test_deferred_injector_creation():
+    global Dep
+
+    class Test(Dependencies):
+        dep: "Inject[Dep]"
+
+    class Dep_:
+        ...
+
+    Dep = Dep_
+
+    context = Context()
+    test = context.get(Test)
+    assert isinstance(test.dep, Dep)
