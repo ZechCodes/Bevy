@@ -63,7 +63,18 @@ class Inject(Generic[T]):
     def __init__(self, type_: Type[T]):
         self.type = type_
 
+    @overload
     def __get__(self, instance: Dependencies, owner) -> T:
+        ...
+
+    @overload
+    def __get__(self, instance: None, owner) -> Inject:
+        ...
+
+    def __get__(self, instance: Dependencies | None, owner) -> T | Inject:
+        if not instance:
+            return self
+
         return instance.__bevy__.get(self.type)
 
     def __class_getitem__(cls, item):
