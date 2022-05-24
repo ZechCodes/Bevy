@@ -44,20 +44,36 @@ class Provider(Generic[T], ABC):
 
     def is_matching_provider_type(self, provider_type: Type[Provider]) -> bool:
         cls = type(self)
-        return provider_type is cls or issubclass(provider_type, cls) or issubclass(cls, provider_type)
+        return (
+            provider_type is cls
+            or issubclass(provider_type, cls)
+            or issubclass(cls, provider_type)
+        )
 
     def is_matching_type(self, type_: Type) -> bool:
         try:
-            return type_ is self._type or issubclass(type_, self._type) or issubclass(self._type, type_)
+            return (
+                type_ is self._type
+                or issubclass(type_, self._type)
+                or issubclass(self._type, type_)
+            )
         except TypeError:
             return False
 
     def __eq__(self, other):
-        return other.is_matching_provider_type(type(self)) and other.is_matching_type(self._type)
+        return other.is_matching_provider_type(type(self)) and other.is_matching_type(
+            self._type
+        )
 
 
 class SharedInstanceProvider(Provider):
-    def __init__(self, type_: Type[T], context: b.BaseContext | None = None, *, use: T | NOTSET = NOTSET):
+    def __init__(
+        self,
+        type_: Type[T],
+        context: b.BaseContext | None = None,
+        *,
+        use: T | NOTSET = NOTSET,
+    ):
         super().__init__(type_, context)
         self._instance = use
 

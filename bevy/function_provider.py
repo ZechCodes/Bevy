@@ -13,7 +13,13 @@ T = TypeVar("T")
 
 
 class FunctionProvider(Provider):
-    def __init__(self, func: Callable[P, T], context: BaseContext | None = None, *, use: Callable[P, T] | NOTSET = NOTSET):
+    def __init__(
+        self,
+        func: Callable[P, T],
+        context: BaseContext | None = None,
+        *,
+        use: Callable[P, T] | NOTSET = NOTSET,
+    ):
         self._context = context
         self._func = func
         self._use = use
@@ -47,10 +53,7 @@ class FunctionProvider(Provider):
         return self._get_signature_types(sig_1) == self._get_signature_types(sig_2)
 
     def _get_signature_types(self, sig: inspect.Signature) -> list[Type]:
-        return [
-            param.annotation
-            for param in sig.parameters.values()
-        ]
+        return [param.annotation for param in sig.parameters.values()]
 
     def _bind_function(self) -> Callable[P, T]:
         signature = inspect.signature(self._func)
@@ -76,7 +79,9 @@ class FunctionProvider(Provider):
         return type(self)(self._func, context, use=self._use)
 
     def __eq__(self, other):
-        return other.is_matching_provider_type(type(self)) and other.is_matching_type(self._func)
+        return other.is_matching_provider_type(type(self)) and other.is_matching_type(
+            self._func
+        )
 
     def __repr__(self):
         return f"{type(self).__name__}<{self._func!r}, bound={bool(self._context)}, use={self._use}>"

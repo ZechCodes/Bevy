@@ -17,8 +17,4 @@ def sentinel(name: str, truthy: bool = False) -> Type:
         def __repr__(self):
             return f"<{self.__name__}>"
 
-    return SentinelMCS(
-        name,
-        (object,),
-        {}
-    )
+    return SentinelMCS(name, (object,), {})

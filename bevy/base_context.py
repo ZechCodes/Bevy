@@ -18,11 +18,15 @@ class BaseContext(ABC):
         ...
 
     @abstractmethod
-    def get_provider(self, provider: p.Provider[T], *, propagate: bool) -> p.Provider[T] | None:
+    def get_provider(
+        self, provider: p.Provider[T], *, propagate: bool
+    ) -> p.Provider[T] | None:
         ...
 
     @abstractmethod
-    def get_provider_for(self, type_: Type[T], *, propagate: bool) -> p.Provider[T] | None:
+    def get_provider_for(
+        self, type_: Type[T], *, propagate: bool
+    ) -> p.Provider[T] | None:
         ...
 
     @abstractmethod

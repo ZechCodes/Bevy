@@ -41,7 +41,9 @@ class Context(BaseContext):
     def branch(self) -> Context:
         return type(self)(self)
 
-    def get_provider(self, provider: Provider[T], *, propagate: bool = True) -> Provider[T]:
+    def get_provider(
+        self, provider: Provider[T], *, propagate: bool = True
+    ) -> Provider[T]:
         if p := self._find_provider(provider):
             return p
 
@@ -62,7 +64,7 @@ class Context(BaseContext):
         type_: Type[T],
         *,
         propagate: bool = True,
-        provider_type: Protocol[Provider] = SharedInstanceProvider
+        provider_type: Protocol[Provider] = SharedInstanceProvider,
     ) -> Provider[T]:
         lookup_provider = provider_type(type_, self)
         return self.get_provider(lookup_provider, propagate=propagate)
@@ -72,9 +74,11 @@ class Context(BaseContext):
         func: Callable[P, T],
         *,
         propagate: bool = True,
-        provider_type: Protocol[Provider] = FunctionProvider
+        provider_type: Protocol[Provider] = FunctionProvider,
     ) -> Callable[P, T]:
-        provider = self.get_provider_for(func, propagate=propagate, provider_type=provider_type)
+        provider = self.get_provider_for(
+            func, propagate=propagate, provider_type=provider_type
+        )
         return provider.get_instance()
 
     def get(
@@ -84,9 +88,11 @@ class Context(BaseContext):
         propagate: bool = True,
         provider_type: Protocol[Provider] = SharedInstanceProvider,
         args: list | None = None,
-        kwargs: dict | None = None
+        kwargs: dict | None = None,
     ) -> T:
-        provider = self.get_provider_for(type_, propagate=propagate, provider_type=provider_type)
+        provider = self.get_provider_for(
+            type_, propagate=propagate, provider_type=provider_type
+        )
         return provider.get_instance(*args or [], **kwargs or {})
 
     def has(
@@ -104,9 +110,11 @@ class Context(BaseContext):
         use: T,
         type_: Type[T] | None = None,
         *,
-        provider_type: Protocol[SharedInstanceProvider] = SharedInstanceProvider
+        provider_type: Protocol[SharedInstanceProvider] = SharedInstanceProvider,
     ):
-        self.add_provider(provider_type(type(use) if type_ is None else type_, self, use=use))
+        self.add_provider(
+            provider_type(type(use) if type_ is None else type_, self, use=use)
+        )
 
     def _find_provider(self, provider: Provider[T]) -> Provider[T] | None:
         for p in self._providers:
