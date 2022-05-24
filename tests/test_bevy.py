@@ -114,3 +114,18 @@ def test_auto_context_creation():
 
     test = Test()
     assert test.dep_a is test.dep_b.dep
+
+
+def test_inherited_dependencies():
+    class TestParent(Dependencies):
+        dep: Inject[Dependency]
+
+    class TestChild(TestParent):
+        ...
+
+    context = Context()
+    parent = context.get(TestParent)
+    inst = context.get(TestChild)
+    assert isinstance(parent.dep, Dependency)
+    assert isinstance(inst.dep, Dependency)
+    assert inst.dep is parent.dep
