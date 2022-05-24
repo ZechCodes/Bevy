@@ -1,58 +1,19 @@
 from __future__ import annotations
-from functools import cache, wraps
-from typing import Annotated, Generic, overload, Type, TypeVar, get_type_hints, get_args, get_origin
+from functools import wraps
+from typing import (
+    Generic,
+    Type,
+    TypeVar,
+    get_type_hints,
+)
 
 import bevy.context as context
 
 T = TypeVar("T")
 
 
-class ContextAlreadySet(RuntimeError): ...
-
-
-class ContextAccessor:
-    def __init__(self):
-        self._context: context.Context | None = None
-
-    @property
-    def context(self) -> context.Context:
-        if not self._context:
-            self._context = context.Context()
-
-        return self._context
-
-    @context.setter
-    def context(self, value):
-        if self._context:
-            raise ContextAlreadySet(f"The context has already been set on {self}")
-
-        self._context = value
-
-    def get(self, type_: Type[T], *args, **kwargs) -> T:
-        provider = self.context.get_provider_for(type_)
-        return provider.get_instance(*args, **kwargs)
-
-
-class ContextInjector:
-    @overload
-    def __get__(self, instance: None, owner: Type[T]) -> None:
-        ...
-
-    @overload
-    def __get__(self, instance: T, owner: Type[T]) -> ContextAccessor:
-        ...
-
-    @cache
-    def __get__(self, instance: T | None, owner: Type[T]) -> ContextAccessor | None:
-        if instance:
-            return ContextAccessor()
-
-    def __set__(self, instance, value):
-        instance.__bevy__.context = value
-
-
 class Dependencies(Generic[T]):
-    __bevy__ = ContextInjector()
+    __bevy__: context.Context | None = None
 
     def __init_subclass__(cls, **kwargs):
         init = cls.__init__
@@ -64,6 +25,9 @@ class Dependencies(Generic[T]):
             cls.__init__(*args)
 
         cls.__init__ = new_init
+
+    def __init__(self, *args, **kwargs):
+        self.__bevy__ = self.__bevy__ or context.Context()
 
 
 class Inject(Generic[T]):

@@ -102,3 +102,15 @@ def test_getting_a_function_with_matching_signature():
     context.add_provider(FunctionProvider(dep_function))
 
     assert context.get(function, provider_type=FunctionProvider)() == 20
+
+
+def test_auto_context_creation():
+    class TestDep(Dependencies):
+        dep: Inject[Dependency]
+
+    class Test(Dependencies):
+        dep_a: Inject[Dependency]
+        dep_b: Inject[TestDep]
+
+    test = Test()
+    assert test.dep_a is test.dep_b.dep
