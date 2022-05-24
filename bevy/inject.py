@@ -6,6 +6,7 @@ from typing import (
     TypeVar,
     get_type_hints,
 )
+from inspect import get_annotations
 
 import bevy.context as context
 
@@ -43,5 +44,6 @@ class Inject(Generic[T]):
 
 def _build_injectors(cls):
     for name, annotation in get_type_hints(cls).items():
+    for name, annotation in get_annotations(cls, eval_str=True).items():
         if isinstance(annotation, Inject):
             setattr(cls, name, annotation)
