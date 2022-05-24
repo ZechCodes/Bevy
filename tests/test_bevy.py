@@ -1,5 +1,6 @@
 from bevy import Context, Inject, Dependencies
 from bevy.function_provider import FunctionProvider
+from pytest import raises
 
 
 class Dependency:
@@ -114,6 +115,34 @@ def test_auto_context_creation():
 
     test = Test()
     assert test.dep_a is test.dep_b.dep
+
+
+def test_deferred_bevy_setup():
+    class Test(Dependencies):
+        dep: "Inject[Dep]"
+
+    # Need to hoist the dependency into the global namespace so that it can be found by inspect.get_annotations
+    global Dep
+
+    class Dep:
+        ...
+
+    # If this ever fails to raise the AttributeError, then we can likely remove the deferred injector builder.
+    with raises(AttributeError):
+        assert not isinstance(Test.dep, Inject)
+
+    context = Context()
+    test = context.get(Test)
+    assert isinstance(test.dep, Dep)
+
+
+def test_bevy_setup():
+    class Test(Dependencies):
+        dep_a: Inject[Dependency]
+        dep_b: "Inject[Dependency]"
+
+    assert isinstance(Test.dep_a, Inject)
+    assert isinstance(Test.dep_b, Inject)
 
 
 def test_inherited_dependencies():
