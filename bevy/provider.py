@@ -33,10 +33,10 @@ class Provider(Generic[T], ABC):
                 f"{self} cannot create an instance of {type_} as the provider is not bound to a context."
             )
 
-        inst = type_.__new__(type_, *args, **kwargs)
-        inst.__bevy__ = self._context
-        inst.__init__(*args, **kwargs)
-        return inst
+        return self._create_instance(*args, **kwargs)
+
+    def _create_instance(self, *args, **kwargs) -> T:
+        return self._type(*args, **kwargs)
 
     @abstractmethod
     def get_instance(self, *args, **kwargs) -> T:
@@ -87,6 +87,17 @@ class SharedInstanceProvider(Provider):
         self._instance = self.create(self._type, *args, **kwargs)
         self.get_instance = self._get_existing_instance
         return self._get_existing_instance()
+
+    def _create_instance(self, *args, **kwargs) -> T:
+        def bevy_init(s):
+            s.__bevy__ = self._context
+
+        t = type(
+            self._type.__name__,
+            (self._type,),
+            {"__bevy_init__": bevy_init},
+        )
+        return t(*args, **kwargs)
 
     get_instance = _get_existing_instance
 
