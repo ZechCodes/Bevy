@@ -43,18 +43,18 @@ def test_context_has():
     assert not context.has(Dep2)
 
 
-def test_context_use_for():
+def test_context_add_as_type():
     class Dep2:
         ...
 
     context = Context()
-    context.use_for(Dep2(), Dependency)
+    context.add(Dep2(), as_type=Dependency)
     assert isinstance(context.get(Dependency), Dep2)
 
 
-def test_context_use_for_instance():
+def test_context_add_instance():
     context = Context()
-    context.use_for(Dependency(10))
+    context.add(Dependency(10))
     assert context.get(Dependency).value == 10
 
 
@@ -74,7 +74,7 @@ def test_function_providers():
         return dep.value
 
     context = Context()
-    context.use_for(Dependency(10))
+    context.add(Dependency(10))
     func = context.bind(function)
 
     assert func() == 10
@@ -85,7 +85,7 @@ def test_getting_a_function():
         return dep.value
 
     context = Context()
-    context.use_for(Dependency(10))
+    context.add(Dependency(10))
     context.add_provider(FunctionProvider(function))
 
     assert context.get(function, provider_type=FunctionProvider)() == 10
@@ -99,7 +99,7 @@ def test_getting_a_function_with_matching_signature():
         return dep.value
 
     context = Context()
-    context.use_for(Dependency(10))
+    context.add(Dependency(10))
     context.add_provider(FunctionProvider(dep_function))
 
     assert context.get(function, provider_type=FunctionProvider)() == 20

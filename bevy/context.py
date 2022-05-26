@@ -69,6 +69,19 @@ class Context(BaseContext):
         lookup_provider = provider_type(type_, self)
         return self.get_provider(lookup_provider, propagate=propagate)
 
+    def add(
+        self,
+        instance: T,
+        *,
+        as_type: Type[T] = None,
+        provider_type: Protocol[Provider] = SharedInstanceProvider,
+    ):
+        self.add_provider(
+            provider_type(
+                type(instance) if as_type is None else as_type, self, use=instance
+            )
+        )
+
     def bind(
         self,
         func: Callable[P, T],
@@ -104,17 +117,6 @@ class Context(BaseContext):
     ) -> T:
         lookup_provider = provider_type(type_, self)
         return self.has_provider(lookup_provider, propagate=propagate)
-
-    def use_for(
-        self,
-        use: T,
-        type_: Type[T] | None = None,
-        *,
-        provider_type: Protocol[SharedInstanceProvider] = SharedInstanceProvider,
-    ):
-        self.add_provider(
-            provider_type(type(use) if type_ is None else type_, self, use=use)
-        )
 
     def _find_provider(self, provider: Provider[T]) -> Provider[T] | None:
         for p in self._providers:
