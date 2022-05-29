@@ -1,81 +1,139 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import Callable, Generic, Type, TypeVar
+from typing import TypeVar, Protocol, overload, Sequence
 
-import bevy.base_context as b
+from bevy.inject import Dependencies
 from bevy.sentinel import sentinel
 
 
+KeyObject = TypeVar("KeyObject")
+ValueObject = TypeVar("ValueObject")
 T = TypeVar("T")
-_T = TypeVar("_T")
-Builder = Callable[[Type[_T], ...], _T]
 
 
-NOTSET = sentinel("NOTSET")
+NOT_FOUND = sentinel("NOT_FOUND")
 
 
-class ProviderHasNoBoundContext(Exception):
-    ...
-
-
-class Provider(Generic[T], ABC):
-    def __init__(self, type_: Type[T], context: b.BaseContext | None = None):
-        self._context = context
-        self._type = type_
-
-    @abstractmethod
-    def bind_to(self, context: b.BaseContext) -> Provider[T]:
+class ProviderProtocol(Protocol[KeyObject, ValueObject]):
+    def add(self, obj: ValueObject, *, use_as: KeyObject | None = None):
         ...
 
-    def create(self, type_: Type[T], *args, **kwargs) -> T:
-        if not self._context:
-            raise ProviderHasNoBoundContext(
-                f"{self} cannot create an instance of {type_} as the provider is not bound to a context."
-            )
-
-        inst = type_.__new__(type_, *args, **kwargs)
-        inst.__bevy__ = self._context
-        inst.__init__(*args, **kwargs)
-        return inst
-
-    @abstractmethod
-    def get_instance(self, *args, **kwargs) -> T:
+    def bind_to_context(self, obj: KeyObject, contex) -> KeyObject:
         ...
 
-    def is_matching_provider_type(self, provider_type: Type[Provider]) -> bool:
-        cls = type(self)
-        return provider_type is cls or issubclass(provider_type, cls) or issubclass(cls, provider_type)
+    def create(self, obj: KeyObject, *args, add: bool = False, **kwargs) -> ValueObject:
+        ...
 
-    def is_matching_type(self, type_: Type) -> bool:
-        try:
-            return type_ is self._type or issubclass(type_, self._type) or issubclass(self._type, type_)
-        except TypeError:
-            return False
+    @overload
+    def get(self, obj: KeyObject, default: ValueObject) -> ValueObject:
+        ...
 
-    def __eq__(self, other):
-        return other.is_matching_provider_type(type(self)) and other.is_matching_type(self._type)
+    @overload
+    def get(self, obj: KeyObject, default: None = None) -> ValueObject | None:
+        ...
+
+    @overload
+    def get(self, obj: KeyObject, default: T) -> ValueObject | T:
+        ...
+
+    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+        ...
+
+    def has(self, obj: KeyObject) -> bool:
+        ...
+
+    def supports(self, obj: KeyObject) -> bool:
+        ...
+
+    @classmethod
+    def create_and_insert(
+        cls,
+        providers: Sequence[ProviderProtocol],
+        *args,
+        __provider__: ProviderProtocol | None = None,
+        **kwargs
+    ) -> Sequence[ProviderProtocol]:
+        ...
 
 
-class SharedInstanceProvider(Provider):
-    def __init__(self, type_: Type[T], context: b.BaseContext | None = None, *, use: T | NOTSET = NOTSET):
-        super().__init__(type_, context)
-        self._instance = use
+class InstanceMatchingProvider(ProviderProtocol, Dependencies):
+    def __init__(self, *_, **__):
+        super().__init__()
+        self._repository = {}
 
-        if self._instance is NOTSET:
-            self.get_instance = self._create_new_instance
+    def add(self, obj: ValueObject, *, use_as: KeyObject | None = None):
+        self._repository[use_as or obj] = obj
 
-    def _get_existing_instance(self) -> T:
-        return self._instance
+    def bind_to_context(self, obj: KeyObject, context) -> KeyObject:
+        raise Exception("Cannot bind instances to a context")
 
-    def _create_new_instance(self, *args, **kwargs) -> T:
-        self._instance = self.create(self._type, *args, **kwargs)
-        self.get_instance = self._get_existing_instance
-        return self._get_existing_instance()
+    def create(self, obj: KeyObject, *args, add: bool = False, **kwargs) -> ValueObject:
+        if add:
+            self.add(obj)
 
-    get_instance = _get_existing_instance
+        return obj
 
-    def bind_to(self, context: b.BaseContext) -> Provider[T]:
-        return type(self)(self._type, context, use=self._instance)
+    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+        for key, value in self._repository.items():
+            if obj is key:
+                return value
 
-    def __repr__(self):
-        return f"{type(self).__name__}<{self._type!r}, bound={bool(self._context)}, use={self._instance}>"
+        return default
+
+    def has(self, obj: KeyObject) -> bool:
+        return self.get(obj, NOT_FOUND) is not NOT_FOUND
+
+    def supports(self, obj: KeyObject) -> bool:
+        return not isinstance(obj, type)
+
+    @classmethod
+    def create_and_insert(
+        cls,
+        providers: Sequence[ProviderProtocol],
+        *args,
+        __provider__: ProviderProtocol | None = None,
+        **kwargs
+    ) -> Sequence[ProviderProtocol]:
+        return __provider__ or cls(*args, **kwargs), *providers
+
+
+class TypeMatchingProvider(ProviderProtocol, Dependencies):
+    def __init__(self, *_, **__):
+        super().__init__()
+        self._repository = {}
+
+    def add(self, obj: ValueObject, *, use_as: KeyObject | None = None):
+        key = use_as or type(obj)
+        self._repository[key] = obj
+
+    def bind_to_context(self, obj: KeyObject | type, context) -> KeyObject | type:
+        return type(obj.__name__, (object,), {"__bevy__": context})
+
+    def create(self, obj: KeyObject, *args, add: bool = False, **kwargs) -> ValueObject:
+        value = self.__bevy__.bind(obj)(*args, **kwargs)
+        if add:
+            self.add(value)
+
+        return value
+
+    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+        for key, value in self._repository.items():
+            if obj is key or (isinstance(obj, type) and (issubclass(obj, key) and issubclass(key, obj))):
+                return value
+
+        return default
+
+    def has(self, obj: KeyObject) -> bool:
+        return self.get(obj, NOT_FOUND) is not NOT_FOUND
+
+    def supports(self, obj: KeyObject) -> bool:
+        return isinstance(obj, type)
+
+    @classmethod
+    def create_and_insert(
+        cls,
+        providers: Sequence[ProviderProtocol],
+        *args,
+        __provider__: ProviderProtocol | None = None,
+        **kwargs
+    ) -> Sequence[ProviderProtocol]:
+        return *providers, __provider__ or cls(*args, **kwargs)

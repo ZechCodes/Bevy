@@ -1,16 +1,38 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Sequence
 
 import bevy.provider as p
 
 
+KeyObject = TypeVar("KeyObject")
+ValueObject = TypeVar("ValueObject")
 T = TypeVar("T")
 
 
 class BaseContext(ABC):
     @abstractmethod
-    def add_provider(self, provider: p.Provider[T]):
+    def add(
+        self,
+        obj: ValueObject,
+        *,
+        use_as: KeyObject | None = None,
+        propagate: bool = True
+    ):
+        ...
+
+    @abstractmethod
+    def add_provider(
+        self,
+        provider: Type[p.ProviderProtocol],
+        *args,
+        __provider__: p.ProviderProtocol | None = None,
+        **kwargs
+    ):
+        ...
+
+    @abstractmethod
+    def bind(self, obj: KeyObject, *, propagate: bool = True) -> KeyObject:
         ...
 
     @abstractmethod
@@ -18,17 +40,27 @@ class BaseContext(ABC):
         ...
 
     @abstractmethod
-    def get_provider(self, provider: p.Provider[T], *, propagate: bool) -> p.Provider[T] | None:
+    def get(
+        self,
+        obj: KeyObject,
+        default: ValueObject | T | None = None,
+        *, propagate: bool = True
+    ) -> ValueObject | T | None:
         ...
 
     @abstractmethod
-    def get_provider_for(self, type_: Type[T], *, propagate: bool) -> p.Provider[T] | None:
+    def get_provider_for(
+        self,
+        obj: KeyObject,
+        *,
+        propagate: bool = True
+    ) -> p.ProviderProtocol[KeyObject, ValueObject] | None:
         ...
 
     @abstractmethod
-    def get(self, type_: Type[T], *, propagate: bool = True) -> T | None:
+    def has(self, obj: KeyObject, *, propagate: bool = True) -> bool:
         ...
 
     @abstractmethod
-    def has_provider(self, provider: p.Provider[T], *, propagate: bool) -> bool:
+    def has_provider_for(self, obj: KeyObject, *, propagate: bool = True) -> bool:
         ...

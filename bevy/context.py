@@ -5,112 +5,117 @@ Most fundamentally it uses a repository to store all instances that have been in
 with. When a class created by the context
 """
 from __future__ import annotations
-from typing import Callable, ParamSpec, Protocol, Type, TypeVar
+from typing import ParamSpec, Type, TypeVar, Sequence
 
 from bevy.base_context import BaseContext
 from bevy.null_context import NullContext
-from bevy.provider import Provider, SharedInstanceProvider
-from bevy.function_provider import FunctionProvider
+from bevy.provider import ProviderProtocol
+from bevy.sentinel import sentinel
 
 
 P = ParamSpec("P")
 T = TypeVar("T")
+KeyObject = TypeVar("KeyObject")
+ValueObject = TypeVar("ValueObject")
 
 
-class ProviderAlreadyExistsInContext(Exception):
+NOT_FOUND = sentinel("NOT_FOUND")
+
+
+class NoSupportingProviderFoundInContext(Exception):
     ...
 
 
 class Context(BaseContext):
-    def __init__(self, parent: Context | None = None):
+    def __init__(self, *providers, parent: Context | None = None):
         self._parent = parent or NullContext()
-        self._providers = []
+        self._providers: Sequence[ProviderProtocol] = self._build_providers(providers)
 
-    def add_provider(self, provider: Provider[T]) -> Provider[T]:
-        if self.has_provider(provider, propagate=False):
-            raise ProviderAlreadyExistsInContext(
-                f"A matching provider already exists in {self}\n"
-                f"-   Adding:  {provider}\n"
-                f"-   Found:   {self.get_provider(provider, propagate=False)}"
+    def add(
+        self,
+        obj: ValueObject,
+        *,
+        use_as: KeyObject | None = None,
+        propagate: bool = True
+    ):
+        provider = self.get_provider_for(use_as or obj, propagate=propagate)
+        if not provider:
+            raise NoSupportingProviderFoundInContext(
+                f"No provider was found in the context that supports the object being added. {obj=} {use_as=} "
+                f"{propagate=}"
             )
 
-        bound_provider = provider.bind_to(self)
-        self._providers.append(bound_provider)
-        return bound_provider
+        provider.add(obj, use_as=use_as)
+
+    def add_provider(
+        self,
+        provider:
+        Type[ProviderProtocol],
+        *args,
+        __provider__: ProviderProtocol | None = None,
+        **kwargs
+    ):
+        self._providers = self.bind(provider).create_and_insert(
+            self._providers, *args, __provider__=__provider__, **kwargs
+        )
+
+    def bind(self, obj: KeyObject, *, propagate: bool = True) -> KeyObject:
+        provider = self.get_provider_for(obj, propagate=propagate)
+        if not provider:
+            raise NoSupportingProviderFoundInContext(
+                f"No provider was found in the context that supports the object. {obj=} {propagate=}"
+            )
+
+        return provider.bind_to_context(obj, self)
 
     def branch(self) -> Context:
-        return type(self)(self)
-
-    def get_provider(self, provider: Provider[T], *, propagate: bool = True) -> Provider[T]:
-        if p := self._find_provider(provider):
-            return p
-
-        if propagate and self._parent.has_provider(provider):
-            return self._parent.get_provider(provider)
-
-        return self.add_provider(provider)
-
-    def has_provider(self, provider: Provider[T], *, propagate: bool = True) -> bool:
-        found = self._find_provider(provider)
-        if not found and propagate:
-            return self._parent.has_provider(provider)
-
-        return bool(found)
-
-    def get_provider_for(
-        self,
-        type_: Type[T],
-        *,
-        propagate: bool = True,
-        provider_type: Protocol[Provider] = SharedInstanceProvider
-    ) -> Provider[T]:
-        lookup_provider = provider_type(type_, self)
-        return self.get_provider(lookup_provider, propagate=propagate)
-
-    def bind(
-        self,
-        func: Callable[P, T],
-        *,
-        propagate: bool = True,
-        provider_type: Protocol[Provider] = FunctionProvider
-    ) -> Callable[P, T]:
-        provider = self.get_provider_for(func, propagate=propagate, provider_type=provider_type)
-        return provider.get_instance()
+        return type(self)(parent=self)
 
     def get(
         self,
-        type_: Type[T],
-        *,
-        propagate: bool = True,
-        provider_type: Protocol[Provider] = SharedInstanceProvider,
-        args: list | None = None,
-        kwargs: dict | None = None
-    ) -> T:
-        provider = self.get_provider_for(type_, propagate=propagate, provider_type=provider_type)
-        return provider.get_instance(*args or [], **kwargs or {})
+        obj: KeyObject,
+        default: ValueObject | T | None = None,
+        *, propagate: bool = True
+    ) -> ValueObject | T | None:
+        provider = self.get_provider_for(obj, propagate=False)
+        if provider and provider.has(obj):
+            return provider.get(obj)
 
-    def has(
+        if propagate:
+            return self._parent.get(obj, default)
+
+        return default
+
+    def get_provider_for(
         self,
-        type_: Type[T],
+        obj: KeyObject,
         *,
-        propagate: bool = True,
-        provider_type: Protocol[Provider] = SharedInstanceProvider,
-    ) -> T:
-        lookup_provider = provider_type(type_, self)
-        return self.has_provider(lookup_provider, propagate=propagate)
+        propagate: bool = True
+    ) -> ProviderProtocol[KeyObject, ValueObject] | None:
+        if p := self._find_provider(obj):
+            return p
 
-    def use_for(
+        if propagate and self._parent.has_provider_for(obj):
+            return self._parent.get_provider_for(obj)
+
+    def has(self, obj: KeyObject, *, propagate: bool = True) -> bool:
+        return self.get(obj, NOT_FOUND, propagate=propagate) is not NOT_FOUND
+
+    def has_provider_for(self, obj: KeyObject, *, propagate: bool = True) -> bool:
+        return self.get_provider_for(obj, propagate=propagate) is not None
+
+    def _build_providers(
         self,
-        use: T,
-        type_: Type[T] | None = None,
-        *,
-        provider_type: Protocol[SharedInstanceProvider] = SharedInstanceProvider
-    ):
-        self.add_provider(provider_type(type(use) if type_ is None else type_, self, use=use))
+        provider_types: Sequence[Type[ProviderProtocol] | ProviderProtocol]
+    ) -> Sequence[ProviderProtocol]:
+        providers = ()
+        for p in provider_types:
+            provider_type, provider = (p, None) if isinstance(p, type) else (type(p), p)
+            providers = provider_type.add_provider(providers, __provider__=provider)
 
-    def _find_provider(self, provider: Provider[T]) -> Provider[T] | None:
-        for p in self._providers:
-            if p == provider:
-                return p
+        return providers
 
-        return
+    def _find_provider(self, obj: KeyObject) -> ProviderProtocol | None:
+        for provider in self._providers:
+            if provider.supports(obj):
+                return provider
