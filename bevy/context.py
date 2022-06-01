@@ -9,7 +9,7 @@ from typing import ParamSpec, Type, TypeVar, Sequence
 
 from bevy.base_context import BaseContext
 from bevy.null_context import NullContext
-from bevy.provider import ProviderProtocol
+from bevy.provider import ProviderProtocol, InstanceMatchingProvider, TypeMatchingProvider
 from bevy.sentinel import sentinel
 
 
@@ -49,8 +49,7 @@ class Context(BaseContext):
 
     def add_provider(
         self,
-        provider:
-        Type[ProviderProtocol],
+        provider: Type[ProviderProtocol],
         *args,
         __provider__: ProviderProtocol | None = None,
         **kwargs
@@ -124,7 +123,7 @@ class Context(BaseContext):
             provider_type, provider = (p, None) if isinstance(p, type) else (type(p), p)
             providers = provider_type.create_and_insert(providers, __provider__=provider)
 
-        return providers
+        return providers or self._build_providers((InstanceMatchingProvider, TypeMatchingProvider))
 
     def _find_provider(self, obj: KeyObject) -> ProviderProtocol | None:
         for provider in self._providers:
