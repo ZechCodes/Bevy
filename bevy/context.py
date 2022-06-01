@@ -122,7 +122,7 @@ class Context(BaseContext):
         providers = ()
         for p in provider_types:
             provider_type, provider = (p, None) if isinstance(p, type) else (type(p), p)
-            providers = provider_type.add_provider(providers, __provider__=provider)
+            providers = provider_type.create_and_insert(providers, __provider__=provider)
 
         return providers
 
