@@ -1,37 +1,16 @@
 from __future__ import annotations
-from functools import cache, wraps
-from typing import Generic, overload, Type, TypeVar
+
+import abc
+from functools import cache
+from typing import Any, Generic, overload, Type, TypeVar, get_type_hints
 from inspect import get_annotations
+from enum import Enum
 
 import bevy.context as context
+import bevy.base_context as base_context
 
 T = TypeVar("T")
-
-
-class ContextAlreadySet(RuntimeError): ...
-
-
-class ContextAccessor:
-    def __init__(self):
-        self._context: context.Context | None = None
-
-    @property
-    def context(self) -> context.Context:
-        if not self._context:
-            self._context = context.Context()
-
-        return self._context
-
-    @context.setter
-    def context(self, value):
-        if self._context:
-            raise ContextAlreadySet(f"The context has already been set on {self}")
-
-        self._context = value
-
-    def get(self, type_: Type[T], *args, **kwargs) -> T:
-        provider = self.context.get_provider_for(type_)
-        return provider.get_instance(*args, **kwargs)
+AnnotationType = TypeVar("AnnotationType", bound=type)
 
 
 class ContextInjector:
@@ -40,67 +19,149 @@ class ContextInjector:
         ...
 
     @overload
-    def __get__(self, instance: T, owner: Type[T]) -> ContextAccessor:
+    def __get__(self, instance: T, owner: Type[T]) -> base_context.BaseContext:
         ...
 
     @cache
-    def __get__(self, instance: T | None, owner: Type[T]) -> ContextAccessor | None:
-        if instance:
-            return ContextAccessor()
+    def __get__(self, instance: T | None, owner: Type[T]) -> base_context.BaseContext | None:
+        if not instance:
+            return
 
-    def __set__(self, instance, value):
-        instance.__bevy__.context = value
+        if instance.__bevy_context__:
+            return instance.__bevy_context__
 
-
-class Dependencies:
-    __bevy__ = ContextInjector()
-
-    def __init_subclass__(cls, **kwargs):
-        _try_early_injector_creation(cls)
+        return context.Context()
 
 
-class Inject(Generic[T]):
-    def __init__(self, type_: Type[T]):
-        self.type = type_
+class AnnotationGetter(Generic[AnnotationType, T]):
+    def __init__(self, owner_cls: type, attr_name: str, annotation: AnnotationType[T], value: Inject | None):
+        self.annotation = annotation
+        self.attr_name = attr_name
+        self.owner_cls = owner_cls
+        self.value = value
+
+    def get(self) -> AnnotationType[T]:
+        return self.annotation
+
+    @classmethod
+    def factory(cls, owner_cls: type, attr_name: str, annotation: Any, value: Inject | None) -> AnnotationGetter:
+        if isinstance(annotation, str):
+            return LazyAnnotationGetter(owner_cls, attr_name, annotation, value)
+
+        return AnnotationGetter(owner_cls, attr_name, annotation, value)
+
+
+class LazyAnnotationGetter(AnnotationGetter):
+    def __init__(self, owner_cls: type, attr_name: str, annotation: str, value: Inject | None):
+        super().__init__(owner_cls, attr_name, annotation, value)
+
+    @cache
+    def get(self) -> type:
+        type_hints = get_type_hints(self.owner_cls)
+        return type_hints[self.attr_name]
+
+
+class InjectionStrategy(abc.ABC):
+    @abc.abstractmethod
+    def get_declared_dependencies(self, t: type) -> dict[str, AnnotationGetter]:
+        ...
+
+    def create_injectors(self, on_cls: Type[BevyInject], dependencies: dict[str, AnnotationGetter]):
+        for name, annotation_getter in dependencies.items():
+            setattr(on_cls, name, InjectionDescriptor(on_cls, name, annotation_getter))
+
+
+class InjectAllStrategy(InjectionStrategy):
+    """ This will scan a class's attribute annotations and create injection descriptors for any that aren't already
+    assigned. """
+    def get_declared_dependencies(self, t: type) -> dict[str, AnnotationGetter]:
+        return {
+            name: AnnotationGetter.factory(t, name, annotation, value)
+            for name, annotation in get_annotations(t).items()
+            if (value := getattr(t, name, None)) is None or isinstance(value, Inject)
+        }
+
+
+class InjectAllowedStrategy(InjectionStrategy):
+    """ This will scan a class's attribute annotations and create injection descriptors for any that aren't already
+    assigned and that are in the allowed set. """
+    def __init__(self, allow: set[str] | None = None):
+        super().__init__()
+        self.allow = allow or set()
+
+    def __class_getitem__(cls, allowed: tuple[str]) -> InjectAllowedStrategy:
+        return InjectAllowedStrategy(_make_set(allowed))
+
+    def get_declared_dependencies(self, t: type) -> dict[str, AnnotationGetter]:
+        return {
+            name: AnnotationGetter.factory(t, name, annotation, value)
+            for name, annotation in get_annotations(t).items()
+            if (value := getattr(t, name, None)) is None and name in self.allow or isinstance(value, Inject)
+        }
+
+
+class InjectDisallowedStrategy(InjectionStrategy):
+    """ This will scan a class's attribute annotations and create injection descriptors for any that aren't already
+    assigned and that aren't in the disallowed set. """
+    def __init__(self, disallow: set[str]):
+        super().__init__()
+        self.disallow = disallow
+
+    def __class_getitem__(cls, disallow: tuple[str]) -> InjectDisallowedStrategy:
+        return InjectDisallowedStrategy(_make_set(disallow))
+
+    def get_declared_dependencies(self, t: type) -> dict[str, AnnotationGetter]:
+        return {
+            name: AnnotationGetter.factory(t, name, annotation, value)
+            for name, annotation in get_annotations(t).items()
+            if (value := getattr(t, name, None)) is None and name not in self.disallow or isinstance(value, Inject)
+        }
+
+
+class Detection:
+    ALL = InjectAllStrategy()
+    ONLY = InjectAllowedStrategy
+    IGNORE = InjectDisallowedStrategy
+
+
+class BevyInject:
+    __bevy_context__ = None
+    bevy = ContextInjector()
+
+    def __init_subclass__(cls, bevy: InjectionStrategy | None = None, **kwargs):
+        strategy = bevy or Detection.ONLY()  # Default to ignoring all annotations
+        dependencies = strategy.get_declared_dependencies(cls)
+        strategy.create_injectors(cls, dependencies)
+
+
+class Inject:
+    ...
+
+
+class InjectionDescriptor(Generic[T]):
+    def __init__(self, on_cls: Type[BevyInject], attr_name: str, annotation_getter: AnnotationGetter[Type[T], T]):
+        self.on_cls = on_cls
+        self.attr_name = attr_name
+        self.annotation_getter = annotation_getter
 
     @overload
-    def __get__(self, instance: Dependencies, owner) -> T:
+    def __get__(self, instance: BevyInject, owner) -> T:
         ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Inject:
+    def __get__(self, instance: None, owner) -> InjectionDescriptor:
         ...
 
-    def __get__(self, instance: Dependencies | None, owner) -> T | Inject:
+    def __get__(self, instance: BevyInject | None, owner) -> T | InjectionDescriptor:
         if not instance:
             return self
 
-        return instance.__bevy__.get(self.type)
-
-    def __class_getitem__(cls, item):
-        return Inject(item)
+        type_hint = self.annotation_getter.get()
+        return instance.bevy.get(type_hint) or instance.bevy.create(type_hint, add_to_context=True)
 
 
-def _try_early_injector_creation(cls):
-    try:
-        _build_injectors(cls)
-    except Exception:
-        _inject_deferred_injector_builder(cls)
+def _make_set(item) -> set:
+    if isinstance(item, tuple):
+        return set(item)
 
-
-def _inject_deferred_injector_builder(cls):
-    init = cls.__init__
-
-    @wraps(init)
-    def new_init(*args):
-        _build_injectors(cls)
-        cls.__init__ = init
-        cls.__init__(*args)
-
-    cls.__init__ = new_init
-
-
-def _build_injectors(cls):
-    for name, annotation in get_annotations(cls, eval_str=True).items():
-        if isinstance(annotation, Inject):
-            setattr(cls, name, annotation)
+    return {item}

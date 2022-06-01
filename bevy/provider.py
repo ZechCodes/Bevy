@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TypeVar, Protocol, overload, Sequence
 
-from bevy.inject import Dependencies
+from bevy.inject import BevyInject
 from bevy.sentinel import sentinel
 
 
@@ -55,7 +55,7 @@ class ProviderProtocol(Protocol[KeyObject, ValueObject]):
         ...
 
 
-class InstanceMatchingProvider(ProviderProtocol, Dependencies):
+class InstanceMatchingProvider(ProviderProtocol, BevyInject):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}
@@ -96,7 +96,7 @@ class InstanceMatchingProvider(ProviderProtocol, Dependencies):
         return __provider__ or cls(*args, **kwargs), *providers
 
 
-class TypeMatchingProvider(ProviderProtocol, Dependencies):
+class TypeMatchingProvider(ProviderProtocol, BevyInject):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}
@@ -106,10 +106,10 @@ class TypeMatchingProvider(ProviderProtocol, Dependencies):
         self._repository[key] = obj
 
     def bind_to_context(self, obj: KeyObject | type, context) -> KeyObject | type:
-        return type(obj.__name__, (object,), {"__bevy__": context})
+        return type(obj.__name__, (obj,), {"__bevy_context__": context})
 
     def create(self, obj: KeyObject, *args, add: bool = False, **kwargs) -> ValueObject:
-        value = self.__bevy__.bind(obj)(*args, **kwargs)
+        value = self.bevy.bind(obj)(*args, **kwargs)
         if add:
             self.add(value)
 
@@ -117,7 +117,7 @@ class TypeMatchingProvider(ProviderProtocol, Dependencies):
 
     def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
         for key, value in self._repository.items():
-            if obj is key or (isinstance(obj, type) and (issubclass(obj, key) and issubclass(key, obj))):
+            if obj is key or (isinstance(obj, type) and (issubclass(obj, key) or issubclass(key, obj))):
                 return value
 
         return default
