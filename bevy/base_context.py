@@ -40,6 +40,17 @@ class BaseContext(ABC):
         ...
 
     @abstractmethod
+    def create(
+        self,
+        obj: KeyObject,
+        *args,
+        add_to_context: bool = False,
+        propagate: bool = True,
+        **kwargs
+    ) -> ValueObject:
+        ...
+
+    @abstractmethod
     def get(
         self,
         obj: KeyObject,

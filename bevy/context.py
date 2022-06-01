@@ -71,6 +71,17 @@ class Context(BaseContext):
     def branch(self) -> Context:
         return type(self)(parent=self)
 
+    def create(
+        self,
+        obj: KeyObject,
+        *args,
+        add_to_context: bool = False,
+        propagate: bool = True,
+        **kwargs
+    ) -> ValueObject:
+        provider = self.get_provider_for(obj, propagate=propagate)
+        return provider.create(obj, *args, add=add_to_context, **kwargs)
+
     def get(
         self,
         obj: KeyObject,

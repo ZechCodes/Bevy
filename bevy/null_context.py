@@ -14,6 +14,9 @@ class NullContext(BaseContext):
     def branch(self) -> BaseContext:
         return self
 
+    def create(self, *_, **__) -> None:
+        return None
+
     def get(self, *_, **__) -> None:
         return None
 
