@@ -11,6 +11,7 @@ import bevy.base_context as base_context
 T = TypeVar("T")
 AnnotationType = TypeVar("AnnotationType", bound=type)
 
+
 class ContextInjector:
     @overload
     def __get__(self, instance: None, owner: Type[T]) -> None:
@@ -148,7 +149,8 @@ class Inject:
     ...
 
 
-class InjectionDescriptor(Generic[T]):    def __init__(self, on_cls: Type[BevyInject], attr_name: str, annotation_getter: AnnotationGetter[Type[T], T]):
+class InjectionDescriptor(Generic[T]):
+    def __init__(self, on_cls: Type[BevyInject], attr_name: str, annotation_getter: AnnotationGetter[Type[T], T]):
         self.on_cls = on_cls
         self.attr_name = attr_name
         self.annotation_getter = annotation_getter
@@ -156,6 +158,7 @@ class InjectionDescriptor(Generic[T]):    def __init__(self, on_cls: Type[BevyIn
     @overload
     def __get__(self, instance: BevyInject, owner) -> T:
         ...
+
     @overload
     def __get__(self, instance: None, owner) -> InjectionDescriptor:
         ...
@@ -163,6 +166,7 @@ class InjectionDescriptor(Generic[T]):    def __init__(self, on_cls: Type[BevyIn
     def __get__(self, instance: BevyInject | None, owner) -> T | InjectionDescriptor:
         if not instance:
             return self
+
         type_hint = self.annotation_getter.get()
         return instance.bevy.get(type_hint) or instance.bevy.create(type_hint, add_to_context=True)
 
