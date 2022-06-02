@@ -118,7 +118,7 @@ class InjectDisallowedStrategy(InjectionStrategy):
         }
 
 
-class Detection:
+class Detect:
     ALL = InjectAllStrategy()
     ONLY = InjectAllowedStrategy
     IGNORE = InjectDisallowedStrategy
@@ -138,8 +138,7 @@ class Inject:
     ...
 
 
-class InjectionDescriptor(Generic[T]):
-    def __init__(self, on_cls: Type[BevyInject], attr_name: str, annotation_getter: AnnotationGetter[Type[T], T]):
+class InjectionDescriptor(Generic[T]):    def __init__(self, on_cls: Type[BevyInject], attr_name: str, annotation_getter: AnnotationGetter[Type[T], T]):
         self.on_cls = on_cls
         self.attr_name = attr_name
         self.annotation_getter = annotation_getter

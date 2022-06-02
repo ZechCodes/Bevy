@@ -1,2 +1,2 @@
 from bevy.context import Context
-from bevy.inject import BevyInject, Inject, Detection
+from bevy.inject import BevyInject, Inject, Detect
