@@ -7,8 +7,8 @@ with. When a class created by the context
 from __future__ import annotations
 from typing import ParamSpec, Protocol, Type, TypeVar, Sequence
 
-from bevy.base_context import BaseContext
-from bevy.null_context import NullContext
+from bevy.context.abstract_context import AbstractContext
+from bevy.context.null_context import NullContext
 from bevy.providers import InstanceMatchingProvider, TypeMatchingProvider
 from bevy.providers.builder import ProviderBuilder
 from bevy.providers.protocol import ProviderProtocol
@@ -31,7 +31,7 @@ class NoSupportingProviderFoundInContext(Exception):
     ...
 
 
-class Context(BaseContext):
+class Context(AbstractContext):
     def __init__(self, *providers: ProviderConstructor, parent: Context | None = None):
         self._parent = parent or NullContext()
         self._providers, self._provider_constructors = self._build_providers(providers)
