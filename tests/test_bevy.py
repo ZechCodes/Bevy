@@ -1,5 +1,7 @@
 from bevy import Bevy, Context, Inject, Detect
 from bevy.providers import TypeMatchingProvider
+from bevy.providers.function_provider import FunctionProvider
+from asyncio import run as run_async
 
 
 class Dependency:
@@ -174,3 +176,58 @@ def test_providers_are_inherited():
     test = branch.create(Dependency, 10)
 
     assert test.value == 20
+
+
+def test_function_provider_signature_matching():
+    def func_a(x: int, y: str) -> list[int]:
+        return [x * 2, int(y)]
+
+    def func_b(a: int, b: str) -> list[int]:
+        return [a * 5, int(b) + 2]
+
+    context = Context()
+    context.add_provider(FunctionProvider)
+    context.add(func_a)
+    test = context.get(func_b)
+    assert isinstance(context.get_provider_for(func_b), FunctionProvider)
+    assert test(5, "10") == [10, 10]
+    assert test is func_a
+
+
+def test_function_injection():
+    def func(x: Dependency = Inject) -> int:
+        return x.value
+
+    context = Context()
+    context.add_provider(FunctionProvider)
+    context.add(Dependency(10), use_as=Dependency)
+    test = context.bind(func)
+
+    assert test() == 10
+
+
+def test_coroutine_injection():
+    async def func(x: Dependency = Inject) -> int:
+        return x.value
+
+    context = Context()
+    context.add_provider(FunctionProvider)
+    context.add(Dependency(10), use_as=Dependency)
+    test = context.bind(func)
+
+    assert run_async(test()) == 10
+
+
+def test_method_injection():
+    class Test:
+        def func(self, x: Dependency = Inject) -> int:
+            return x.value
+
+    context = Context()
+    context.add_provider(FunctionProvider)
+    context.add(Dependency(10), use_as=Dependency)
+
+    inst = Test()
+    test = context.bind(inst.func)
+
+    assert test() == 10
