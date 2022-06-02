@@ -9,7 +9,9 @@ from typing import ParamSpec, Protocol, Type, TypeVar, Sequence
 
 from bevy.base_context import BaseContext
 from bevy.null_context import NullContext
-from bevy.provider import ProviderBuilder, ProviderProtocol, InstanceMatchingProvider, TypeMatchingProvider
+from bevy.providers import InstanceMatchingProvider, TypeMatchingProvider
+from bevy.providers.builder import ProviderBuilder
+from bevy.providers.protocol import ProviderProtocol
 from bevy.sentinel import sentinel
 
 

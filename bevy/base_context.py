@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Type, TypeVar, Sequence
 
-import bevy.provider as p
+import bevy.providers as p
 
 
 KeyObject = TypeVar("KeyObject")

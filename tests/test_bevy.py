@@ -1,5 +1,5 @@
 from bevy import Bevy, Context, Inject, Detect
-from bevy.provider import TypeMatchingProvider
+from bevy.providers import TypeMatchingProvider
 
 
 class Dependency:
