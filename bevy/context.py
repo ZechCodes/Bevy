@@ -51,12 +51,9 @@ class Context(BaseContext):
         self,
         provider: Type[ProviderProtocol],
         *args,
-        __provider__: ProviderProtocol | None = None,
         **kwargs
     ):
-        self._providers = self.bind(provider).create_and_insert(
-            self._providers, *args, __provider__=__provider__, **kwargs
-        )
+        self._providers = self.bind(provider).create_and_insert(self._providers, *args, **kwargs)
 
     def bind(self, obj: KeyObject, *, propagate: bool = True) -> KeyObject:
         provider = self.get_provider_for(obj, propagate=propagate)

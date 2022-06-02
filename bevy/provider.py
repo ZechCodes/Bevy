@@ -49,7 +49,6 @@ class ProviderProtocol(Protocol[KeyObject, ValueObject]):
         cls,
         providers: Sequence[ProviderProtocol],
         *args,
-        __provider__: ProviderProtocol | None = None,
         **kwargs
     ) -> Sequence[ProviderProtocol]:
         ...
@@ -90,10 +89,9 @@ class InstanceMatchingProvider(ProviderProtocol, BevyInject):
         cls,
         providers: Sequence[ProviderProtocol],
         *args,
-        __provider__: ProviderProtocol | None = None,
         **kwargs
     ) -> Sequence[ProviderProtocol]:
-        return __provider__ or cls(*args, **kwargs), *providers
+        return cls(*args, **kwargs), *providers
 
 
 class TypeMatchingProvider(ProviderProtocol, BevyInject):
@@ -133,7 +131,6 @@ class TypeMatchingProvider(ProviderProtocol, BevyInject):
         cls,
         providers: Sequence[ProviderProtocol],
         *args,
-        __provider__: ProviderProtocol | None = None,
         **kwargs
     ) -> Sequence[ProviderProtocol]:
-        return *providers, __provider__ or cls(*args, **kwargs)
+        return *providers, cls(*args, **kwargs)
