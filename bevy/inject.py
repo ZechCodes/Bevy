@@ -77,7 +77,10 @@ class InjectAllStrategy(InjectionStrategy):
         return {
             name: AnnotationGetter.factory(t, name, annotation, value)
             for name, annotation in get_annotations(t).items()
-            if (value := getattr(t, name, None)) is None or isinstance(value, Inject)
+            if (
+                (value := getattr(t, name, None)) is None
+                or is_inject(value)
+            )
         }
 
 
@@ -95,7 +98,11 @@ class InjectAllowedStrategy(InjectionStrategy):
         return {
             name: AnnotationGetter.factory(t, name, annotation, value)
             for name, annotation in get_annotations(t).items()
-            if (value := getattr(t, name, None)) is None and name in self.allow or isinstance(value, Inject)
+            if (
+                (value := getattr(t, name, None)) is None
+                and name in self.allow
+                or is_inject(value)
+            )
         }
 
 
@@ -113,7 +120,11 @@ class InjectDisallowedStrategy(InjectionStrategy):
         return {
             name: AnnotationGetter.factory(t, name, annotation, value)
             for name, annotation in get_annotations(t).items()
-            if (value := getattr(t, name, None)) is None and name not in self.disallow or isinstance(value, Inject)
+            if (
+                (value := getattr(t, name, None)) is None
+                and name not in self.disallow
+                or is_inject(value)
+            )
         }
 
 
@@ -176,3 +187,7 @@ def _make_set(item) -> set:
         return set(item)
 
     return {item}
+
+
+def is_inject(obj) -> bool:
+    return obj is Inject or isinstance(obj, Inject) or (isinstance(obj, type) and issubclass(obj, Inject))
