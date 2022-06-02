@@ -1,4 +1,4 @@
-from bevy import BevyInject, Context, Inject, Detect
+from bevy import Bevy, Context, Inject, Detect
 from bevy.provider import TypeMatchingProvider
 
 
@@ -8,7 +8,7 @@ class Dependency:
 
 
 def test_dependency_creation():
-    class Test(BevyInject):
+    class Test(Bevy):
         dep: Dependency = Inject()
 
     test = Test()
@@ -16,7 +16,7 @@ def test_dependency_creation():
 
 
 def test_dependency_detection():
-    class Test(BevyInject[Detect.ALL]):
+    class Test(Bevy[Detect.ALL]):
         dep: Dependency
 
     test = Test()
@@ -24,7 +24,7 @@ def test_dependency_detection():
 
 
 def test_dependency_only_detection():
-    class Test(BevyInject[Detect.ONLY["dep"]]):
+    class Test(Bevy[Detect.ONLY["dep"]]):
         dep: Dependency
         no_dep: Dependency
 
@@ -34,7 +34,7 @@ def test_dependency_only_detection():
 
 
 def test_dependency_ignore_detection():
-    class Test(BevyInject[Detect.IGNORE["no_dep"]]):
+    class Test(Bevy[Detect.IGNORE["no_dep"]]):
         dep: Dependency
         no_dep: Dependency
 
@@ -44,10 +44,10 @@ def test_dependency_ignore_detection():
 
 
 def test_shared_dependencies():
-    class TestA(BevyInject[Detect.ALL]):
+    class TestA(Bevy[Detect.ALL]):
         dep: Dependency
 
-    class TestB(BevyInject[Detect.ALL]):
+    class TestB(Bevy[Detect.ALL]):
         dep: Dependency
 
     context = Context()
@@ -59,7 +59,7 @@ def test_shared_dependencies():
 
 
 def test_inherited_dependencies():
-    class Test(BevyInject[Detect.ALL]):
+    class Test(Bevy[Detect.ALL]):
         dep: Dependency
 
     parent = Context()
@@ -70,7 +70,7 @@ def test_inherited_dependencies():
 
 
 def test_multiple_branches_are_isolated():
-    class Test(BevyInject[Detect.ALL]):
+    class Test(Bevy[Detect.ALL]):
         dep: Dependency
 
     parent = Context()
@@ -86,7 +86,7 @@ def test_multiple_branches_are_isolated():
 
 
 def test_string_annotations():
-    class Test(BevyInject[Detect.ALL]):
+    class Test(Bevy[Detect.ALL]):
         dep: "Dependency"
 
     test = Test()
@@ -95,7 +95,7 @@ def test_string_annotations():
 
 
 def test_context_descriptor():
-    class Test(BevyInject):
+    class Test(Bevy):
         def __init__(self):
             self.dep = self.bevy.create(Dependency)
 
@@ -104,7 +104,7 @@ def test_context_descriptor():
 
 
 def test_context_descriptor_gives_bound_context():
-    class Test(BevyInject):
+    class Test(Bevy):
         ...
 
     context = Context()
@@ -113,7 +113,7 @@ def test_context_descriptor_gives_bound_context():
 
 
 def test_unique_creates():
-    class Test(BevyInject):
+    class Test(Bevy):
         ...
 
     context = Context()

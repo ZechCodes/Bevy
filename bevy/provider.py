@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import cast, Generic, Type, TypeVar, Protocol, overload, Sequence
 
-from bevy.inject import BevyInject
+from bevy.inject import Bevy
 from bevy.sentinel import sentinel
 import bevy.base_context as base_context
 
@@ -102,7 +102,7 @@ class ProviderProtocol(Protocol[KeyObject, ValueObject]):
         ...
 
 
-class InstanceMatchingProvider(ProviderProtocol, BevyInject):
+class InstanceMatchingProvider(ProviderProtocol, Bevy):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}
@@ -142,7 +142,7 @@ class InstanceMatchingProvider(ProviderProtocol, BevyInject):
         return cls(*args, **kwargs), *providers
 
 
-class TypeMatchingProvider(ProviderProtocol, BevyInject):
+class TypeMatchingProvider(ProviderProtocol, Bevy):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}
