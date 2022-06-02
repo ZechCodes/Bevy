@@ -1,5 +1,5 @@
-from bevy import BevyInject, Context, Inject, Detection
-from pytest import raises
+from bevy import BevyInject, Context, Inject, Detect
+from bevy.provider import TypeMatchingProvider
 
 
 class Dependency:
@@ -16,7 +16,7 @@ def test_dependency_creation():
 
 
 def test_dependency_detection():
-    class Test(BevyInject, bevy=Detection.ALL):
+    class Test(BevyInject[Detect.ALL]):
         dep: Dependency
 
     test = Test()
@@ -24,7 +24,7 @@ def test_dependency_detection():
 
 
 def test_dependency_only_detection():
-    class Test(BevyInject, bevy=Detection.ONLY["dep"]):
+    class Test(BevyInject[Detect.ONLY["dep"]]):
         dep: Dependency
         no_dep: Dependency
 
@@ -34,7 +34,7 @@ def test_dependency_only_detection():
 
 
 def test_dependency_ignore_detection():
-    class Test(BevyInject, bevy=Detection.IGNORE["no_dep"]):
+    class Test(BevyInject[Detect.IGNORE["no_dep"]]):
         dep: Dependency
         no_dep: Dependency
 
@@ -44,10 +44,10 @@ def test_dependency_ignore_detection():
 
 
 def test_shared_dependencies():
-    class TestA(BevyInject, bevy=Detection.ALL):
+    class TestA(BevyInject[Detect.ALL]):
         dep: Dependency
 
-    class TestB(BevyInject, bevy=Detection.ALL):
+    class TestB(BevyInject[Detect.ALL]):
         dep: Dependency
 
     context = Context()
@@ -59,7 +59,7 @@ def test_shared_dependencies():
 
 
 def test_inherited_dependencies():
-    class Test(BevyInject, bevy=Detection.ALL):
+    class Test(BevyInject[Detect.ALL]):
         dep: Dependency
 
     parent = Context()
@@ -67,3 +67,110 @@ def test_inherited_dependencies():
     child = parent.branch()
     test = child.create(Test)
     assert test.dep is parent.get(Dependency)
+
+
+def test_multiple_branches_are_isolated():
+    class Test(BevyInject[Detect.ALL]):
+        dep: Dependency
+
+    parent = Context()
+    child_a = parent.branch()
+    test_a = child_a.create(Test)
+
+    child_b = parent.branch()
+    test_b = child_b.create(Test)
+    test_c = child_b.create(Test)
+
+    assert test_a.dep is not test_b.dep
+    assert test_b.dep is test_c.dep
+
+
+def test_string_annotations():
+    class Test(BevyInject[Detect.ALL]):
+        dep: "Dependency"
+
+    test = Test()
+
+    assert isinstance(test.dep, Dependency)
+
+
+def test_context_descriptor():
+    class Test(BevyInject):
+        def __init__(self):
+            self.dep = self.bevy.create(Dependency)
+
+    test = Test()
+    assert isinstance(test.dep, Dependency)
+
+
+def test_context_descriptor_gives_bound_context():
+    class Test(BevyInject):
+        ...
+
+    context = Context()
+    test = context.create(Test)
+    assert test.bevy is context
+
+
+def test_unique_creates():
+    class Test(BevyInject):
+        ...
+
+    context = Context()
+    test_a = context.create(Test)
+    test_b = context.create(Test)
+
+    assert test_a is not test_b
+
+
+def test_custom_provider():
+    class TestProvider(TypeMatchingProvider):
+        def __init__(self, add):
+            super().__init__()
+            self._add = add
+
+        def create(self, obj, value=0, *args, add: bool = False, **kwargs):
+            return super().create(obj, value + self._add, *args, add=add, **kwargs)
+
+        def supports(self, obj) -> bool:
+            return obj is Dependency or issubclass(obj, Dependency)
+
+        @classmethod
+        def create_and_insert(cls, providers, add=0, *args, **kwargs):
+            return cls(add), *providers
+
+    context = Context()
+    context.add_provider(TestProvider, 10)
+    test_none = context.get(Dependency)
+    test_a = context.create(Dependency, 10, add_to_context=True)
+    test_b = context.get(Dependency)
+    test_c = context.create(Dependency, 10)
+
+    assert test_none is None
+    assert test_a is test_b
+    assert test_a is not test_c
+    assert test_a.value == test_b.value and test_b.value == test_c.value and test_c.value == 20
+
+
+def test_providers_are_inherited():
+    class TestProvider(TypeMatchingProvider):
+        def __init__(self, add):
+            super().__init__()
+            self._add = add
+
+        def create(self, obj, value=0, *args, add: bool = False, **kwargs):
+            return super().create(obj, value + self._add, *args, add=add, **kwargs)
+
+        def supports(self, obj) -> bool:
+            return obj is Dependency or issubclass(obj, Dependency)
+
+        @classmethod
+        def create_and_insert(cls, providers, *args, **kwargs):
+            return cls(*args, **kwargs), *providers
+
+    context = Context()
+    context.add_provider(TestProvider, 10)
+    branch = context.branch()
+    test = branch.create(Dependency, 10)
+
+    assert test.value == 20

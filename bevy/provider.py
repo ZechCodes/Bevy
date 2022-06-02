@@ -1,19 +1,67 @@
 from __future__ import annotations
-from typing import TypeVar, Protocol, overload, Sequence
+from typing import cast, Generic, Type, TypeVar, Protocol, overload, Sequence
 
 from bevy.inject import BevyInject
 from bevy.sentinel import sentinel
+import bevy.base_context as base_context
 
 
 KeyObject = TypeVar("KeyObject")
 ValueObject = TypeVar("ValueObject")
+ProviderType = TypeVar("ProviderType", bound="Protocol[ProviderProtocol]")
 T = TypeVar("T")
 
 
 NOT_FOUND = sentinel("NOT_FOUND")
 
 
+class ProviderBuilder(Generic[ProviderType]):
+    __match_args__ = "provider", "args", "kwargs"
+
+    def __init__(self, provider: ProviderType, *args, **kwargs):
+        self.provider = provider
+        self.args = args
+        self.kwargs = kwargs
+
+    def bind(self, context: base_context.BaseContext) -> ProviderBuilder[ProviderType]:
+        return ProviderBuilder(self._bind(context), *self.args, **self.kwargs)
+
+    def _bind(
+        self,
+        context: base_context.BaseContext
+    ) -> ProviderType:
+        if self.provider.__bevy_context__ is context:
+            return self.provider
+
+        return self._create_bound_provider_type(context)
+
+    def create_and_insert(self, providers: Sequence[ProviderProtocol]) -> Sequence[ProviderProtocol]:
+        return self.provider.create_and_insert(providers, *self.args, **self.kwargs)
+
+    def _create_bound_provider_type(self, context: base_context.BaseContext) -> ProviderType:
+        return cast(
+            ProviderType,
+            type(
+                self.provider.__name__,
+                (self.provider,),
+                {
+                    "__bevy_context__": context
+                }
+            )
+        )
+
+    @classmethod
+    def create(cls, provider: Type[ProviderProtocol] | ProviderBuilder, *args, **kwargs) -> ProviderBuilder:
+        match provider:
+            case ProviderBuilder(existing_provider):
+                return provider
+
+        return ProviderBuilder(provider, *args, **kwargs)
+
+
 class ProviderProtocol(Protocol[KeyObject, ValueObject]):
+    __bevy_context__: base_context.BaseContext
+
     def add(self, obj: ValueObject, *, use_as: KeyObject | None = None):
         ...
 

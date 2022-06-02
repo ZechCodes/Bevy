@@ -5,11 +5,11 @@ Most fundamentally it uses a repository to store all instances that have been in
 with. When a class created by the context
 """
 from __future__ import annotations
-from typing import ParamSpec, Type, TypeVar, Sequence
+from typing import ParamSpec, Protocol, Type, TypeVar, Sequence
 
 from bevy.base_context import BaseContext
 from bevy.null_context import NullContext
-from bevy.provider import ProviderProtocol, InstanceMatchingProvider, TypeMatchingProvider
+from bevy.provider import ProviderBuilder, ProviderProtocol, InstanceMatchingProvider, TypeMatchingProvider
 from bevy.sentinel import sentinel
 
 
@@ -17,6 +17,9 @@ P = ParamSpec("P")
 T = TypeVar("T")
 KeyObject = TypeVar("KeyObject")
 ValueObject = TypeVar("ValueObject")
+
+
+ProviderConstructor = ProviderBuilder | Type[ProviderProtocol]
 
 
 NOT_FOUND = sentinel("NOT_FOUND")
@@ -27,9 +30,9 @@ class NoSupportingProviderFoundInContext(Exception):
 
 
 class Context(BaseContext):
-    def __init__(self, *providers, parent: Context | None = None):
+    def __init__(self, *providers: ProviderConstructor, parent: Context | None = None):
         self._parent = parent or NullContext()
-        self._providers: Sequence[ProviderProtocol] = self._build_providers(providers)
+        self._providers, self._provider_constructors = self._build_providers(providers)
 
     def add(
         self,
@@ -49,11 +52,13 @@ class Context(BaseContext):
 
     def add_provider(
         self,
-        provider: Type[ProviderProtocol],
+        provider: Protocol[ProviderProtocol],
         *args,
         **kwargs
     ):
-        self._providers = self.bind(provider).create_and_insert(self._providers, *args, **kwargs)
+        builder = ProviderBuilder.create(provider, *args, **kwargs)
+        self._providers = builder.bind(self).create_and_insert(self._providers)
+        self._provider_constructors.append(builder)
 
     def bind(self, obj: KeyObject, *, propagate: bool = True) -> KeyObject:
         provider = self.get_provider_for(obj, propagate=propagate)
@@ -65,7 +70,7 @@ class Context(BaseContext):
         return provider.bind_to_context(obj, self)
 
     def branch(self) -> Context:
-        return type(self)(parent=self)
+        return type(self)(*self._provider_constructors, parent=self)
 
     def create(
         self,
@@ -113,14 +118,24 @@ class Context(BaseContext):
 
     def _build_providers(
         self,
-        provider_types: Sequence[Type[ProviderProtocol] | ProviderProtocol]
-    ) -> Sequence[ProviderProtocol]:
-        providers = ()
-        for p in provider_types:
-            provider_type, provider = (p, None) if isinstance(p, type) else (type(p), p)
-            providers = provider_type.create_and_insert(providers, __provider__=provider)
+        provider_types: Sequence[ProviderConstructor]
+    ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
+        if not provider_types:
+            return self._build_providers((InstanceMatchingProvider, TypeMatchingProvider))
 
-        return providers or self._build_providers((InstanceMatchingProvider, TypeMatchingProvider))
+        return self._build_providers_from_provider_types(provider_types)
+
+    def _build_providers_from_provider_types(
+        self,
+        provider_types: Sequence[ProviderConstructor]
+    ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
+        builders = []
+        providers = ()
+        for provider in provider_types:
+            builders.append(builder := ProviderBuilder.create(provider))
+            providers = builder.bind(self).create_and_insert(providers)
+
+        return providers, builders
 
     def _find_provider(self, obj: KeyObject) -> ProviderProtocol | None:
         for provider in self._providers:
