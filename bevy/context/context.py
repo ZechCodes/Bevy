@@ -9,7 +9,7 @@ from typing import ParamSpec, Protocol, Type, TypeVar, Sequence
 
 from bevy.context.abstract_context import AbstractContext
 from bevy.context.null_context import NullContext
-from bevy.providers import InstanceMatchingProvider, TypeMatchingProvider
+from bevy.providers import InstanceProvider, TypeMatchingProvider
 from bevy.providers.builder import ProviderBuilder
 from bevy.providers.protocol import ProviderProtocol
 from bevy.sentinel import sentinel
@@ -123,7 +123,7 @@ class Context(AbstractContext):
         provider_types: Sequence[ProviderConstructor]
     ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
         if not provider_types:
-            return self._build_providers((InstanceMatchingProvider, TypeMatchingProvider))
+            return self._build_providers((InstanceProvider, TypeMatchingProvider))
 
         return self._build_providers_from_provider_types(provider_types)
 
