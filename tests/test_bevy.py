@@ -1,6 +1,6 @@
 from bevy import Bevy, Context, Inject, Detect
 from bevy.providers import TypeProvider
-from bevy.providers.function_provider import FunctionProvider
+from bevy.providers.function_provider import FunctionProvider, bevy_method
 from asyncio import run as run_async
 
 
@@ -231,3 +231,17 @@ def test_method_injection():
     test = context.bind(inst.func)
 
     assert test() == 10
+
+
+def test_bevy_method_decorator():
+    class Test(Bevy):
+        @bevy_method
+        def func(self, x: Dependency = Inject) -> int:
+            return x.value
+
+    context = Context()
+    context.add_provider(FunctionProvider)
+    context.add(Dependency(10), use_as=Dependency)
+
+    test = context.create(Test)
+    assert test.func() == 10

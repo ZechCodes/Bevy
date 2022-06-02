@@ -91,3 +91,11 @@ class FunctionProvider(ProviderProtocol, Bevy):
         **kwargs
     ) -> Sequence[ProviderProtocol]:
         return cls(*args, **kwargs), *providers
+
+
+def bevy_method(method):
+    @wraps(method)
+    def inject(s: Bevy, *args, **kwargs):
+        return s.bevy.bind(method)(s, *args, **kwargs)
+
+    return inject
