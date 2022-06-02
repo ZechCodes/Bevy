@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import abc
 from functools import cache
-from typing import Any, Generic, overload, Type, TypeVar, get_type_hints
+from typing import Any, cast, Generic, overload, Type, TypeVar, get_type_hints
 from inspect import get_annotations
-from enum import Enum
 
 import bevy.context as context
 import bevy.base_context as base_context
 
 T = TypeVar("T")
 AnnotationType = TypeVar("AnnotationType", bound=type)
-
 
 class ContextInjector:
     @overload
@@ -126,12 +124,24 @@ class Detect:
 
 class BevyInject:
     __bevy_context__ = None
+    _detection_strategy = Detect.ONLY()
     bevy = ContextInjector()
 
-    def __init_subclass__(cls, bevy: InjectionStrategy | None = None, **kwargs):
-        strategy = bevy or Detection.ONLY()  # Default to ignoring all annotations
-        dependencies = strategy.get_declared_dependencies(cls)
-        strategy.create_injectors(cls, dependencies)
+    def __init_subclass__(cls, **kwargs):
+        dependencies = cls._detection_strategy.get_declared_dependencies(cls)
+        cls._detection_strategy.create_injectors(cls, dependencies)
+
+    def __class_getitem__(cls, strategy: InjectionStrategy) -> Type[BevyInject]:
+        return cast(
+            Type[BevyInject],
+            type(
+                cls.__name__,
+                (cls,),
+                {
+                    "_detection_strategy": strategy
+                }
+            )
+        )
 
 
 class Inject:
@@ -146,7 +156,6 @@ class InjectionDescriptor(Generic[T]):    def __init__(self, on_cls: Type[BevyIn
     @overload
     def __get__(self, instance: BevyInject, owner) -> T:
         ...
-
     @overload
     def __get__(self, instance: None, owner) -> InjectionDescriptor:
         ...
@@ -154,7 +163,6 @@ class InjectionDescriptor(Generic[T]):    def __init__(self, on_cls: Type[BevyIn
     def __get__(self, instance: BevyInject | None, owner) -> T | InjectionDescriptor:
         if not instance:
             return self
-
         type_hint = self.annotation_getter.get()
         return instance.bevy.get(type_hint) or instance.bevy.create(type_hint, add_to_context=True)
 
