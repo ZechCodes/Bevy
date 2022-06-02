@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import overload, Protocol, Sequence, TypeVar
 
-import bevy.base_context as bc
+import bevy.context.abstract_context as bc
 
 
 KeyObject = TypeVar("KeyObject")
@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 
 class ProviderProtocol(Protocol[KeyObject, ValueObject]):
-    __bevy_context__: bc.BaseContext
+    __bevy_context__: bc.AbstractContext
 
     def add(self, obj: ValueObject, *, use_as: KeyObject | None = None):
         ...

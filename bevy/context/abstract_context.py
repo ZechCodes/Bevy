@@ -10,7 +10,7 @@ ValueObject = TypeVar("ValueObject")
 T = TypeVar("T")
 
 
-class BaseContext(ABC):
+class AbstractContext(ABC):
     @abstractmethod
     def add(
         self,
@@ -36,7 +36,7 @@ class BaseContext(ABC):
         ...
 
     @abstractmethod
-    def branch(self) -> BaseContext:
+    def branch(self) -> AbstractContext:
         ...
 
     @abstractmethod
