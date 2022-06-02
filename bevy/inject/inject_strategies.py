@@ -8,7 +8,7 @@ from bevy.inject.annotations import AnnotationGetter
 import bevy.inject.inject as i
 
 
-def _is_inject(obj) -> bool:
+def is_inject(obj) -> bool:
     return obj is i.Inject or isinstance(obj, i.Inject) or (isinstance(obj, type) and issubclass(obj, i.Inject))
 
 
@@ -38,7 +38,7 @@ class InjectAllStrategy(InjectionStrategy):
             for name, annotation in get_annotations(t).items()
             if (
                 (value := getattr(t, name, None)) is None
-                or _is_inject(value)
+                or is_inject(value)
             )
         }
 
@@ -60,7 +60,7 @@ class InjectAllowStrategy(InjectionStrategy):
             if (
                 (value := getattr(t, name, None)) is None
                 and name in self.allow
-                or _is_inject(value)
+                or is_inject(value)
             )
         }
 
@@ -82,6 +82,6 @@ class InjectDisallowStrategy(InjectionStrategy):
             if (
                 (value := getattr(t, name, None)) is None
                 and name not in self.disallow
-                or _is_inject(value)
+                or is_inject(value)
             )
         }
