@@ -13,7 +13,7 @@ T = TypeVar("T")
 NOT_FOUND = sentinel("NOT_FOUND")
 
 
-class TypeMatchingProvider(ProviderProtocol, Bevy):
+class TypeProvider(ProviderProtocol, Bevy):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}

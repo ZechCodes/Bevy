@@ -1,5 +1,5 @@
 from bevy import Bevy, Context, Inject, Detect
-from bevy.providers import TypeMatchingProvider
+from bevy.providers import TypeProvider
 from bevy.providers.function_provider import FunctionProvider
 from asyncio import run as run_async
 
@@ -126,7 +126,7 @@ def test_unique_creates():
 
 
 def test_custom_provider():
-    class TestProvider(TypeMatchingProvider):
+    class TestProvider(TypeProvider):
         def __init__(self, add):
             super().__init__()
             self._add = add
@@ -155,7 +155,7 @@ def test_custom_provider():
 
 
 def test_providers_are_inherited():
-    class TestProvider(TypeMatchingProvider):
+    class TestProvider(TypeProvider):
         def __init__(self, add):
             super().__init__()
             self._add = add
