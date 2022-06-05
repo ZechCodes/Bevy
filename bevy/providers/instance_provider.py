@@ -2,6 +2,7 @@ from typing import Sequence, TypeVar
 
 from bevy.inject import Bevy
 from bevy.providers.protocol import ProviderProtocol
+from bevy.providers.injection_priority_helpers import high_priority
 from bevy.sentinel import sentinel
 
 
@@ -43,11 +44,4 @@ class InstanceProvider(ProviderProtocol, Bevy):
     def supports(self, obj: KeyObject) -> bool:
         return not isinstance(obj, type)
 
-    @classmethod
-    def create_and_insert(
-        cls,
-        providers: Sequence[ProviderProtocol],
-        *args,
-        **kwargs
-    ) -> Sequence[ProviderProtocol]:
-        return cls(*args, **kwargs), *providers
+    create_and_insert = high_priority
