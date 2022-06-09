@@ -1,4 +1,4 @@
-from bevy import Bevy, Context, Inject, Detect
+from bevy import Bevy, Context, Inject
 from bevy.providers import TypeProvider
 from bevy.providers.function_provider import FunctionProvider, bevy_method
 from asyncio import run as run_async
@@ -18,7 +18,7 @@ def test_dependency_creation():
 
 
 def test_dependency_detection():
-    class Test(Bevy[Detect.ALL]):
+    class Test(Bevy, inject=Inject.ALL):
         dep: Dependency
 
     test = Test()
@@ -26,7 +26,7 @@ def test_dependency_detection():
 
 
 def test_dependency_only_detection():
-    class Test(Bevy[Detect.ONLY["dep"]]):
+    class Test(Bevy, inject=Inject.ONLY("dep")):
         dep: Dependency
         no_dep: Dependency
 
@@ -36,7 +36,7 @@ def test_dependency_only_detection():
 
 
 def test_dependency_ignore_detection():
-    class Test(Bevy[Detect.IGNORE["no_dep"]]):
+    class Test(Bevy, inject=Inject.IGNORE("no_dep")):
         dep: Dependency
         no_dep: Dependency
 
@@ -46,10 +46,10 @@ def test_dependency_ignore_detection():
 
 
 def test_shared_dependencies():
-    class TestA(Bevy[Detect.ALL]):
+    class TestA(Bevy, inject=Inject.ALL):
         dep: Dependency
 
-    class TestB(Bevy[Detect.ALL]):
+    class TestB(Bevy, inject=Inject.ALL):
         dep: Dependency
 
     context = Context()
@@ -61,7 +61,7 @@ def test_shared_dependencies():
 
 
 def test_inherited_dependencies():
-    class Test(Bevy[Detect.ALL]):
+    class Test(Bevy, inject=Inject.ALL):
         dep: Dependency
 
     parent = Context()
@@ -72,7 +72,7 @@ def test_inherited_dependencies():
 
 
 def test_multiple_branches_are_isolated():
-    class Test(Bevy[Detect.ALL]):
+    class Test(Bevy, inject=Inject.ALL):
         dep: Dependency
 
     parent = Context()
@@ -88,7 +88,7 @@ def test_multiple_branches_are_isolated():
 
 
 def test_string_annotations():
-    class Test(Bevy[Detect.ALL]):
+    class Test(Bevy, inject=Inject.ALL):
         dep: "Dependency"
 
     test = Test()
@@ -151,7 +151,11 @@ def test_custom_provider():
     assert test_none is None
     assert test_a is test_b
     assert test_a is not test_c
-    assert test_a.value == test_b.value and test_b.value == test_c.value and test_c.value == 20
+    assert (
+        test_a.value == test_b.value
+        and test_b.value == test_c.value
+        and test_c.value == 20
+    )
 
 
 def test_providers_are_inherited():
