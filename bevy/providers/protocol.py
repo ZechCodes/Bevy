@@ -33,7 +33,9 @@ class ProviderProtocol(Protocol[KeyObject, ValueObject]):
     def get(self, obj: KeyObject, default: T) -> ValueObject | T:
         ...
 
-    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+    def get(
+        self, obj: KeyObject, default: ValueObject | T | None = None
+    ) -> ValueObject | T | None:
         ...
 
     def has(self, obj: KeyObject) -> bool:
@@ -44,9 +46,6 @@ class ProviderProtocol(Protocol[KeyObject, ValueObject]):
 
     @classmethod
     def create_and_insert(
-        cls,
-        providers: Sequence[ProviderProtocol],
-        *args,
-        **kwargs
+        cls, providers: Sequence[ProviderProtocol], *args, **kwargs
     ) -> Sequence[ProviderProtocol]:
         ...

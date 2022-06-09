@@ -35,7 +35,9 @@ class FunctionProvider(ProviderProtocol, Bevy):
 
         return func
 
-    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+    def get(
+        self, obj: KeyObject, default: ValueObject | T | None = None
+    ) -> ValueObject | T | None:
         for key, value in self._repository.items():
             if self._signatures_exact_type_match(obj, key):
                 return value
@@ -58,10 +60,7 @@ class FunctionProvider(ProviderProtocol, Bevy):
         return self._get_signature_types(sig_1) == self._get_signature_types(sig_2)
 
     def _get_signature_types(self, sig: Signature) -> list[Type]:
-        return [
-            param.annotation
-            for param in sig.parameters.values()
-        ]
+        return [param.annotation for param in sig.parameters.values()]
 
     def _bind_function(self, func: ValueObject, context) -> ValueObject:
         sig = signature(func)
@@ -85,10 +84,7 @@ class FunctionProvider(ProviderProtocol, Bevy):
 
     @classmethod
     def create_and_insert(
-        cls,
-        providers: Sequence[ProviderProtocol],
-        *args,
-        **kwargs
+        cls, providers: Sequence[ProviderProtocol], *args, **kwargs
     ) -> Sequence[ProviderProtocol]:
         return cls(*args, **kwargs), *providers
 

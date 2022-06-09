@@ -10,7 +10,13 @@ T = TypeVar("T")
 
 
 class AnnotationGetter(Generic[AnnotationType, T]):
-    def __init__(self, owner_cls: type, attr_name: str, annotation: AnnotationType[T], value: i.Inject | None):
+    def __init__(
+        self,
+        owner_cls: type,
+        attr_name: str,
+        annotation: AnnotationType[T],
+        value: i.Inject | None,
+    ):
         self.annotation = annotation
         self.attr_name = attr_name
         self.owner_cls = owner_cls
@@ -20,7 +26,9 @@ class AnnotationGetter(Generic[AnnotationType, T]):
         return self.annotation
 
     @classmethod
-    def factory(cls, owner_cls: type, attr_name: str, annotation: Any, value: i.Inject | None) -> AnnotationGetter:
+    def factory(
+        cls, owner_cls: type, attr_name: str, annotation: Any, value: i.Inject | None
+    ) -> AnnotationGetter:
         if isinstance(annotation, str):
             return LazyAnnotationGetter(owner_cls, attr_name, annotation, value)
 
@@ -28,7 +36,9 @@ class AnnotationGetter(Generic[AnnotationType, T]):
 
 
 class LazyAnnotationGetter(AnnotationGetter):
-    def __init__(self, owner_cls: type, attr_name: str, annotation: str, value: i.Inject | None):
+    def __init__(
+        self, owner_cls: type, attr_name: str, annotation: str, value: i.Inject | None
+    ):
         super().__init__(owner_cls, attr_name, annotation, value)
 
     @cache

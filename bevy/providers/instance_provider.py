@@ -31,7 +31,9 @@ class InstanceProvider(ProviderProtocol, Bevy):
 
         return obj
 
-    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+    def get(
+        self, obj: KeyObject, default: ValueObject | T | None = None
+    ) -> ValueObject | T | None:
         for key, value in self._repository.items():
             if obj is key:
                 return value

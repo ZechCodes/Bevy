@@ -33,9 +33,13 @@ class TypeProvider(ProviderProtocol, Bevy):
 
         return value
 
-    def get(self, obj: KeyObject, default: ValueObject | T | None = None) -> ValueObject | T | None:
+    def get(
+        self, obj: KeyObject, default: ValueObject | T | None = None
+    ) -> ValueObject | T | None:
         for key, value in self._repository.items():
-            if obj is key or (isinstance(obj, type) and (issubclass(obj, key) or issubclass(key, obj))):
+            if obj is key or (
+                isinstance(obj, type) and (issubclass(obj, key) or issubclass(key, obj))
+            ):
                 return value
 
         return default

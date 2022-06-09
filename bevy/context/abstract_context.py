@@ -17,7 +17,7 @@ class AbstractContext(ABC):
         obj: ValueObject,
         *,
         use_as: KeyObject | None = None,
-        propagate: bool = True
+        propagate: bool = True,
     ):
         ...
 
@@ -27,7 +27,7 @@ class AbstractContext(ABC):
         provider: Type[p.ProviderProtocol],
         *args,
         __provider__: p.ProviderProtocol | None = None,
-        **kwargs
+        **kwargs,
     ):
         ...
 
@@ -46,7 +46,7 @@ class AbstractContext(ABC):
         *args,
         add_to_context: bool = False,
         propagate: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ValueObject:
         ...
 
@@ -55,16 +55,14 @@ class AbstractContext(ABC):
         self,
         obj: KeyObject,
         default: ValueObject | T | None = None,
-        *, propagate: bool = True
+        *,
+        propagate: bool = True,
     ) -> ValueObject | T | None:
         ...
 
     @abstractmethod
     def get_provider_for(
-        self,
-        obj: KeyObject,
-        *,
-        propagate: bool = True
+        self, obj: KeyObject, *, propagate: bool = True
     ) -> p.ProviderProtocol[KeyObject, ValueObject] | None:
         ...
 

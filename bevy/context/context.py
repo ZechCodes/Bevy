@@ -41,7 +41,7 @@ class Context(AbstractContext):
         obj: ValueObject,
         *,
         use_as: KeyObject | None = None,
-        propagate: bool = True
+        propagate: bool = True,
     ):
         provider = self.get_provider_for(use_as or obj, propagate=propagate)
         if not provider:
@@ -52,12 +52,7 @@ class Context(AbstractContext):
 
         provider.add(obj, use_as=use_as)
 
-    def add_provider(
-        self,
-        provider: Protocol[ProviderProtocol],
-        *args,
-        **kwargs
-    ):
+    def add_provider(self, provider: Protocol[ProviderProtocol], *args, **kwargs):
         builder = ProviderBuilder.create(provider, *args, **kwargs)
         self._providers = builder.bind(self).create_and_insert(self._providers)
         self._provider_constructors.append(builder)
@@ -80,7 +75,7 @@ class Context(AbstractContext):
         *args,
         add_to_context: bool = False,
         propagate: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ValueObject:
         provider = self.get_provider_for(obj, propagate=propagate)
         return provider.create(obj, *args, add=add_to_context, **kwargs)
@@ -89,7 +84,8 @@ class Context(AbstractContext):
         self,
         obj: KeyObject,
         default: ValueObject | T | None = None,
-        *, propagate: bool = True
+        *,
+        propagate: bool = True,
     ) -> ValueObject | T | None:
         provider = self.get_provider_for(obj, propagate=False)
         if provider and provider.has(obj):
@@ -101,10 +97,7 @@ class Context(AbstractContext):
         return default
 
     def get_provider_for(
-        self,
-        obj: KeyObject,
-        *,
-        propagate: bool = True
+        self, obj: KeyObject, *, propagate: bool = True
     ) -> ProviderProtocol[KeyObject, ValueObject] | None:
         if p := self._find_provider(obj):
             return p
@@ -119,8 +112,7 @@ class Context(AbstractContext):
         return self.get_provider_for(obj, propagate=propagate) is not None
 
     def _build_providers(
-        self,
-        provider_types: Sequence[ProviderConstructor]
+        self, provider_types: Sequence[ProviderConstructor]
     ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
         if not provider_types:
             return self._build_providers((InstanceProvider, TypeProvider))
@@ -128,8 +120,7 @@ class Context(AbstractContext):
         return self._build_providers_from_provider_types(provider_types)
 
     def _build_providers_from_provider_types(
-        self,
-        provider_types: Sequence[ProviderConstructor]
+        self, provider_types: Sequence[ProviderConstructor]
     ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
         builders = []
         providers = ()
