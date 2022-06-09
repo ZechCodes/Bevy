@@ -14,14 +14,10 @@ from bevy.inject.inject_strategies import (
 T = TypeVar("T")
 
 
-class Detect:
+class Inject:
     ALL = InjectAllStrategy()
     ONLY = InjectAllowStrategy
     IGNORE = InjectDisallowStrategy
-
-
-class Inject:
-    ...
 
 
 class Bevy:
@@ -55,7 +51,6 @@ class InjectionDescriptor(Generic[T]):
     @overload
     def __get__(self, instance: Bevy, owner) -> T:
         ...
-
     @overload
     def __get__(self, instance: None, owner) -> InjectionDescriptor:
         ...
