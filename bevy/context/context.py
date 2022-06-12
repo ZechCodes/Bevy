@@ -5,7 +5,7 @@ Most fundamentally it uses a repository to store all instances that have been in
 with. When a class created by the context
 """
 from __future__ import annotations
-from typing import ParamSpec, Protocol, Type, TypeVar, Sequence
+from typing import ParamSpec, Type, TypeVar, Sequence
 
 from bevy.context.abstract_context import AbstractContext
 from bevy.context.null_context import NullContext
@@ -52,7 +52,7 @@ class Context(AbstractContext):
 
         provider.add(obj, use_as=use_as)
 
-    def add_provider(self, provider: Protocol[ProviderProtocol], *args, **kwargs):
+    def add_provider(self, provider: Type[BaseProvider], *args, **kwargs):
         builder = ProviderBuilder.create(provider, *args, **kwargs)
         self._providers = builder.bind(self).create_and_insert(self._providers)
         self._provider_constructors.append(builder)
@@ -98,7 +98,7 @@ class Context(AbstractContext):
 
     def get_provider_for(
         self, obj: KeyObject, *, propagate: bool = True
-    ) -> ProviderProtocol[KeyObject, ValueObject] | None:
+    ) -> BaseProvider[KeyObject, ValueObject] | None:
         if p := self._find_provider(obj):
             return p
 
@@ -113,7 +113,7 @@ class Context(AbstractContext):
 
     def _build_providers(
         self, provider_types: Sequence[ProviderConstructor]
-    ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
+    ) -> tuple[Sequence[BaseProvider], list[ProviderBuilder]]:
         if not provider_types:
             return self._build_providers((InstanceProvider, TypeProvider))
 
@@ -121,7 +121,7 @@ class Context(AbstractContext):
 
     def _build_providers_from_provider_types(
         self, provider_types: Sequence[ProviderConstructor]
-    ) -> tuple[Sequence[ProviderProtocol], list[ProviderBuilder]]:
+    ) -> tuple[Sequence[BaseProvider], list[ProviderBuilder]]:
         builders = []
         providers = ()
         for provider in provider_types:
@@ -130,7 +130,7 @@ class Context(AbstractContext):
 
         return providers, builders
 
-    def _find_provider(self, obj: KeyObject) -> ProviderProtocol | None:
+    def _find_provider(self, obj: KeyObject) -> BaseProvider | None:
         for provider in self._providers:
             if provider.supports(obj):
                 return provider
