@@ -29,6 +29,14 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "fast-protocol"
+version = "1.0.1"
+description = "A very simple Python module to declare protocols for checking if objects provide the desired interface."
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+
+[[package]]
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
@@ -110,7 +118,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "2c990e6b01ef58027b19b549d50f78dbd089a2e6381c8cb0f3891b316ac086d3"
+content-hash = "275bbfc945f4e872bad8552ca8457f15458fe8a3eef7b43731955cdc6a887832"
 
 [metadata.files]
 atomicwrites = [
@@ -124,6 +132,10 @@ attrs = [
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
+]
+fast-protocol = [
+    {file = "fast-protocol-1.0.1.tar.gz", hash = "sha256:16c03f78d3f0f04a76659fb65ce494d82ee509a535b961f0897cb62549541ef5"},
+    {file = "fast_protocol-1.0.1-py3-none-any.whl", hash = "sha256:27bb531e44f70060a1d925b3a7d18fff5fab63bf909fd316cb2fd8b97414bbd0"},
 ]
 iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},

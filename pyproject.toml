@@ -18,6 +18,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
+fast-protocol = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
