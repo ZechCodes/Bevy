@@ -29,10 +29,11 @@ class AnnotationGetter(Generic[AnnotationType, T]):
     def factory(
         cls, owner_cls: type, attr_name: str, annotation: Any, value: i.Inject | None
     ) -> AnnotationGetter:
-        if isinstance(annotation, str):
-            return LazyAnnotationGetter(owner_cls, attr_name, annotation, value)
-
-        return AnnotationGetter(owner_cls, attr_name, annotation, value)
+        match annotation:
+            case str():
+                return LazyAnnotationGetter(owner_cls, attr_name, annotation, value)
+            case _:
+                return AnnotationGetter(owner_cls, attr_name, annotation, value)
 
 
 class LazyAnnotationGetter(AnnotationGetter):
