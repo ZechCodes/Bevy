@@ -4,7 +4,7 @@ from typing import Callable, ParamSpec, Sequence, Type, TypeVar
 
 from bevy.inject import Bevy
 from bevy.inject.inject_strategies import is_inject
-from bevy.providers.protocol import ProviderProtocol
+from bevy.providers.base import BaseProvider
 from bevy.sentinel import sentinel
 
 
@@ -17,7 +17,7 @@ ValueObject = Callable[P, T]
 NOT_FOUND = sentinel("NOT_FOUND")
 
 
-class FunctionProvider(ProviderProtocol, Bevy):
+class FunctionProvider(BaseProvider, Bevy, priority="high"):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}
@@ -81,12 +81,6 @@ class FunctionProvider(ProviderProtocol, Bevy):
             return func(*params.args, **params.kwargs)
 
         return call
-
-    @classmethod
-    def create_and_insert(
-        cls, providers: Sequence[ProviderProtocol], *args, **kwargs
-    ) -> Sequence[ProviderProtocol]:
-        return cls(*args, **kwargs), *providers
 
 
 def bevy_method(method):

@@ -1,8 +1,7 @@
 from typing import Sequence, TypeVar
 
 from bevy.inject import Bevy
-from bevy.providers.protocol import ProviderProtocol
-from bevy.providers.injection_priority_helpers import high_priority
+from bevy.providers.base import BaseProvider
 from bevy.sentinel import sentinel
 
 
@@ -14,7 +13,7 @@ T = TypeVar("T")
 NOT_FOUND = sentinel("NOT_FOUND")
 
 
-class InstanceProvider(ProviderProtocol, Bevy):
+class InstanceProvider(BaseProvider, Bevy, priority="high"):
     def __init__(self, *_, **__):
         super().__init__()
         self._repository = {}
@@ -45,5 +44,3 @@ class InstanceProvider(ProviderProtocol, Bevy):
 
     def supports(self, obj: KeyObject) -> bool:
         return not isinstance(obj, type)
-
-    create_and_insert = high_priority
