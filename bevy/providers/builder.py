@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import cast, Generic, Sequence, Type, TypeVar
 
-from bevy.providers.protocol import ProviderProtocol
+from bevy.providers.base import BaseProvider
 import bevy.context.abstract_context as bc
 
 
-ProviderType = TypeVar("ProviderType", bound=Type[ProviderProtocol])
+ProviderType = TypeVar("ProviderType", bound=Type[BaseProvider])
 
 
 class ProviderBuilder(Generic[ProviderType]):
@@ -26,8 +26,8 @@ class ProviderBuilder(Generic[ProviderType]):
         return self._create_bound_provider_type(context)
 
     def create_and_insert(
-        self, providers: Sequence[ProviderProtocol]
-    ) -> Sequence[ProviderProtocol]:
+        self, providers: Sequence[BaseProvider]
+    ) -> Sequence[BaseProvider]:
         return self.provider.create_and_insert(providers, *self.args, **self.kwargs)
 
     def _create_bound_provider_type(self, context: bc.AbstractContext) -> ProviderType:

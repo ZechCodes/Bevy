@@ -11,7 +11,7 @@ from bevy.context.abstract_context import AbstractContext
 from bevy.context.null_context import NullContext
 from bevy.providers import InstanceProvider, TypeProvider
 from bevy.providers.builder import ProviderBuilder
-from bevy.providers.protocol import ProviderProtocol
+from bevy.providers.base import BaseProvider
 from bevy.sentinel import sentinel
 
 
@@ -21,7 +21,7 @@ KeyObject = TypeVar("KeyObject")
 ValueObject = TypeVar("ValueObject")
 
 
-ProviderConstructor = ProviderBuilder | Type[ProviderProtocol]
+ProviderConstructor = ProviderBuilder | Type[BaseProvider]
 
 
 NOT_FOUND = sentinel("NOT_FOUND")
