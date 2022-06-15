@@ -33,7 +33,7 @@ class NoSupportingProviderFoundInContext(Exception):
 
 class Context(AbstractContext):
     def __init__(self, *providers: ProviderConstructor, parent: Context | None = None):
-        self._parent = parent or NullContext()
+        self._parent = parent or NullContext.factory()
         self._providers, self._provider_constructors = self._build_providers(providers)
 
     def add(
@@ -134,3 +134,7 @@ class Context(AbstractContext):
         for provider in self._providers:
             if provider.supports(obj):
                 return provider
+
+    @classmethod
+    def factory(cls, context: AbstractContext | None = None) -> Context:
+        return context or cls()

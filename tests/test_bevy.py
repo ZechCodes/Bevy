@@ -52,7 +52,7 @@ def test_shared_dependencies():
     class TestB(Bevy, inject=Inject.ALL):
         dep: Dependency
 
-    context = Context()
+    context = Context.factory()
     a = context.create(TestA)
     b = context.create(TestB)
     assert isinstance(a.dep, Dependency)
@@ -64,7 +64,7 @@ def test_inherited_dependencies():
     class Test(Bevy, inject=Inject.ALL):
         dep: Dependency
 
-    parent = Context()
+    parent = Context.factory()
     parent.create(Dependency, add_to_context=True)
     child = parent.branch()
     test = child.create(Test)
@@ -75,7 +75,7 @@ def test_multiple_branches_are_isolated():
     class Test(Bevy, inject=Inject.ALL):
         dep: Dependency
 
-    parent = Context()
+    parent = Context.factory()
     child_a = parent.branch()
     test_a = child_a.create(Test)
 
@@ -109,7 +109,7 @@ def test_context_descriptor_gives_bound_context():
     class Test(Bevy):
         ...
 
-    context = Context()
+    context = Context.factory()
     test = context.create(Test)
     assert test.bevy is context
 
@@ -118,7 +118,7 @@ def test_unique_creates():
     class Test(Bevy):
         ...
 
-    context = Context()
+    context = Context.factory()
     test_a = context.create(Test)
     test_b = context.create(Test)
 
@@ -141,7 +141,7 @@ def test_custom_provider():
         def create_and_insert(cls, providers, add=0, *args, **kwargs):
             return cls(add), *providers
 
-    context = Context()
+    context = Context.factory()
     context.add_provider(TestProvider, 10)
     test_none = context.get(Dependency)
     test_a = context.create(Dependency, 10, add_to_context=True)
@@ -174,7 +174,7 @@ def test_providers_are_inherited():
         def create_and_insert(cls, providers, *args, **kwargs):
             return cls(*args, **kwargs), *providers
 
-    context = Context()
+    context = Context.factory()
     context.add_provider(TestProvider, 10)
     branch = context.branch()
     test = branch.create(Dependency, 10)
@@ -189,7 +189,7 @@ def test_function_provider_signature_matching():
     def func_b(a: int, b: str) -> list[int]:
         return [a * 5, int(b) + 2]
 
-    context = Context()
+    context = Context.factory()
     context.add_provider(FunctionProvider)
     context.add(func_a)
     test = context.get(func_b)
@@ -202,7 +202,7 @@ def test_function_injection():
     def func(x: Dependency = Inject) -> int:
         return x.value
 
-    context = Context()
+    context = Context.factory()
     context.add_provider(FunctionProvider)
     context.add(Dependency(10), use_as=Dependency)
     test = context.bind(func)
@@ -214,7 +214,7 @@ def test_coroutine_injection():
     async def func(x: Dependency = Inject) -> int:
         return x.value
 
-    context = Context()
+    context = Context.factory()
     context.add_provider(FunctionProvider)
     context.add(Dependency(10), use_as=Dependency)
     test = context.bind(func)
@@ -227,7 +227,7 @@ def test_method_injection():
         def func(self, x: Dependency = Inject) -> int:
             return x.value
 
-    context = Context()
+    context = Context.factory()
     context.add_provider(FunctionProvider)
     context.add(Dependency(10), use_as=Dependency)
 

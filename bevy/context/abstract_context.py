@@ -73,3 +73,8 @@ class AbstractContext(ABC):
     @abstractmethod
     def has_provider_for(self, obj: KeyObject, *, propagate: bool = True) -> bool:
         ...
+
+    @classmethod
+    @abstractmethod
+    def factory(cls, context: AbstractContext | None) -> AbstractContext:
+        ...

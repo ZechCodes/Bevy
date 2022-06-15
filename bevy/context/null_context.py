@@ -1,4 +1,6 @@
+from __future__ import annotations
 from bevy.context.abstract_context import AbstractContext
+from bevy.single_return_value_cache import single_return_value_cache
 
 
 class NullContext(AbstractContext):
@@ -28,6 +30,11 @@ class NullContext(AbstractContext):
 
     def has_provider_for(self, *_, **__) -> None:
         return
+
+    @classmethod
+    @single_return_value_cache
+    def factory(cls, *_) -> NullContext:
+        return cls()
 
     def __bool__(self):
         return False
