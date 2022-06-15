@@ -20,14 +20,18 @@ class Inject:
     IGNORE = InjectDisallowStrategy
 
 
+def setup_bevy_class(cls, inject: InjectionStrategy | None = None, **kwargs):
+    strategy = inject or InjectAllowStrategy()
+    dependencies = strategy.get_declared_dependencies(cls)
+    strategy.create_injectors(cls, dependencies)
+
+
 class Bevy:
     __bevy_context__ = None
     bevy = ContextInjector()
 
     def __init_subclass__(cls, *, inject: InjectionStrategy | None = None, **kwargs):
-        strategy = inject or InjectAllowStrategy()
-        dependencies = strategy.get_declared_dependencies(cls)
-        strategy.create_injectors(cls, dependencies)
+        setup_bevy_class(cls, inject, **kwargs)
 
     def __class_getitem__(cls, strategy: InjectionStrategy) -> Type[Bevy]:
         return cast(

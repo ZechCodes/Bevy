@@ -1,12 +1,12 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Callable, overload, Generic, Sequence, TypeVar
+from typing import Callable, overload, Generic, Sequence, TypeVar, Type
 
 from fast_protocol import protocol
 
 import bevy.context.abstract_context as bc
 import bevy.providers.injection_priority_helpers as priority_helpers
-
+import bevy.inject.inject as bevy_inject
 
 ProviderInjectorFunction = Callable[
     [Sequence["BaseProvider"]], Sequence["BaseProvider"]
@@ -18,19 +18,24 @@ T = TypeVar("T")
 CallableObj = protocol("__call__")
 
 
+def set_provider_priority(provider: Type[BaseProvider], priority: ProviderInjectorFunction | str | None = None):
+    match priority:
+        case "high":
+            provider.create_and_insert = priority_helpers.high_priority
+        case "low":
+            provider.create_and_insert = priority_helpers.low_priority
+        case CallableObj():
+            provider.create_and_insert = priority
+
+
 class BaseProvider(ABC, Generic[KeyObject, ValueObject]):
     __bevy_context__: bc.AbstractContext
 
     def __init_subclass__(
         cls, *, priority: ProviderInjectorFunction | str | None = None, **kwargs
     ):
-        match priority:
-            case "high":
-                cls.create_and_insert = priority_helpers.high_priority
-            case "low":
-                cls.create_and_insert = priority_helpers.low_priority
-            case CallableObj():
-                cls.create_and_insert = priority
+        bevy_inject.setup_bevy_class(cls, **kwargs)
+        set_provider_priority(cls, priority)
 
     @abstractmethod
     def add(self, obj: ValueObject, *, use_as: KeyObject | None = None):
