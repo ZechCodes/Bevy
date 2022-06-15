@@ -243,8 +243,7 @@ def test_bevy_method_decorator():
         def func(self, x: Dependency = Inject) -> int:
             return x.value
 
-    context = Context()
-    context.add_provider(FunctionProvider)
+    context = Context.factory()
     context.add(Dependency(10), use_as=Dependency)
 
     test = context.create(Test)
