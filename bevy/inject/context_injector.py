@@ -26,4 +26,4 @@ class ContextInjector:
         if instance.__bevy_context__:
             return instance.__bevy_context__
 
-        return c.Context()
+        return c.Context.factory()
