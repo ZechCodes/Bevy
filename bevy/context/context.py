@@ -17,6 +17,7 @@ from bevy.sentinel import sentinel
 
 P = ParamSpec("P")
 T = TypeVar("T")
+ContextType = TypeVar("ContextType", bound=AbstractContext)
 KeyObject = TypeVar("KeyObject")
 ValueObject = TypeVar("ValueObject")
 
@@ -129,11 +130,11 @@ class Context(AbstractContext):
 
     @classmethod
     def factory(
-        cls,
-        context: AbstractContext | None = None,
+        cls: Type[ContextType],
+        context: ContextType | None = None,
         providers: Sequence[ProviderConstructor] | None = None,
         parent: AbstractContext | None = None,
-    ) -> AbstractContext:
+    ) -> ContextType:
         if context:
             return context
 
