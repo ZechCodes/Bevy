@@ -114,14 +114,6 @@ class Context(AbstractContext):
     def _build_providers(
         self, provider_types: Sequence[ProviderConstructor]
     ) -> tuple[Sequence[BaseProvider], list[ProviderBuilder]]:
-        if not provider_types:
-            return self._build_providers((FunctionProvider, TypeProvider))
-
-        return self._build_providers_from_provider_types(provider_types)
-
-    def _build_providers_from_provider_types(
-        self, provider_types: Sequence[ProviderConstructor]
-    ) -> tuple[Sequence[BaseProvider], list[ProviderBuilder]]:
         builders = []
         providers = ()
         for provider in provider_types:
@@ -142,4 +134,10 @@ class Context(AbstractContext):
         providers: Sequence[ProviderConstructor] | None = None,
         parent: AbstractContext | None = None,
     ) -> AbstractContext:
-        return context or cls(*providers or [], parent=parent)
+        if context:
+            return context
+
+        if not providers:
+            providers = (FunctionProvider, TypeProvider)
+
+        return cls(*providers, parent=parent)
