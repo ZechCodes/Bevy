@@ -248,3 +248,9 @@ def test_bevy_method_decorator():
 
     test = context.create(Test)
     assert test.func() == 10
+
+
+def test_function_not_added():
+    context = Context.factory()
+    func = context.get(open)
+    assert func is open

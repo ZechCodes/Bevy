@@ -1,11 +1,12 @@
 from functools import wraps
-from inspect import isfunction, ismethod, signature, Signature
-from typing import Callable, ParamSpec, Sequence, Type, TypeVar
+from inspect import signature, Signature
+from typing import Callable, ParamSpec, Type, TypeVar
 
 from bevy.inject import Bevy
 from bevy.inject.inject_strategies import is_inject
 from bevy.providers.base import BaseProvider
 from bevy.sentinel import sentinel
+from fast_protocol import protocol
 
 
 T = TypeVar("T")
@@ -15,6 +16,9 @@ ValueObject = Callable[P, T]
 
 
 NOT_FOUND = sentinel("NOT_FOUND")
+
+
+CallableProtocol = protocol("__call__")
 
 
 class FunctionProvider(BaseProvider, Bevy, priority="high"):
@@ -36,19 +40,22 @@ class FunctionProvider(BaseProvider, Bevy, priority="high"):
         return func
 
     def get(
-        self, obj: KeyObject, default: ValueObject | T | None = None
+        self, obj: KeyObject, default: ValueObject | T | None = NOT_FOUND
     ) -> ValueObject | T | None:
         for key, value in self._repository.items():
             if self._signatures_exact_type_match(obj, key):
                 return value
 
-        return default or obj
+        if default is NOT_FOUND:
+            return obj
+
+        return default
 
     def has(self, obj: KeyObject) -> bool:
         return self.get(obj, NOT_FOUND) is not NOT_FOUND
 
     def supports(self, obj: KeyObject) -> bool:
-        return isfunction(obj) or ismethod(obj)
+        return not isinstance(obj, type) and isinstance(obj, CallableProtocol)
 
     def _signatures_exact_type_match(self, func_1, func_2) -> bool:
         sig_1 = signature(func_1)
