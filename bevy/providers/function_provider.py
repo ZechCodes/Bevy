@@ -42,7 +42,7 @@ class FunctionProvider(BaseProvider, Bevy, priority="high"):
             if self._signatures_exact_type_match(obj, key):
                 return value
 
-        return default
+        return default or obj
 
     def has(self, obj: KeyObject) -> bool:
         return self.get(obj, NOT_FOUND) is not NOT_FOUND
