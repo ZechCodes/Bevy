@@ -67,7 +67,7 @@ class Context(AbstractContext):
         return provider.bind_to_context(obj, self)
 
     def branch(self) -> Context:
-        return type(self)(*self._provider_constructors, parent=self)
+        return type(self).factory(providers=self._provider_constructors, parent=self)
 
     def create(
         self,
@@ -136,5 +136,10 @@ class Context(AbstractContext):
                 return provider
 
     @classmethod
-    def factory(cls, context: AbstractContext | None = None) -> Context:
-        return context or cls()
+    def factory(
+        cls,
+        context: AbstractContext | None = None,
+        providers: Sequence[ProviderConstructor] | None = None,
+        parent: AbstractContext | None = None,
+    ) -> AbstractContext:
+        return context or cls(*providers or [], parent=parent)

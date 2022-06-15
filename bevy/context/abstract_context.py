@@ -76,5 +76,10 @@ class AbstractContext(ABC):
 
     @classmethod
     @abstractmethod
-    def factory(cls, context: AbstractContext | None) -> AbstractContext:
+    def factory(
+        cls,
+        context: AbstractContext | None,
+        providers: Sequence | None,
+        parent: AbstractContext | None,
+    ) -> AbstractContext:
         ...
