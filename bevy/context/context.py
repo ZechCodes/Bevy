@@ -9,7 +9,7 @@ from typing import ParamSpec, Type, TypeVar, Sequence
 
 from bevy.context.abstract_context import AbstractContext
 from bevy.context.null_context import NullContext
-from bevy.providers import FunctionProvider, TypeProvider
+import bevy.providers
 from bevy.providers.builder import ProviderBuilder
 from bevy.providers.base import BaseProvider
 from bevy.sentinel import sentinel
@@ -139,6 +139,6 @@ class Context(AbstractContext):
             return context
 
         if not providers:
-            providers = (FunctionProvider, TypeProvider)
+            providers = (bevy.providers.FunctionProvider, bevy.providers.TypeProvider)
 
         return cls(*providers, parent=parent)
