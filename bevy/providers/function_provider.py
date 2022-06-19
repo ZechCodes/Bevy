@@ -81,7 +81,8 @@ class FunctionProvider(BaseProvider, Bevy, priority="high"):
         def call(*args, **kwargs):
             params = sig.bind_partial(*args, **kwargs)
             params.arguments |= {
-                name: self.bevy.get(annotation) or self.bevy.create(annotation)
+                name: self.bevy.get(annotation)
+                or self.bevy.create(annotation, add_to_context=True)
                 for name, annotation in inject.items()
                 if name not in params.arguments
             }
