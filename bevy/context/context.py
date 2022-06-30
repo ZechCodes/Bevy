@@ -29,10 +29,6 @@ ProviderConstructor = ProviderBuilder | Type[BaseProvider]
 NOT_FOUND = sentinel("NOT_FOUND")
 
 
-class NoSupportingProviderFoundInContext(Exception):
-    ...
-
-
 class Context(AbstractContext):
     def __init__(self, *providers: ProviderConstructor, parent: Context | None = None):
         self._parent = parent or NullContext.factory()
@@ -47,10 +43,7 @@ class Context(AbstractContext):
     ):
         provider = self.get_provider_for(use_as or obj, propagate=propagate)
         if not provider:
-            raise NoSupportingProviderFoundInContext(
-                f"No provider was found in the context that supports the object being added. {obj=} {use_as=} "
-                f"{propagate=}"
-            )
+            raise BevyNoProviderFound(f"Failed to add, no provider found for {obj!r}")
 
         provider.add(obj, use_as=use_as)
 
@@ -62,9 +55,7 @@ class Context(AbstractContext):
     def bind(self, obj: KeyObject, *, propagate: bool = True) -> KeyObject:
         provider = self.get_provider_for(obj, propagate=propagate)
         if not provider:
-            raise NoSupportingProviderFoundInContext(
-                f"No provider was found in the context that supports the object. {obj=} {propagate=}"
-            )
+            raise BevyNoProviderFound(f"Failed to bind, no provider found for {obj!r}")
 
         return provider.bind_to_context(obj, self)
 
