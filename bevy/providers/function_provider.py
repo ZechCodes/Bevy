@@ -1,6 +1,6 @@
 from functools import wraps
-from inspect import signature, Signature
-from typing import Callable, ParamSpec, Type, TypeVar
+from inspect import signature, Signature, get_annotations
+from typing import Any, Callable, ParamSpec, Type, TypeVar
 
 from bevy.inject import Bevy
 from bevy.inject.inject_strategies import is_inject
@@ -71,8 +71,9 @@ class FunctionProvider(BaseProvider, Bevy, priority="high"):
 
     def _bind_function(self, func: ValueObject, context) -> ValueObject:
         sig = signature(func)
+        namespace = self._get_function_namespace(func)
         inject = {
-            name: parameter.annotation
+            name: self._process_annotation(parameter.annotation, namespace)
             for name, parameter in sig.parameters.items()
             if is_inject(parameter.default)
         }
@@ -89,6 +90,18 @@ class FunctionProvider(BaseProvider, Bevy, priority="high"):
             return func(*params.args, **params.kwargs)
 
         return call
+
+    def _process_annotation(self, annotation, namespace):
+        if isinstance(annotation, str):
+            return eval(annotation, namespace)
+
+        return annotation
+
+    def _get_function_namespace(self, func) -> dict[str, Any]:
+        if hasattr(func, "__func__"):
+            func = func.__func__
+
+        return func.__globals__
 
 
 def bevy_method(method):
