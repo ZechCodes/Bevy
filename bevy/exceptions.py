@@ -1,0 +1,6 @@
+class BevyException(Exception):
+    ...
+
+
+class BevyNoProviderFound(BevyException):
+    ...

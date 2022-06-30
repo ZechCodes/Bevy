@@ -13,6 +13,7 @@ import bevy.providers
 from bevy.providers.builder import ProviderBuilder
 from bevy.providers.base import BaseProvider
 from bevy.sentinel import sentinel
+from bevy.exceptions import BevyNoProviderFound
 
 
 P = ParamSpec("P")
@@ -79,6 +80,11 @@ class Context(AbstractContext):
         **kwargs,
     ) -> ValueObject:
         provider = self.get_provider_for(obj, propagate=propagate)
+        if not provider:
+            raise BevyNoProviderFound(
+                f"Failed to create, no provider found for {obj!r}"
+            )
+
         return provider.create(obj, *args, add=add_to_context, **kwargs)
 
     def get(
