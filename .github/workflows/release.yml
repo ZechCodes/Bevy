@@ -1,4 +1,4 @@
-name: Release Fast Protocol to PyPI
+name: Release Bevy to PyPI
 
 on:
   release:
