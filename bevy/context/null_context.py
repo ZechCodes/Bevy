@@ -22,6 +22,9 @@ class NullContext(AbstractContext):
     def get(self, *_, **__) -> None:
         return None
 
+    def find(self, _, default, *__, **___) -> None:
+        return default
+
     def get_provider_for(self, *_, **__) -> None:
         return None
 

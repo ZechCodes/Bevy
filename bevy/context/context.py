@@ -78,7 +78,7 @@ class Context(AbstractContext):
 
         return provider.create(obj, *args, add=cache, **kwargs)
 
-    def get(
+    def find(
         self,
         obj: KeyObject,
         default: ValueObject | T | None = None,
@@ -90,9 +90,18 @@ class Context(AbstractContext):
             return provider.get(obj)
 
         if propagate:
-            return self._parent.get(obj, default)
+            return self._parent.find(obj, default)
 
         return default
+
+    def get(
+        self, obj: KeyObject, *, propagate: bool = True, cache: bool = True
+    ) -> ValueObject | T:
+        value = self.find(obj, NOT_FOUND, propagate=propagate)
+        if value is NOT_FOUND:
+            value = self.create(obj, cache=cache)
+
+        return value
 
     def get_provider_for(
         self, obj: KeyObject, *, propagate: bool = True
@@ -104,7 +113,7 @@ class Context(AbstractContext):
             return self._parent.get_provider_for(obj)
 
     def has(self, obj: KeyObject, *, propagate: bool = True) -> bool:
-        return self.get(obj, NOT_FOUND, propagate=propagate) is not NOT_FOUND
+        return self.find(obj, NOT_FOUND, propagate=propagate) is not NOT_FOUND
 
     def has_provider_for(self, obj: KeyObject, *, propagate: bool = True) -> bool:
         return self.get_provider_for(obj, propagate=propagate) is not None

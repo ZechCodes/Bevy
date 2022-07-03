@@ -51,13 +51,19 @@ class AbstractContext(ABC):
         ...
 
     @abstractmethod
-    def get(
+    def find(
         self,
         obj: KeyObject,
         default: ValueObject | T | None = None,
         *,
         propagate: bool = True,
     ) -> ValueObject | T | None:
+        ...
+
+    @abstractmethod
+    def get(
+        self, obj: KeyObject, *, propagate: bool = True, cache: bool = True
+    ) -> ValueObject | T:
         ...
 
     @abstractmethod

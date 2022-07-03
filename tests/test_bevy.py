@@ -143,9 +143,9 @@ def test_custom_provider():
 
     context = Context.factory()
     context.add_provider(TestProvider, 10)
-    test_none = context.get(Dependency)
-    test_b = context.get(Dependency)
+    test_none = context.find(Dependency)
     test_a = context.create(Dependency, 10, cache=True)
+    test_b = context.find(Dependency)
     test_c = context.create(Dependency, 10)
 
     assert test_none is None
