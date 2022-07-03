@@ -65,7 +65,7 @@ def test_inherited_dependencies():
         dep: Dependency
 
     parent = Context.factory()
-    parent.create(Dependency, add_to_context=True)
+    parent.create(Dependency, cache=True)
     child = parent.branch()
     test = child.create(Test)
     assert test.dep is parent.get(Dependency)
@@ -144,8 +144,8 @@ def test_custom_provider():
     context = Context.factory()
     context.add_provider(TestProvider, 10)
     test_none = context.get(Dependency)
-    test_a = context.create(Dependency, 10, add_to_context=True)
     test_b = context.get(Dependency)
+    test_a = context.create(Dependency, 10, cache=True)
     test_c = context.create(Dependency, 10)
 
     assert test_none is None

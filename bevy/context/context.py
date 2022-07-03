@@ -66,7 +66,7 @@ class Context(AbstractContext):
         self,
         obj: KeyObject,
         *args,
-        add_to_context: bool = False,
+        cache: bool = False,
         propagate: bool = True,
         **kwargs,
     ) -> ValueObject:
@@ -76,7 +76,7 @@ class Context(AbstractContext):
                 f"Failed to create, no provider found for {obj!r}"
             )
 
-        return provider.create(obj, *args, add=add_to_context, **kwargs)
+        return provider.create(obj, *args, add=cache, **kwargs)
 
     def get(
         self,

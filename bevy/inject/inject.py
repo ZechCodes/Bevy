@@ -64,5 +64,5 @@ class InjectionDescriptor(Generic[T]):
 
         type_hint = self.annotation_getter.get()
         return instance.bevy.get(type_hint) or instance.bevy.create(
-            type_hint, add_to_context=True
+            type_hint, cache=True
         )

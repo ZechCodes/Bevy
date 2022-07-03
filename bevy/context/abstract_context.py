@@ -44,7 +44,7 @@ class AbstractContext(ABC):
         self,
         obj: KeyObject,
         *args,
-        add_to_context: bool = False,
+        cache: bool = False,
         propagate: bool = True,
         **kwargs,
     ) -> ValueObject:
