@@ -20,10 +20,10 @@ class ContextInjector:
 
     @cache
     def __get__(self, instance: T | None, owner: Type[T]) -> bc.AbstractContext | None:
-        if not instance:
+        if instance is None:
             return
 
-        if instance.__bevy_context__:
-            return instance.__bevy_context__
+        if context := getattr(instance, "__bevy_context__", None):
+            return context
 
         return c.Context.factory()
