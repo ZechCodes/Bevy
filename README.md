@@ -21,47 +21,68 @@ Python doesn’t have an actual interface implementation like many other languag
 - Tests can provide mock implementations of dependencies without needing to jump through hoops to inject them. They can provide the mock to the context and Bevy will make sure it is used where appropriate.
 
 ## How It Works
-Bevy is an object oriented *dependency injection* framework. Similar to Pydantic, it relies on Python 3's class
-annotations, using them to determine what dependencies a class has.
+Bevy replies on Python's classes to keep track of dependencies, it however does not require any serious understanding of OOP. Injections rely on Python's type annotations, much like Pydantic. Any class that inherits from the `Bevy` class will be scanned for any attributes that have been assigned the `Inject` object, they will become a descriptor that will handle injecting the appropriate instance to match the annotation of the attribute.
+
+Similarly class methods can use the `bevy_method` decorator, which will look at the method's signature looking for any parameters that have been assigned the `Inject` object. When the method is called it will use the Bevy context attached to the class to inject the appropriate dependencies into the function. If a value is passed to an inject parameter, Bevy will ignore that parameter and not override the passed parameter.  
 
 **Example**
 ```py
-from bevy.injection import AutoInject, detect_dependencies
-@detect_dependencies
-class Example(AutoInject):
-    dependency: Dependency
+from bevy import Bevy, Inject
+
+class Example(Bevy):
+    dependency: Dependency = Inject
 ```
 Each dependency when instantiated is added to a context repository for reuse. This allows many classes to share the same
 instance of each dependency. This is handy for sharing things like database connections, config files, or authenticated
 API sessions.
 
-## Bevy Constructors
-
-To instantiate classes and have Bevy inject their dependencies it is necessary to bind them to a 
-`bevy.injection.Context`. This will give a callable that will build instances that are bound to the context.
-
-**Example**
-```py
-import bevy.injection
-context = bevy.injection.Context()
-builder = context.bind(Example)
-example = builder()  # An instance of Example will be created
-```
-### Configuring Dependencies
-
-When the `Context` encounters a dependency that is not in its repository it will attempt to create the
-dependency. The approach is very naive, it will just call the dependency with no arguments. If it succeeds it will be
-added to the repository for later use and injected into the class.
-
-This behavior can be changed by passing an instantiated dependency to `Context.add`.
-**Example**
-```py
-context.add(Dependency("foobar"))
-```
-
-### Getting Instances
-You can get an instance of a class by using `Context.get` or `Context.get_or_create`. `get_or_create` will naively create an instance of the requested class if it is not found.
-**Example**
+### Usage
+To use Bevy you can either create an instance of your `Bevy` subclass or you can create a Bevy context and use that to create instances of your classes.
 ```python
-inst = context.get(Dependency)
+from bevy import Bevy, Inject, Context
+
+class Example(Bevy):
+    dependency: Dependency = Inject
+
+context = Context()
+example = context.get(Example)
 ```
+
+**Bevy Methods**
+Method parameter injection works quite simply. Just use the decorator and use the `Inject` object to indicate which parameters should be injected when the method is called.
+```python
+from bevy import Bevy, Inject, Context
+from bevy.providers.function_provider import bevy_method
+
+class Example(Bevy):
+    @bevy_method
+    def demo_method(self, dependency: Dependency = Inject):
+        ...
+
+context = Context()
+example = context.get(Example)
+example.demo_method()
+```
+
+**Creating Overrides**
+It is possible to pass in overrides to the Bevy context which will be used in place of the requested type.
+```python
+from bevy import Bevy, Inject, Context
+
+class Example(Bevy):
+    dependency: Dependency = Inject
+
+context = Context()
+context.add(some_instance, use_as=Dependency)
+example = context.get(Example)
+```
+
+**Providers**
+Bevy has the concept of dependency providers. When a dependency is requested from the Bevy context, the context goes through all registered providers looking for one that can handle the requested type. It then requests that the provider get an instance of the requested type. This is a powerful feature that can be used to dynamically create instances that have a more advanced initialization. I've used this for creating SQLAlchemy database connections and injecting db sessions. I've also used it to inject config models that pull in their values only as needed from a global config object. Bevy's dependency repository then acts as a cache for those objects. 
+
+At this time though, the provider API is actively being refined, so will likely be changed in future versions.
+
+## Future
+- Get the providers API nailed down to maximize flexibility and simplicity.
+- Support for context managers. Initially I want to have them work with Bevy methods, essentially wrapping the function call in a `with` block. Eventually I'd like to support them at the instance and application levels. This would allow for dependencies that need to be cleaned up when an instance or the context itself is destroyed.
+- Auto-detect methods that have used the `Inject` object. 
