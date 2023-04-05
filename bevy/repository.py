@@ -43,5 +43,3 @@ class Repository:
                 return result
             case Failure(_):
                 return self.create(lookup_type)
-            case _:
-                return None
