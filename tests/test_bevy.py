@@ -1,4 +1,5 @@
 from bevy import Repository, get_repository
+from bevy.generic_provider import GenericProvider
 
 
 def test_repository_exists():
@@ -10,6 +11,7 @@ def test_repository_get():
         ...
 
     repo = get_repository()
+    repo.add_providers(GenericProvider)
     instance = repo.get(TestType)
 
     assert isinstance(instance, TestType)
@@ -20,6 +22,7 @@ def test_repository_caching():
         ...
 
     repo = get_repository()
+    repo.add_providers(GenericProvider)
     instance_a = repo.get(TestType)
     instance_b = repo.get(TestType)
 
