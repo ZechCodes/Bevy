@@ -3,6 +3,7 @@ from typing import Callable, Generic, Self, TypeAlias, TypeVar
 
 T = TypeVar("T")
 Setter: TypeAlias = Callable[[T], None]
+_NOTSET = object()
 
 
 class ResultBuilder(Generic[T]):
@@ -23,7 +24,7 @@ class ResultBuilder(Generic[T]):
 
 
 class Result(Generic[T]):
-    _result: T | None = None
+    _result: T | None = _NOTSET
     exception: Exception | None = None
 
     @property
@@ -32,6 +33,9 @@ class Result(Generic[T]):
             raise self.exception
 
         return self._result
+
+    def __bool__(self):
+        return self.exception is None and self._result is not _NOTSET
 
 
 class Success(Result[T]):
