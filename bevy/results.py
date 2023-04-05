@@ -10,8 +10,9 @@ class ResultBuilder(Generic[T]):
     def __init__(self):
         self.result: Result[T] = Result[T]()
 
-    def set(self, result: T):
+    def set(self, result: T) -> T:
         self.result = Success[T](result)
+        return result
 
     def __enter__(self) -> tuple[Self, Setter]:
         return self, self.set
