@@ -1,5 +1,5 @@
-from bevy import Context, get_context
+from bevy import Repository, get_repository
 
 
-def test_context_exists():
-    assert isinstance(get_context(), Context)
+def test_repository_exists():
+    assert isinstance(get_repository(), Repository)
