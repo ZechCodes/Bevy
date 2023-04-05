@@ -12,10 +12,10 @@ class Repository:
     def __init__(self):
         self._providers: list[Provider] = []
 
-    def add_providers(self, *providers: Type[Provider[T]]):
+    def add_providers(self, *providers: Type[Provider]):
         """Creates providers and adds them to the repository. These providers will be used to lookup and create
         instances that will be stored and returned by the repository."""
-        self._providers.extend(provider.create(self) for provider in providers)
+        self._providers.extend(provider(self) for provider in providers)
 
     def create(self, new_type: Type[T]) -> T | None:
         """Attempts to create an instance of the type, returning None if no supporting provider was found."""
