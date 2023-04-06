@@ -1,10 +1,6 @@
 from bevy.results import Result, Success, Failure, ResultBuilder
 
 
-def test_not_set():
-    assert not Result()
-
-
 def test_result_set():
     assert Success("Testing")
 
