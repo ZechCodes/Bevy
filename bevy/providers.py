@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 
 _T = TypeVar("_T")
-_V = TypeVar("_T")
+_V = TypeVar("_V")
 Builder = Callable[[], _V]
 
 
