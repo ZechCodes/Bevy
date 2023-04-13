@@ -1,5 +1,5 @@
 from bevy import dependency, inject, Repository, get_repository
-from bevy.generic_provider import GenericProvider
+from bevy.type_provider import TypeProvider
 
 
 def test_repository_exists():
@@ -11,7 +11,7 @@ def test_repository_get():
         ...
 
     repo = get_repository()
-    repo.add_providers(GenericProvider)
+    repo.add_providers(TypeProvider)
     instance = repo.get(TestType)
 
     assert isinstance(instance, TestType)
@@ -22,7 +22,7 @@ def test_repository_caching():
         ...
 
     repo = get_repository()
-    repo.add_providers(GenericProvider)
+    repo.add_providers(TypeProvider)
     instance_a = repo.get(TestType)
     instance_b = repo.get(TestType)
 
@@ -37,7 +37,7 @@ def test_injection_descriptor():
         dep: Dep = dependency()
 
     repo = get_repository()
-    repo.add_providers(GenericProvider)
+    repo.add_providers(TypeProvider)
     instance = TestType()
 
     assert isinstance(instance.dep, Dep)
@@ -51,7 +51,7 @@ def test_injection_descriptor_is_shared():
         dep: Dep = dependency()
 
     repo = get_repository()
-    repo.add_providers(GenericProvider)
+    repo.add_providers(TypeProvider)
     instance_a = TestType()
     instance_b = TestType()
 
