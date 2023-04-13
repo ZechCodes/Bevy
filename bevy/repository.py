@@ -1,6 +1,7 @@
 from bevy.providers import Provider
 from bevy.results import Result, Success, Failure
 from typing import Any, TypeVar, Type
+from bevy.contextvar import ContextVarDefaultFactory as _ContextVarDefaultFactory
 
 
 T = TypeVar("T")
@@ -43,3 +44,10 @@ class Repository:
                 return result
             case Failure(_):
                 return self.create(lookup_type)
+
+
+_bevy_repository = _ContextVarDefaultFactory("bevy_context", default=Repository)
+
+
+def get_repository() -> Repository:
+    return _bevy_repository.get()

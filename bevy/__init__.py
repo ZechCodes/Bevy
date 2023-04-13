@@ -1,9 +1,5 @@
-from bevy.contextvar import ContextVarDefaultFactory as _ContextVarDefaultFactory
-from bevy.repository import Repository
+from bevy.dependency_descriptor import dependency
+from bevy.repository import Repository, get_repository
 
 
-_bevy_repository = _ContextVarDefaultFactory("bevy_context", default=Repository)
-
-
-def get_repository() -> Repository:
-    return _bevy_repository.get()
+__all__ = ("dependency", "Repository", "get_repository")
