@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 _T = TypeVar("_T")
 _V = TypeVar("_T")
-Builder = Callable[[], _T]
+Builder = Callable[[], _V]
 
 
 class Provider(Generic[_T, _V], ABC):
