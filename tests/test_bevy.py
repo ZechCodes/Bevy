@@ -1,4 +1,4 @@
-from bevy import dependency, Repository, get_repository
+from bevy import dependency, inject, Repository, get_repository
 from bevy.generic_provider import GenericProvider
 
 
@@ -56,3 +56,19 @@ def test_injection_descriptor_is_shared():
     instance_b = TestType()
 
     assert instance_a.dep is instance_b.dep
+
+
+def test_function_parameter_injection():
+    class DepA:
+        ...
+
+    class DepB:
+        ...
+
+    @inject
+    def test_function(param_a: DepA = dependency(), param_b: DepB = dependency()):
+        return param_a, param_b
+
+    ret_a, ret_b = test_function()
+    assert isinstance(ret_a, DepA)
+    assert isinstance(ret_b, DepB)
