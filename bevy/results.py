@@ -3,7 +3,6 @@ from typing import Callable, Generic, Self, TypeAlias, TypeVar
 
 T = TypeVar("T")
 Setter: TypeAlias = Callable[[T], None]
-_NOTSET = object()
 
 
 class ResultBuilder(Generic[T]):
@@ -25,25 +24,18 @@ class ResultBuilder(Generic[T]):
 
 
 class Result(Generic[T]):
-    _result: T | None = _NOTSET
+    result: T | None = None
     exception: Exception | None = None
 
-    @property
-    def result(self) -> T:
-        if self.exception:
-            raise self.exception
-
-        return self._result
-
     def __bool__(self):
-        return self.exception is None and self._result is not _NOTSET
+        return True
 
 
 class Success(Result[T]):
     __match_args__ = ("result",)
 
     def __init__(self, result: T):
-        self._result = result
+        self.result = result
 
 
 class Failure(Result[T]):
@@ -51,3 +43,10 @@ class Failure(Result[T]):
 
     def __init__(self, exception: Exception):
         self.exception = exception
+
+    def __bool__(self):
+        return False
+
+    @property
+    def result(self) -> T:
+        raise self.exception
