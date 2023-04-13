@@ -11,6 +11,8 @@ _NOTSET = object()
 
 class Repository(Generic[_T, _V]):
     """The Bevy repository manages instance providers and caching the results that the providers create."""
+    _bevy_repository: "Repository[_T, _V]" = _ContextVarDefaultFactory("bevy_context", default=lambda: Repository())
+
     def __init__(self):
         self._providers: list[Provider[_T, _V]] = []
 
@@ -46,9 +48,9 @@ class Repository(Generic[_T, _V]):
             case Failure(_):
                 return self.create(lookup)
 
+    @classmethod
+    def get_repository(cls: "Type[Repository[_T, _V]]") -> "Repository[_T, _V]":
+        return cls._bevy_repository.get()
 
-_bevy_repository = _ContextVarDefaultFactory("bevy_context", default=Repository)
 
-
-def get_repository() -> Repository:
-    return _bevy_repository.get()
+get_repository = Repository.get_repository
