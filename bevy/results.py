@@ -1,7 +1,7 @@
 from typing import Callable, Generic, Self, TypeAlias, TypeVar
 
 
-T = TypeVar("T")
+T = TypeVar("_T")
 Setter: TypeAlias = Callable[[T], None]
 
 

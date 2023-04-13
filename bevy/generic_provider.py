@@ -2,7 +2,7 @@ from bevy.providers import Provider, Builder
 from typing import Type, TypeVar
 
 
-T = TypeVar("T")
+T = TypeVar("_T")
 
 
 class GenericProvider(Provider):
