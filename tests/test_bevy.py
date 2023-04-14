@@ -8,7 +8,7 @@ from pytest import fixture
 
 @fixture
 def repository():
-    Repository._bevy_repository.set(Repository())
+    Repository.set_repository(Repository())
     return get_repository()
 
 

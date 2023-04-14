@@ -61,5 +61,9 @@ class Repository(Generic[_K, _V]):
     def get_repository(cls: "Type[Repository[_K, _V]]") -> "Repository[_K, _V]":
         return cls._bevy_repository.get()
 
+    @classmethod
+    def set_repository(cls, repository: "Repository[_K, _V]"):
+        cls._bevy_repository.set(repository)
+
 
 get_repository = Repository.get_repository
