@@ -116,7 +116,7 @@ def test_multiple_annotated(repository):
     def test_function(
         param_a: Annotated[str, "TestA"] = dependency(),
         param_b: Annotated[str, "TestB"] = dependency(),
-    ) -> str:
+    ) -> tuple[str, str]:
         return param_a, param_b
 
     repository.add_providers(AnnotatedProvider)
