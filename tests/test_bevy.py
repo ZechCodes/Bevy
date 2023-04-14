@@ -90,7 +90,7 @@ def test_annotated_provider(repository):
     repository.add_providers(AnnotatedProvider)
     repository.add(Annotated[str, "Testing"], "testing")
 
-    assert test_function()
+    assert test_function() == "testing"
 
 
 def test_annotated_provider_on_class(repository):
@@ -113,7 +113,10 @@ def test_annotated_dependency_not_set(repository):
 
 def test_multiple_annotated(repository):
     @inject
-    def test_function(param_a: Annotated[str, "TestA"] = dependency(), param_b: Annotated[str, "TestB"] = dependency()) -> str:
+    def test_function(
+        param_a: Annotated[str, "TestA"] = dependency(),
+        param_b: Annotated[str, "TestB"] = dependency(),
+    ) -> str:
         return param_a, param_b
 
     repository.add_providers(AnnotatedProvider)
