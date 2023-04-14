@@ -21,7 +21,7 @@ class AnnotatedProvider(Provider[_A, _T]):
 
     def builder(self, annotated: _A) -> Callable[[], _T] | None:
         new_type, _ = get_args(annotated)
-        return lambda: new_type()
+        return lambda: self._repository.get(new_type)
 
     def find(self, annotated: _A) -> Result[_T]:
         with ResultBuilder() as (builder, set_result):
