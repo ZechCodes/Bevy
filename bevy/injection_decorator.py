@@ -1,6 +1,6 @@
-from typing import Callable, TypeVar, ParamSpec, TypeAlias, get_type_hints
+from typing import Any, Callable, TypeVar, ParamSpec, TypeAlias
 from functools import wraps
-from inspect import signature
+from inspect import signature, get_annotations
 from bevy.dependency_descriptor import Dependency
 from bevy.repository import get_repository
 
@@ -11,9 +11,10 @@ _C: TypeAlias = Callable[_P, _R]
 
 def inject(func: _C) -> Callable[_P, _R]:
     sig = signature(func)
-    type_hints = get_type_hints(func)
+    ns = _get_function_namespace(func)
+    annotations = get_annotations(func, globals=ns, eval_str=True)
     inject_parameters = {
-        name: type_hints[name]
+        name: annotations[name]
         for name, parameter in sig.parameters.items()
         if isinstance(parameter.default, Dependency)
     }
@@ -30,3 +31,14 @@ def inject(func: _C) -> Callable[_P, _R]:
         return func(*params.args, **params.kwargs)
 
     return injector
+
+
+def _get_function_namespace(func: _C) -> dict[str, Any]:
+    return _unwrap_function(func).__globals__
+
+
+def _unwrap_function(func: _C) -> _C:
+    if hasattr(func, "__func__"):
+        return _unwrap_function(func.__func__)
+
+    return func
