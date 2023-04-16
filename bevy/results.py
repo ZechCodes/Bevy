@@ -1,16 +1,16 @@
 from typing import Callable, Generic, Self, TypeAlias, TypeVar
 
 
-T = TypeVar("_T")
-Setter: TypeAlias = Callable[[T], None]
+_T = TypeVar("_T")
+Setter: TypeAlias = Callable[[_T], None]
 
 
-class ResultBuilder(Generic[T]):
+class ResultBuilder(Generic[_T]):
     def __init__(self):
-        self.result: Result[T] = Result[T]()
+        self.result: Result[_T] = Result[_T]()
 
-    def set(self, result: T) -> T:
-        self.result = Success[T](result)
+    def set(self, result: _T) -> _T:
+        self.result = Success[_T](result)
         return result
 
     def __enter__(self) -> tuple[Self, Setter]:
@@ -18,27 +18,27 @@ class ResultBuilder(Generic[T]):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_val:
-            self.result = Failure[T](exc_val)
+            self.result = Failure[_T](exc_val)
 
         return True
 
 
-class Result(Generic[T]):
-    result: T | None = None
+class Result(Generic[_T]):
+    result: _T | None = None
     exception: Exception | None = None
 
     def __bool__(self):
         return True
 
 
-class Success(Result[T]):
+class Success(Result[_T]):
     __match_args__ = ("result",)
 
-    def __init__(self, result: T):
+    def __init__(self, result: _T):
         self.result = result
 
 
-class Failure(Result[T]):
+class Failure(Result[_T]):
     __match_args__ = ("exception",)
 
     def __init__(self, exception: Exception):
@@ -48,5 +48,5 @@ class Failure(Result[T]):
         return False
 
     @property
-    def result(self) -> T:
+    def result(self) -> _T:
         raise self.exception
