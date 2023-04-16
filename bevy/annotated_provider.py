@@ -19,8 +19,8 @@ _A: TypeAlias = Annotated[Type[_T], Hashable]
 
 def get_type(annotated: _A) -> Option[_T]:
     match get_args(annotated):
-        case (type() as new_type, _):
-            return Value(new_type)
+        case (type() as type_, _):
+            return Value(type_)
         case _:
             return Null()
 
@@ -30,8 +30,8 @@ class AnnotatedProvider(Provider[_A, _T]):
 
     def factory(self, annotated: _A) -> Option[Callable[[], _T]]:
         match get_type(annotated):
-            case Value(new_type):
-                return Value(partial(self._repository.get, new_type))
+            case Value(type_):
+                return Value(partial(self._repository.get, type_))
             case Null(message):
                 return Null(message)
 
