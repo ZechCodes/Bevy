@@ -18,7 +18,7 @@ class TypeProvider(Provider[Type[_T], _T]):
 
     def factory(self, new_type: Type[_T]) -> Option[Callable[[], _T]]:
         match new_type:
-            case BevyConstructable():
+            case BevyConstructable() if isinstance(new_type, type):
                 return Value(new_type.__bevy_constructor__)
             case type():
                 return Value(new_type)
