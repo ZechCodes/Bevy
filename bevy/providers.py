@@ -41,6 +41,8 @@ class Provider(Generic[_K, _V], ABC):
             try:
                 set_result(self._cache[key])
             except KeyError as exception:
-                raise Exception(f"Provider had no instances cached for {key!r}") from exception
+                raise Exception(
+                    f"Provider had no instances cached for {key!r}"
+                ) from exception
 
         return builder.result

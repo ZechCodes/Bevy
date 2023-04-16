@@ -19,7 +19,9 @@ class Dependency(Generic[_T]):
         return repo.get(self._type)
 
     def __set_name__(self, owner: Type, name: str):
-        self._type = get_annotations(owner, globals=_get_class_namespace(owner), eval_str=True)[name]
+        self._type = get_annotations(
+            owner, globals=_get_class_namespace(owner), eval_str=True
+        )[name]
 
 
 def dependency() -> Any:

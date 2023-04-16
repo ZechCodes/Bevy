@@ -1,9 +1,10 @@
-from bevy import dependency, inject, Repository, get_repository
-from bevy.type_provider import TypeProvider
-from bevy.annotated_provider import AnnotatedProvider
 from typing import Annotated
 
 from pytest import fixture
+
+from bevy import dependency, inject, Repository, get_repository
+from bevy.annotated_provider import AnnotatedProvider
+from bevy.type_provider import TypeProvider
 
 
 @fixture

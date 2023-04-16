@@ -9,6 +9,7 @@ _A: TypeAlias = Annotated[Type[_T], Hashable]
 
 class AnnotatedProvider(Provider[_A, _T]):
     """The type provider supports any types and will attempt to instantiate them with no args."""
+
     def add(self, annotated: _A, value: _T) -> Result[bool]:
         with ResultBuilder() as (result_builder, set_result):
             if (builder := self.builder(annotated)) is None:
@@ -28,6 +29,8 @@ class AnnotatedProvider(Provider[_A, _T]):
             try:
                 set_result(self._cache[annotated])
             except KeyError as exception:
-                raise Exception(f"Provider had no instances cached for {annotated!r}") from exception
+                raise Exception(
+                    f"Provider had no instances cached for {annotated!r}"
+                ) from exception
 
         return builder.result
