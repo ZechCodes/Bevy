@@ -84,6 +84,12 @@ class Repository(NullRepository[_K, _V]):
 
         return Null(f"No match for {key!r} was found in the repository")
 
+    def fork_context(self) -> "Repository[_K, _V]":
+        """Branches the repository and sets the branch as the repository for the current context."""
+        branch = self.branch()
+        self.set_repository(branch)
+        return branch
+
     def get(
         self, key: _K, default: _V | None = None, *, allow_propagation: bool = True
     ) -> _V:

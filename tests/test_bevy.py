@@ -168,3 +168,17 @@ def test_repository_branching_create(repository):
     branch.create(int)
     assert branch.find(int).value_or(-1) is 0
     assert repository.find(int).value_or(-1) is 10
+
+
+def test_context_forking(repository):
+    fork = repository.fork_context()
+    assert get_repository() is fork
+    assert fork is not repository
+
+
+def test_context_forking_inheritance(repository):
+    repository.add_providers(TypeProvider)
+    repository.set(int, 10)
+
+    fork = repository.fork_context()
+    assert fork.get(int) is repository.get(int)
