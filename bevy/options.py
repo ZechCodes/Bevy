@@ -20,6 +20,15 @@ class Option(Generic[_T], ABC):
 
 
 class Value(Option[_T]):
+    """The Value option type is used to wrap a set value. No matter what the contained value is instances of the Value
+    type will always evaluate as truthyto help identify if an Option has a value or not. The Value type can surface its
+    value as a match arg in a match/case statement.
+
+        match example:
+            case Value(value):
+                print(value)
+    """
+
     __match_args__ = ("value",)
 
     def __init__(self, value: _T):
@@ -30,6 +39,7 @@ class Value(Option[_T]):
         return self._value
 
     def value_or(self, default: _T) -> _T:
+        """The Value option will always have a value so this just returns the value."""
         return self.value
 
     def __bool__(self):
@@ -43,10 +53,21 @@ class Value(Option[_T]):
 
 
 class Null(Option):
+    """The Null option type represents the absence of a value. The Null option will always evaluate as falsey to help
+    identify if an Option has a value or not. Null options can take an optional message that will be used in error
+    messages and that can be surfaced as a match arg in match/case statements.
+
+        match example:
+            case Null(message):
+                print(message)
+    """
+
     __match_args__ = ("message",)
 
     def __init__(self, message: str = ""):
-        self.message = message
+        self._message = message
+
+    @property
     def message(self) -> str:
         return self._message or "Null value"
 
