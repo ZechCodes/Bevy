@@ -3,8 +3,8 @@ from typing import Annotated
 from pytest import fixture
 
 from bevy import dependency, inject, Repository, get_repository
-from bevy.annotated_provider import AnnotatedProvider
-from bevy.type_provider import TypeProvider
+from providers.annotated_provider import AnnotatedProvider
+from providers.type_provider import TypeProvider
 
 
 @fixture

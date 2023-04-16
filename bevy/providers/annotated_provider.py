@@ -11,7 +11,7 @@ from typing import (
 )
 
 from bevy.options import Option, Value, Null
-from bevy.providers import Provider
+from bevy.providers.base import Provider
 
 _T = TypeVar("_T")
 _A: TypeAlias = Annotated[Type[_T], Hashable]
