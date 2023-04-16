@@ -1,16 +1,14 @@
 # Bevy
-Bevy makes using *Dependency Injection* a breeze so that you can focus on creating amazing code.
+Bevy makes using *Dependency Injection* in *Python* a breeze so that you can focus on creating amazing code.
 
 ## Installation
 ```shell script
-pip install bevy
+pip install bevy>2.0.0b1
 ```
 
-**[Documentation](docs/documentation.md)**
-
 ## Dependency Injection
-Put simply, *Dependency Injection* is a design pattern where the objects that your class depends on are instantiated outside the class. Those dependencies are then injected into your class when it is instantiated.
-This promotes loosely coupled code where your class doesn't require direct knowledge of what classes it depends on or how to create them. Instead, your class declares what class interface it expects and an outside framework handles the work of creating the class instances with the correct interface.
+Put simply, *Dependency Injection* is a design pattern where the objects that your code depends on are instantiated by the caller. Those dependencies are then injected into your code when it is run.
+This promotes loosely coupled code where your code doesn't require direct knowledge of what objects it depends on or how to create them. Instead, your code declares what interface it expects and an outside framework handles the work of creating objects with the correct interface.
 
 ## Interfaces
 Python doesn't have an actual interface implementation like many other languages. Class inheritance, however, can be used in a very similar way since subclasses will likely have the same fundamental interface as their base class. 
@@ -18,74 +16,76 @@ Python doesn't have an actual interface implementation like many other languages
 ## Why Do I Care?
 *Dependency Injection* and its reliance on abstract interfaces makes your code easier to maintain:
 - Changes can be made without needing to alter implementation details in unrelated code, so long as the interface isn’t modified in a substantial way.
-- Tests can provide mock implementations of dependencies without needing to jump through hoops to inject them. They can provide the mock to the context and Bevy will make sure it is used where appropriate.
+- Tests can provide mock implementations of dependencies without needing to rely on patching or duck typing. They can provide the mock to Bevy which can then ensure it is used when necessary.
 
 ## How It Works
-Bevy replies on Python's classes to keep track of dependencies, it however does not require any serious understanding of OOP. Injections rely on Python's type annotations, much like Pydantic. Any class that inherits from the `Bevy` class will be scanned for any attributes that have been assigned the `Inject` object, they will become a descriptor that will handle injecting the appropriate instance to match the annotation of the attribute.
+Bevy makes use of Python's contextvars to store a repository object global to the context. You can then use `bevy.inject` and `bevy.dependency` to inject dependencies into functions and classes. 
 
-Similarly, class methods can use the `bevy_method` decorator, which will look at the method's signature looking for any parameters that have been assigned the `Inject` object. When the method is called it will use the Bevy context attached to the class to inject the appropriate dependencies into the function. If a value is passed to an inject parameter, Bevy will ignore that parameter and not override the passed parameter.  
+The `dependency` function returns a descriptor that can detect the type hints that have been set on a class attribute. It can then create and return a dependency that matches the type hints.
+
+The `inject` decorator allows you to use the `dependecy` function to inject dependencies into functions. Each parameter that needs to be injected should have its default value set to `dependency()` and then the `inject` decorator will intelligently handle injecting those dependencies into the function arguments based on the parameter type hints. This injection is compatible with positional only, positional, keyword, and keyword only arguments.
 
 **Example**
 ```py
-from bevy import Bevy, Inject
+from bevy import inject, dependency
 
-class Example(Bevy):
-    dependency: Dependency = Inject
+class Thing:
+    ...
+
+class Example:
+    foo: Thing = dependency()
+
+@inject
+def example(foo: Thing = dependency()):
+    ...
 ```
-Each dependency when instantiated is added to a context repository for reuse. This allows many classes to share the same
-instance of each dependency. This is handy for sharing things like database connections, config files, or authenticated
-API sessions.
+Each dependency once created is stored in the context global repository's cache to be reused by other functions and classes that depend on them. This sharing is very useful for database connections, config files, authenticated API sessions, etc.
 
-### Usage
-To use Bevy you can either create an instance of your `Bevy` subclass or you can create a Bevy context and use that to create instances of your classes.
+**Setting Values In the Repository**
+
+It is possible to provide a value to the context's global repository that will be used as a dependency.You can get the current repository using the `bevy.get_repository` function, you can then use that repository's `set` method to assign an instance to a given key.
 ```python
-from bevy import Bevy, Inject, Context
+from bevy import get_repository
 
-class Example(Bevy):
-    dependency: Dependency = Inject
-
-context = Context()
-example = context.get(Example)
+get_repository().set(Thing, Thing("foobar"))
 ```
+This would cause anything that has a dependency for `Thing` to have the instance `Thing("foobar")` injected.
 
-**Bevy Methods**
+The `set` method will return an empty `bevy.options.Value` object if it succeeds in setting the value into the cache or will return a `bevy.options.Null` object if it fails.
 
-Method parameter injection works quite simply. Just use the decorator and use the `Inject` object to indicate which parameters should be injected when the method is called.
+**Getting Values From the Repository**
+
+It is possible to get values directly from the repository using its `get` method.
 ```python
-from bevy import Bevy, Inject, Context
-from bevy.providers.function_provider import bevy_method
+from bevy import get_repository
 
-class Example(Bevy):
-    @bevy_method
-    def demo_method(self, dependency: Dependency = Inject):
-        ...
-
-context = Context()
-example = context.get(Example)
-example.demo_method()
+thing = get_repository().get(Thing)
 ```
+If an instance of `Thing` is not found in the cache it will create an instance, save it in the cache for future use, and then return it.
 
-**Creating Overrides**
-
-It is possible to pass in overrides to the Bevy context which will be used in place of the requested type. This is great for providing instantiated instances of classes (config models, database connections, etc.) or for test mocks.
+It is possible to get a value from the cache without creating an instance if it's not found using the `find` method. This method returns an `Option` type that can either be your value wrapped in a `Value` type or a `Null` type if the value was not found. You can use the `value_or` method to get your value or a default if it doesn't exist.
 ```python
-from bevy import Bevy, Inject, Context
+thing = get_repository().find(Thing).value_or(None)
+```
+It is also possible to use match/case to unwrap the value with more flexibility.
+```python
+from bevy.options import Value, Null
 
-class Example(Bevy):
-    dependency: Dependency = Inject
-
-context = Context()
-context.add(some_instance, use_as=Dependency)
-example = context.get(Example)
+match get_repository().find(Thing):
+    case Value(value):
+        thing = value
+    case Null():
+        raise Exception("Could not find an instance of Thing")
 ```
 
-**Providers**
+**Dependency Providers**
 
-Bevy has the concept of dependency providers. When a dependency is requested from the Bevy context, the context goes through all registered providers looking for one that can handle the requested type. It then requests that the provider get an instance of the requested type. This is a powerful feature that can be used to dynamically create instances that have a more advanced initialization. I've used this for creating SQLAlchemy database connections and injecting db sessions. I've also used it to inject config models that pull in their values only as needed from a global config object. Bevy's dependency repository then acts as a cache for those objects. 
+To make Bevy as flexible as possible, it has dependency providers. These are classes that can be registered with the repository to cache value instances, look up cached instances using a key type, and create new instances for a key type.
 
-At this time though, the provider API is actively being refined, so will likely be changed in future versions.
+The default repository type has two dependency providers: an annotated provider and a type provider.
+- The **Type Provider** handles key types that are class types. So when a dependency annotation is `Thing`, for example, the type provider will handle looking through its cache for an instance of `Thing` and creating an instance if it is not found.
+- The **Annotated Provider** handles key types that are instances of `typing.Annotated`. It works very similarly to the type provider except it allows you to provide an annotation. This is helpful if you have multiple instances of the same type that need to exist together. You could have `Annotated[Thing, {"test": "A"}]` and `Annotated[Thing, {"test": "B"}]`, both of them would be able to point to distinct instances of `Thing` in the same repository cache.
 
-## Future
-- Get the providers API nailed down to maximize flexibility and simplicity.
-- Support for context managers. Initially I want to have them work with Bevy methods, essentially wrapping the function call in a `with` block. Eventually I'd like to support them at the instance and application levels. This would allow for dependencies that need to be cleaned up when an instance or the context itself is destroyed.
-- Auto-detect methods that have used the `Inject` object. 
+It is possible to add new providers to the repository using it's `add_providers` method which takes any number of provider types.
+
+It is also possible to subclass `bevy.Repository`, provide a custom `factory` class method that returns an instance of `Repository` with whatever default providers you want set. Just call `Repository.set_repository` with an instance of the new repository type.
