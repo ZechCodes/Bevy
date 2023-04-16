@@ -12,7 +12,7 @@ class NullRepository(Generic[_K, _V]):
     def add_providers(self, *providers: Type[Provider[_K, _V]]):
         return
 
-    def branch(self) -> "NullRepository":
+    def branch(self) -> "NullRepository[_K, _V]":
         return self
 
     def create(self, key: _K) -> Option[_V]:
@@ -46,7 +46,7 @@ class Repository(NullRepository[_K, _V]):
         instances that will be stored and returned by the repository."""
         self._providers.extend(provider(self) for provider in providers)
 
-    def branch(self) -> "Repository":
+    def branch(self) -> "Repository[_K, _V]":
         branch = type(self)(self)
 
         providers = (provider.get_clone_factory() for provider in self._providers)
