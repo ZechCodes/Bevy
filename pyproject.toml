@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Bevy"
-version = "2.0.1a0"
+version = "2.0.1b0"
 description = "Python Dependency Inversion made simple so you can focus on creating amazing code."
 authors = ["Zech Zimmerman <hi@zech.codes>"]
 license = "MIT"
