@@ -1,29 +1,22 @@
+from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
-
 
 _T = TypeVar("_T")
 
 
-class Option(Generic[_T]):
+class Option(Generic[_T], ABC):
     """Option types help make code cleaner and typing more consistent. The value type can wrap values while the null
     type can stand in for anytime that there is no value set. Option types are convenient to use with match/case
     statements."""
 
-    def __new__(cls, *args, **kwargs):
-        if cls is Option:
-            raise Exception("You cannot create an instance of the base option type.")
-
-        return object.__new__(cls)
-
     @property
+    @abstractmethod
     def value(self) -> _T:
         return self._get_value()
 
-    def _get_value(self):
-        raise Exception("No value was set")
-
+    @abstractmethod
     def value_or(self, default: _T) -> _T:
-        return default
+        """Returns the value if it is set or returns the provided default value."""
 
 
 class Value(Option[_T]):
@@ -32,7 +25,8 @@ class Value(Option[_T]):
     def __init__(self, value: _T):
         self._value = value
 
-    def _get_value(self):
+    @property
+    def value(self) -> _T:
         return self._value
 
     def value_or(self, default: _T) -> _T:
@@ -54,11 +48,13 @@ class Null(Option):
     def __init__(self, message: str = ""):
         self.message = message
 
-    def _get_value(self):
-        if self.message:
-            raise Exception(self.message)
+    @property
+    def value(self):
+        raise Exception(self.message or "Null value")
 
-        super()._get_value()
+    def value_or(self, default: _T) -> _T:
+        """The Null option will never have a value so this just returns the default."""
+        return default
 
     def __bool__(self):
         return False
