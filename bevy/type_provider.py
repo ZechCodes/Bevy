@@ -1,5 +1,6 @@
 from typing import Callable, Type, TypeVar, Protocol, runtime_checkable
 
+from bevy.options import Option, Null, Value
 from bevy.providers import Provider
 
 _T = TypeVar("_T")
@@ -15,9 +16,14 @@ class BevyConstructable(Protocol[_T]):
 class TypeProvider(Provider[Type[_T], _T]):
     """The type provider supports any types and will attempt to instantiate them with no args."""
 
-    def factory(self, new_type: Type[_T]) -> Callable[[], _T] | None:
+    def factory(self, new_type: Type[_T]) -> Option[Callable[[], _T]]:
         match new_type:
             case BevyConstructable():
-                return new_type.__bevy_constructor__
+                return Value(new_type.__bevy_constructor__)
+            case type():
+                return Value(new_type)
             case _:
-                return new_type
+                return Null()
+
+    def supports(self, new_type: Type[_T]) -> bool:
+        return isinstance(new_type, type)
