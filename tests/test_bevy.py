@@ -125,3 +125,20 @@ def test_multiple_annotated(repository):
     repository.set(Annotated[str, "TestB"], "test_b")
 
     assert test_function() == ("test_a", "test_b")
+
+
+def test_bevy_constructor(repository):
+    class Dep:
+        def __init__(self, msg: str):
+            self.msg = msg
+
+        @classmethod
+        def __bevy_constructor__(cls):
+            return cls("test")
+
+    @inject
+    def test_function(param: Dep = dependency()) -> tuple[str, str]:
+        return param.msg
+
+    repository.add_providers(TypeProvider)
+    assert test_function() == "test"
