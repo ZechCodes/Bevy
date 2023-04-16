@@ -25,12 +25,6 @@ class Option(Generic[_T]):
     def value_or(self, default: _T) -> _T:
         return default
 
-    def __repr__(self):
-        return f"{type(self).__name__}()"
-
-    def __str__(self):
-        return f"<{type(self).__name__}>"
-
 
 class Value(Option[_T]):
     __match_args__ = ("value",)
