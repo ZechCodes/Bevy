@@ -3,8 +3,8 @@ from typing import Annotated
 from pytest import fixture
 
 from bevy import dependency, inject, Repository, get_repository
-from providers.annotated_provider import AnnotatedProvider
-from providers.type_provider import TypeProvider
+from bevy.providers.annotated_provider import AnnotatedProvider
+from bevy.providers.type_provider import TypeProvider
 
 
 @fixture
@@ -142,3 +142,29 @@ def test_bevy_constructor(repository):
 
     repository.add_providers(TypeProvider)
     assert test_function() == "test"
+
+
+def test_repository_branching(repository):
+    repository.add_providers(TypeProvider)
+    repository.set(int, 10)
+
+    branch = repository.branch()
+    assert branch.get(int) is repository.get(int)
+
+
+def test_repository_branching_no_propagation(repository):
+    repository.add_providers(TypeProvider)
+    repository.set(int, 10)
+
+    branch = repository.branch()
+    assert not branch.find(int, allow_propagation=False)
+
+
+def test_repository_branching_create(repository):
+    repository.add_providers(TypeProvider)
+    repository.set(int, 10)
+
+    branch = repository.branch()
+    branch.create(int)
+    assert branch.find(int).value_or(-1) is 0
+    assert repository.find(int).value_or(-1) is 10

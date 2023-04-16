@@ -56,6 +56,10 @@ class Provider(Generic[_K, _V]):
         except KeyError as exception:
             return NotFound(f"{type(self)!r} has no instances cached for {key!r}")
 
+    def get_clone_factory(self) -> Callable[[], "Provider"]:
+        """Returns a callable that can be used to create an instance of the same type of provider."""
+        return type(self)
+
     def set(self, key: _K, value: _V) -> Option[_V]:
         """Sets a value in the cache for the key only if the key is supported by the provider. A Null option
         (NotSupported) is returned when the key is not supported, otherwise a Value option containing the value placed
