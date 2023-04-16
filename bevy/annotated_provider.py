@@ -42,8 +42,4 @@ class AnnotatedProvider(Provider[_A, _T]):
 
     def supports(self, annotated: _A) -> bool:
         """Checks if the given key is indeed a typing.Annotated wrapped type."""
-        match get_type(annotated):
-            case Value() if get_origin(annotated) is Annotated:
-                return True
-            case _:
-                return False
+        return bool(get_type(annotated)) and get_origin(annotated) is Annotated
