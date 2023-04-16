@@ -6,7 +6,10 @@ _T = TypeVar("_T")
 
 class Option(Generic[_T]):
     @property
-    def value(self):
+    def value(self) -> _T:
+        return self._get_value()
+
+    def _get_value(self):
         raise Exception("No value was set")
 
     def value_or(self, default: _T) -> _T:
@@ -22,14 +25,13 @@ class Option(Generic[_T]):
         return f"<{type(self).__name__}>"
 
 
-class Value(Option):
+class Value(Option[_T]):
     __match_args__ = ("value",)
 
     def __init__(self, value: _T):
         self._value = value
 
-    @property
-    def value(self):
+    def _get_value(self):
         return self._value
 
     def value_or(self, default: _T) -> _T:
@@ -47,6 +49,12 @@ class Null(Option):
 
     def __init__(self, message: str = ""):
         self.message = message
+
+    def _get_value(self):
+        if self.message:
+            raise Exception(self.message)
+
+        super()._get_value()
 
     def __bool__(self):
         return False
