@@ -1,7 +1,7 @@
-from bevy.providers import Provider
 from typing import Annotated, Callable, Hashable, Type, TypeAlias, TypeVar, get_args
-from bevy.results import Result, ResultBuilder
 
+from bevy.providers import Provider
+from bevy.results import Result, ResultBuilder
 
 _T = TypeVar("_T")
 _A: TypeAlias = Annotated[Type[_T], Hashable]
@@ -10,17 +10,7 @@ _A: TypeAlias = Annotated[Type[_T], Hashable]
 class AnnotatedProvider(Provider[_A, _T]):
     """The type provider supports any types and will attempt to instantiate them with no args."""
 
-    def set(self, annotated: _A, value: _T) -> Result[bool]:
-        with ResultBuilder() as (result_builder, set_result):
-            if (builder := self.builder(annotated)) is None:
-                raise Exception(f"The provider does not support {annotated!r}")
-
-            self._cache[annotated] = value
-            set_result(True)
-
-        return result_builder.result
-
-    def builder(self, annotated: _A) -> Callable[[], _T] | None:
+    def factory(self, annotated: _A) -> Callable[[], _T] | None:
         new_type, _ = get_args(annotated)
         return lambda: self._repository.get(new_type)
 
@@ -34,3 +24,13 @@ class AnnotatedProvider(Provider[_A, _T]):
                 ) from exception
 
         return builder.result
+
+    def set(self, annotated: _A, value: _T) -> Result[bool]:
+        with ResultBuilder() as (result_builder, set_result):
+            if (builder := self.factory(annotated)) is None:
+                raise Exception(f"The provider does not support {annotated!r}")
+
+            self._cache[annotated] = value
+            set_result(True)
+
+        return result_builder.result

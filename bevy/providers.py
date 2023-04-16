@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
-Builder = Callable[[], _V]
+Factory = Callable[[], _V]
 
 
 class Provider(Generic[_K, _V], ABC):
@@ -14,12 +14,12 @@ class Provider(Generic[_K, _V], ABC):
         self._cache: dict[_K, _V] = {}
 
     @abstractmethod
-    def builder(self, key: _K) -> Builder | None:
+    def factory(self, key: _K) -> Factory | None:
         """Should create a function to build an instance of the type, or returns None if the type is not supported."""
 
     def create(self, key: _K) -> Result[_V]:
         with ResultBuilder() as (result_builder, set_result):
-            if (builder := self.builder(key)) is None:
+            if (builder := self.factory(key)) is None:
                 raise Exception(f"The provider does not support {key!r}")
 
             self._cache[key] = set_result(builder())
@@ -39,7 +39,7 @@ class Provider(Generic[_K, _V], ABC):
 
     def set(self, key: _K, value: _V) -> Result[bool]:
         with ResultBuilder() as (result_builder, set_result):
-            if (builder := self.builder(key)) is None:
+            if (builder := self.factory(key)) is None:
                 raise Exception(f"The provider does not support {key!r}")
 
             self._cache[key] = value
