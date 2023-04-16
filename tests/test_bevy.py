@@ -7,14 +7,24 @@ from bevy.providers.annotated_provider import AnnotatedProvider
 from bevy.providers.type_provider import TypeProvider
 
 
+class TestRepository(Repository):
+    @classmethod
+    def factory(cls):
+        return cls()
+
+
 @fixture
 def repository():
-    Repository.set_repository(Repository())
+    Repository.set_repository(TestRepository.factory())
     return get_repository()
 
 
 def test_repository_exists(repository):
     assert isinstance(get_repository(), Repository)
+
+
+def test_repository_type_overridden(repository):
+    assert isinstance(get_repository(), TestRepository)
 
 
 def test_repository_get(repository):

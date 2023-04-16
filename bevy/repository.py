@@ -38,7 +38,7 @@ class Repository(_NullRepository[_K, _V]):
     """The Bevy repository manages instance providers and caching the results that the providers create."""
 
     _bevy_repository: "_ContextVarDefaultFactory[Repository[_K, _V]]" = (
-        _ContextVarDefaultFactory("bevy_context", default=lambda: Repository())
+        _ContextVarDefaultFactory("bevy_context", default=lambda: Repository.factory())
     )
 
     def __init__(self, parent: "Repository | None" = None):
@@ -120,6 +120,14 @@ class Repository(_NullRepository[_K, _V]):
                     return Value(cached_value)
 
         return Null()
+
+    @classmethod
+    def factory(cls) -> "Repository[_K, _V]":
+        from bevy.providers import AnnotatedProvider, TypeProvider
+
+        repository = cls()
+        repository.add_providers(AnnotatedProvider, TypeProvider)
+        return repository
 
     @classmethod
     def get_repository(cls: "Type[Repository[_K, _V]]") -> "Repository[_K, _V]":
