@@ -8,11 +8,15 @@ _K = TypeVar("_K")
 _V = TypeVar("_V")
 
 
-class NullRepository(Generic[_K, _V]):
+class _NullRepository(Generic[_K, _V]):
+    """The Null Repository provides dead end null behavior. It is intended solely to simplify the propagation logic when
+    searching for cached dependencies. It should only exist at the top of the repository branching tree to stop\
+    propagation. It is not intended for use beyond that case."""
+
     def add_providers(self, *providers: Type[Provider[_K, _V]]):
         return
 
-    def branch(self) -> "NullRepository[_K, _V]":
+    def branch(self) -> "_NullRepository[_K, _V]":
         return self
 
     def create(self, key: _K) -> Option[_V]:
@@ -30,7 +34,7 @@ class NullRepository(Generic[_K, _V]):
         return Null()
 
 
-class Repository(NullRepository[_K, _V]):
+class Repository(_NullRepository[_K, _V]):
     """The Bevy repository manages instance providers and caching the results that the providers create."""
 
     _bevy_repository: "_ContextVarDefaultFactory[Repository[_K, _V]]" = (
@@ -38,7 +42,7 @@ class Repository(NullRepository[_K, _V]):
     )
 
     def __init__(self, parent: "Repository | None" = None):
-        self._parent = parent or NullRepository()
+        self._parent = parent or _NullRepository()
         self._providers: list[Provider[_K, _V]] = []
 
     def add_providers(self, *providers: Type[Provider[_K, _V]]):
