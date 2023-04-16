@@ -28,13 +28,6 @@ class Provider(Generic[_K, _V]):
         self._repository = repository
         self._cache: dict[_K, _V] = {}
 
-    def factory(self, key: _K) -> Option[Factory]:
-        """The base provider returns a Null option as it does not support creating new instances that adhere to the type
-        _V. This method should be overriden by base classes to create or lookup instances as appropriate that are
-        returned as Value options.
-        """
-        return Null(f"{type(self)!r} does not support creating instances of {key!r}")
-
     def create(self, key: _K) -> Option[_V]:
         """Uses a factory function provided by the provider's factory method to get an instance that adheres to the type
         _V and that corresponds to the key. A Null option (NotSupported) is returned when no factory is available,
@@ -46,6 +39,13 @@ class Provider(Generic[_K, _V]):
                 return Value(self._cache[key])
             case _:
                 return NotSupported(f"{type(self)!r} does not support {key!r}")
+
+    def factory(self, key: _K) -> Option[Factory]:
+        """The base provider returns a Null option as it does not support creating new instances that adhere to the type
+        _V. This method should be overriden by base classes to create or lookup instances as appropriate that are
+        returned as Value options.
+        """
+        return Null(f"{type(self)!r} does not support creating instances of {key!r}")
 
     def find(self, key: _K) -> Option[_V]:
         """Searches the cache for an instance that adheres to the type _V and that corresponds to the key. When a match
