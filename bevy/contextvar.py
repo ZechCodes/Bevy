@@ -38,6 +38,7 @@ class ContextVarDefaultFactory(Generic[_T]):
         self._var.reset(token)
 
     def _setup(self) -> _T:
+        """Create the default value and assign it to the contextvar."""
         value = self._factory()
         self.set(value)
         return value
