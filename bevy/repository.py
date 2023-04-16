@@ -19,12 +19,6 @@ class Repository(Generic[_K, _V]):
     def __init__(self):
         self._providers: list[Provider[_K, _V]] = []
 
-    def add(self, key: _K, value: _V):
-        for provider in self._providers:
-            match provider.add(key, value):
-                case Success(_):
-                    return
-
     def add_providers(self, *providers: Type[Provider[_K, _V]]):
         """Creates providers and adds them to the repository. These providers will be used to lookup and create
         instances that will be stored and returned by the repository."""
@@ -56,6 +50,12 @@ class Repository(Generic[_K, _V]):
                 return result
             case Failure(_):
                 return self.create(key)
+
+    def set(self, key: _K, value: _V):
+        for provider in self._providers:
+            match provider.set(key, value):
+                case Success(_):
+                    return
 
     @classmethod
     def get_repository(cls: "Type[Repository[_K, _V]]") -> "Repository[_K, _V]":

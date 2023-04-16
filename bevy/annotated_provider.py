@@ -10,7 +10,7 @@ _A: TypeAlias = Annotated[Type[_T], Hashable]
 class AnnotatedProvider(Provider[_A, _T]):
     """The type provider supports any types and will attempt to instantiate them with no args."""
 
-    def add(self, annotated: _A, value: _T) -> Result[bool]:
+    def set(self, annotated: _A, value: _T) -> Result[bool]:
         with ResultBuilder() as (result_builder, set_result):
             if (builder := self.builder(annotated)) is None:
                 raise Exception(f"The provider does not support {annotated!r}")

@@ -89,7 +89,7 @@ def test_annotated_provider(repository):
         return param
 
     repository.add_providers(AnnotatedProvider)
-    repository.add(Annotated[str, "Testing"], "testing")
+    repository.set(Annotated[str, "Testing"], "testing")
 
     assert test_function() == "testing"
 
@@ -99,7 +99,7 @@ def test_annotated_provider_on_class(repository):
         dep: Annotated[str, "Testing"] = dependency()
 
     repository.add_providers(AnnotatedProvider)
-    repository.add(Annotated[str, "Testing"], "testing")
+    repository.set(Annotated[str, "Testing"], "testing")
     assert TestType().dep == "testing"
 
 
@@ -121,7 +121,7 @@ def test_multiple_annotated(repository):
         return param_a, param_b
 
     repository.add_providers(AnnotatedProvider)
-    repository.add(Annotated[str, "TestA"], "test_a")
-    repository.add(Annotated[str, "TestB"], "test_b")
+    repository.set(Annotated[str, "TestA"], "test_a")
+    repository.set(Annotated[str, "TestB"], "test_b")
 
     assert test_function() == ("test_a", "test_b")
