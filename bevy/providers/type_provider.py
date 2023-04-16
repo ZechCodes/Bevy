@@ -16,14 +16,14 @@ class BevyConstructable(Protocol[_T]):
 class TypeProvider(Provider[Type[_T], _T]):
     """The type provider supports any types and will attempt to instantiate them with no args."""
 
-    def factory(self, new_type: Type[_T]) -> Option[Callable[[], _T]]:
-        match new_type:
-            case BevyConstructable() if isinstance(new_type, type):
-                return Value(new_type.__bevy_constructor__)
-            case type():
-                return Value(new_type)
+    def factory(self, key: Type[_T]) -> Option[Callable[[], _T]]:
+        match key:
+            case BevyConstructable() as type_ if isinstance(type_, type):
+                return Value(type_.__bevy_constructor__)
+            case type() as type_:
+                return Value(type_)
             case _:
                 return Null()
 
-    def supports(self, new_type: Type[_T]) -> bool:
-        return isinstance(new_type, type)
+    def supports(self, key: Type[_T]) -> bool:
+        return isinstance(key, type)
