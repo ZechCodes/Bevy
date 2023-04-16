@@ -5,6 +5,12 @@ _T = TypeVar("_T")
 
 
 class Option(Generic[_T]):
+    def __new__(cls, *args, **kwargs):
+        if cls is Option:
+            raise Exception("You cannot create an instance of the base option type.")
+
+        return object.__new__(cls)
+
     @property
     def value(self) -> _T:
         return self._get_value()
