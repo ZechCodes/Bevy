@@ -1,27 +1,31 @@
-from typing import Any, Generic, Type, TypeVar
-from inspect import get_annotations
-from bevy.repository import get_repository
 import sys
+from inspect import get_annotations
+from typing import Any, Generic, Type, TypeVar
 
-_NOTSET = object()
-_T = TypeVar("_T")
+from bevy.options import Option, Value, Null
+from bevy.repository import get_repository
+
+_K = TypeVar("_K")
 
 
-class Dependency(Generic[_T]):
+class Dependency(Generic[_K]):
+
     def __init__(self):
-        self._type: Type[_T] = _NOTSET
+        self._key: Option[_K] = Null()
 
     def __get__(self, instance: object, owner: Type):
-        if self._type is _NOTSET:
-            raise Exception("The dependency has not been setup")
+        match self._key:
+            case Value(key):
+                repo = get_repository()
+                return repo.get(key)
 
-        repo = get_repository()
-        return repo.get(self._type)
+            case Null():
+                raise Exception("The dependency has not been setup")
 
     def __set_name__(self, owner: Type, name: str):
-        self._type = get_annotations(
-            owner, globals=_get_class_namespace(owner), eval_str=True
-        )[name]
+        ns = _get_class_namespace(owner)
+        annotations = get_annotations(owner, globals=ns, eval_str=True)
+        self._key = Value(annotations[name])
 
 
 def dependency() -> Any:
