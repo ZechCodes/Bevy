@@ -1,11 +1,29 @@
-from bevy.results import Result, ResultBuilder
-from typing import Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
+from typing import Callable, Generic, TypeVar
 
+from bevy.results import Result, ResultBuilder
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
 Factory = Callable[[], _V]
+
+
+class _MessageResult(Result):
+    __match_args__ = ("message",)
+
+    def __init__(self, message: str):
+        self.message = message
+
+    def __bool__(self):
+        return False
+
+
+class NotFound(_MessageResult):
+    ...
+
+
+class NotSupported(_MessageResult):
+    ...
 
 
 class Provider(Generic[_K, _V], ABC):
