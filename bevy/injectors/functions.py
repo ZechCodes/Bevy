@@ -42,4 +42,7 @@ def _unwrap_function(func: _C) -> _C:
     if hasattr(func, "__func__"):
         return _unwrap_function(func.__func__)
 
+    if hasattr(func, "__wrapped__"):
+        return _unwrap_function(func.__wrapped__)
+
     return func
