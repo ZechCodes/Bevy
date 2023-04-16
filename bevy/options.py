@@ -5,6 +5,10 @@ _T = TypeVar("_T")
 
 
 class Option(Generic[_T]):
+    """Option types help make code cleaner and typing more consistent. The value type can wrap values while the null
+    type can stand in for anytime that there is no value set. Option types are convenient to use with match/case
+    statements."""
+
     def __new__(cls, *args, **kwargs):
         if cls is Option:
             raise Exception("You cannot create an instance of the base option type.")
@@ -20,9 +24,6 @@ class Option(Generic[_T]):
 
     def value_or(self, default: _T) -> _T:
         return default
-
-    def __bool__(self):
-        return True
 
     def __repr__(self):
         return f"{type(self).__name__}()"
@@ -42,6 +43,9 @@ class Value(Option[_T]):
 
     def value_or(self, default: _T) -> _T:
         return self.value
+
+    def __bool__(self):
+        return True
 
     def __repr__(self):
         return f"{type(self).__name__}({self.value!r})"
