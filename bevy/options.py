@@ -47,10 +47,12 @@ class Null(Option):
 
     def __init__(self, message: str = ""):
         self.message = message
+    def message(self) -> str:
+        return self._message or "Null value"
 
     @property
     def value(self):
-        raise Exception(self.message or "Null value")
+        raise Exception(self.message)
 
     def value_or(self, default: _T) -> _T:
         """The Null option will never have a value so this just returns the default."""
@@ -60,8 +62,8 @@ class Null(Option):
         return False
 
     def __repr__(self):
-        return f"{type(self).__name__}({repr(self.message) or ''})"
+        return f"{type(self).__name__}({repr(self._message) if self._message else ''})"
 
     def __str__(self):
-        message = f": {self.message}" if self.message else ""
+        message = f": {self._message}" if self._message else ""
         return f"<{type(self).__name__}{message}>"
