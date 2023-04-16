@@ -1,7 +1,7 @@
 from contextvars import ContextVar as _ContextVar, Token as _Token
 from typing import Callable, Generic, TypeVar
 
-from bevy.options import Value as _Value, Null as _Null
+from bevy.options import Option as _Option, Value as _Value, Null as _Null
 
 _T = TypeVar("_T")
 
@@ -11,7 +11,7 @@ class ContextVarDefaultFactory(Generic[_T]):
     set."""
 
     def __init__(self, name: str, *, default: Callable[[], _T]):
-        self._var = _ContextVar(name, default=_Null())
+        self._var: _ContextVar[_Option[_T]] = _ContextVar(name, default=_Null())
         self._factory = default
 
     @property
