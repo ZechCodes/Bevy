@@ -1,6 +1,8 @@
-from typing import Callable, Generic, Self, TypeAlias, TypeVar
+from functools import wraps
+from typing import Callable, Generic, ParamSpec, Self, TypeAlias, TypeVar
 
-
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 _T = TypeVar("_T")
 Setter: TypeAlias = Callable[[_T], None]
 
@@ -11,6 +13,7 @@ class Result(Generic[_T]):
 
     def __bool__(self):
         return True
+
 
 class Success(Result[_T]):
     __match_args__ = ("result",)
@@ -31,6 +34,8 @@ class Failure(Result[_T]):
     @property
     def result(self) -> _T:
         raise self.exception
+
+
 class ResultBuilder(Generic[_T]):
     def __init__(self):
         self.result: Result[_T] = Result[_T]()
@@ -53,3 +58,17 @@ class ResultBuilder(Generic[_T]):
 
         return True
 
+
+def result(func: Callable[_P, _R]) -> Callable[_P, _R]:
+    @wraps(func)
+    def result_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> Result[_R]:
+        with ResultBuilder() as (builder, set_result):
+            match func(*args, **kwargs):
+                case Result() as r:
+                    set_result(r)
+                case _ as r:
+                    set_result(Success(r))
+
+        return builder.result
+
+    return result_wrapper
