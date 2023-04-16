@@ -1,7 +1,8 @@
-from typing import Any, Callable, TypeVar, ParamSpec, TypeAlias
 from functools import wraps
 from inspect import signature, get_annotations
-from bevy.dependency_descriptor import Dependency
+from typing import Any, Callable, TypeVar, ParamSpec, TypeAlias
+
+from bevy.injectors.classes import Dependency
 from bevy.repository import get_repository
 
 _P = ParamSpec("_P")
