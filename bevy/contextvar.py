@@ -27,9 +27,7 @@ class ContextVarDefaultFactory(Generic[_T]):
                 return value
 
             case _Null():
-                value = self._factory()
-                self.set(value)
-                return value
+                return self._setup()
 
     def set(self, value: _T):
         """Proxy the contextvar's set method."""
@@ -38,3 +36,8 @@ class ContextVarDefaultFactory(Generic[_T]):
     def reset(self, token: _Token[_T]) -> None:
         """Proxy the contextvar's reset method."""
         self._var.reset(token)
+
+    def _setup(self) -> _T:
+        value = self._factory()
+        self.set(value)
+        return value
