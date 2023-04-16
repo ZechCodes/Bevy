@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Generic, TypeVar
 
-from bevy.results import Result, ResultBuilder
+from bevy.results import Result, result
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
@@ -35,32 +35,24 @@ class Provider(Generic[_K, _V], ABC):
     def factory(self, key: _K) -> Factory | None:
         """Should create a function to build an instance of the type, or returns None if the type is not supported."""
 
-    def create(self, key: _K) -> Result[_V]:
-        with ResultBuilder() as (result_builder, set_result):
-            if (builder := self.factory(key)) is None:
-                raise Exception(f"The provider does not support {key!r}")
+    @result
+    def create(self, key: _K) -> _V | NotSupported:
+        if (factory := self.factory(key)) is None:
+            return NotSupported(f"{type(self)!r} does not support {key!r}")
 
-            self._cache[key] = set_result(builder())
+        self._cache[key] = factory()
+        return self._cache[key]
 
-        return result_builder.result
+    @result
+    def find(self, key: _K) -> _V | NotFound:
+        try:
+            return self._cache[key]
+        except KeyError as exception:
+            return NotFound(f"{type(self)!r} has no instances cached for {key!r}")
 
-    def find(self, key: _K) -> Result[_V]:
-        with ResultBuilder() as (builder, set_result):
-            try:
-                set_result(self._cache[key])
-            except KeyError as exception:
-                raise Exception(
-                    f"Provider had no instances cached for {key!r}"
-                ) from exception
+    @result
+    def set(self, key: _K, value: _V) -> NotSupported | None:
+        if self.factory(key) is None:
+            return NotSupported(f"{type(self)!r} does not support {key!r}")
 
-        return builder.result
-
-    def set(self, key: _K, value: _V) -> Result[bool]:
-        with ResultBuilder() as (result_builder, set_result):
-            if (builder := self.factory(key)) is None:
-                raise Exception(f"The provider does not support {key!r}")
-
-            self._cache[key] = value
-            set_result(True)
-
-        return result_builder.result
+        self._cache[key] = value
