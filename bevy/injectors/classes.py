@@ -9,6 +9,13 @@ _K = TypeVar("_K")
 
 
 class Dependency(Generic[_K]):
+    """This class can be used to indicate fields that need to be injected. It also acts as a descriptor that can
+    discover the key that needs to be injected and handle injecting the corresponding instance for that key when
+    accessed.
+
+    To avoid typing errors that may arise from assigning instances of `Dependency` to fields, use the `dependency`
+    function. That function returns a new instance of `Dependency` but has a return type of `typing.Any`.
+    """
 
     def __init__(self):
         self._key: Option[_K] = Null()
@@ -29,10 +36,13 @@ class Dependency(Generic[_K]):
 
 
 def dependency() -> Any:
+    """This helper function allows instances of the `Dependency` type to be assigned to fields without breaking type
+    checking."""
     return Dependency()
 
 
 def _get_class_namespace(cls: Type) -> dict[str, Any]:
+    """Attempts to get the global variables in the module that a class was declared in."""
     try:
         return vars(sys.modules[cls.__module__])
     except KeyError:
