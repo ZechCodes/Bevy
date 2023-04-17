@@ -84,7 +84,7 @@ To make Bevy as flexible as possible, it has dependency providers. These are cla
 
 The default repository type has two dependency providers: an annotated provider and a type provider.
 - The **Type Provider** handles key types that are class types. So when a dependency annotation is `Thing`, for example, the type provider will handle looking through its cache for an instance of `Thing` and creating an instance if it is not found.
-- The **Annotated Provider** handles key types that are instances of `typing.Annotated`. It works very similarly to the type provider except it allows you to provide an annotation. This is helpful if you have multiple instances of the same type that need to exist together. You could have `Annotated[Thing, {"test": "A"}]` and `Annotated[Thing, {"test": "B"}]`, both of them would be able to point to distinct instances of `Thing` in the same repository cache.
+- The **Annotated Provider** handles key types that are instances of `typing.Annotated`. It works very similarly to the type provider except it allows you to provide an annotation. This is helpful if you have multiple instances of the same type that need to exist together. You could have `Annotated[Thing, "testA"]` and `Annotated[Thing, "testB"]`, both of them would be able to point to distinct instances of `Thing` in the same repository cache.
 
 It is possible to add new providers to the repository using it's `add_providers` method which takes any number of provider types.
 
