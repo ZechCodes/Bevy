@@ -43,12 +43,15 @@ class Repository(_NullRepository[_K, _V]):
 
     def __init__(self, parent: "Repository | None" = None):
         self._parent = parent or _NullRepository()
-        self._providers: list[Provider[_K, _V]] = []
+        self._providers: tuple[Provider[_K, _V]] = []
 
     def add_providers(self, *providers: Type[Provider[_K, _V]]):
         """Creates providers and adds them to the repository. These providers will be used to lookup and create
         instances that will be stored and returned by the repository."""
-        self._providers.extend(provider(self) for provider in providers)
+        self._providers = (
+            *(provider(self) for provider in providers),
+            *self._providers,
+        )
 
     def branch(self) -> "Repository[_K, _V]":
         branch = type(self)(self)
