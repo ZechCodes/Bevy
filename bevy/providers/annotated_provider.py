@@ -11,7 +11,7 @@ from typing import (
 )
 
 from bevy.options import Option, Value, Null
-from bevy.providers.base import Provider
+from bevy.providers.provider import Provider
 from bevy.repository_cache import RepositoryCache as _RepositoryCache
 
 _T = TypeVar("_T")

@@ -2,7 +2,7 @@ from typing import Generic, TypeVar, Type
 
 from bevy.contextvar import ContextVarDefaultFactory as _ContextVarDefaultFactory
 from bevy.options import Option, Value, Null
-from bevy.providers.base import Provider
+from bevy.providers.provider import Provider
 from bevy.repository_cache import RepositoryCache as _RepositoryCache
 
 _K = TypeVar("_K")

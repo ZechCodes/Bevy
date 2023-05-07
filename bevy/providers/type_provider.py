@@ -1,7 +1,7 @@
 from typing import Callable, Type, TypeVar, Protocol, runtime_checkable
 
 from bevy.options import Option, Null, Value
-from bevy.providers.base import Provider
+from bevy.providers.provider import Provider
 
 _T = TypeVar("_T")
 
