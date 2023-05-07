@@ -54,13 +54,14 @@ class Repository(_NullRepository[_K, _V]):
         self.add_providers(*providers)
 
     def add_providers(self, *providers: Provider[_K, _V]):
-        """Adds providers to the repository. These providers will be used to lookup and create instances that will be
-        stored and returned by the repository."""
-        self._providers.update(
-            (provider, _RepositoryCache(self))
+        """Adds providers to the repository at a higher priority than existing providers. These providers will be used
+        to lookup and create instances that will be stored and returned by the repository.
+        """
+        self._providers = {
+            provider: _RepositoryCache(self)
             for provider in providers
             if provider not in self._providers
-        )
+        } | self._providers
 
     def branch(self) -> "Repository[_K, _V]":
         """Creates a new repository that inherits the providers from the current repository. Dependencies not found on
