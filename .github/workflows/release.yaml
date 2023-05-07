@@ -1,5 +1,4 @@
 name: Release Bevy to PyPI
-
 on:
   release:
     types: [created]
