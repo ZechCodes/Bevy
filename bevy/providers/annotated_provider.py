@@ -11,8 +11,8 @@ from typing import (
 )
 
 from bevy.options import Option, Value, Null
+from bevy.provider_state import ProviderState as _ProviderState
 from bevy.providers.provider import Provider
-from bevy.repository_cache import RepositoryCache as _RepositoryCache
 
 _T = TypeVar("_T")
 _A: TypeAlias = Annotated[Type[_T], Hashable]
@@ -32,7 +32,7 @@ class AnnotatedProvider(Provider[_A, _T]):
     if it's not found in the cache."""
 
     def factory(
-        self, key: _A, cache: _RepositoryCache[_A, _T]
+        self, key: _A, cache: _ProviderState[_A, _T]
     ) -> Option[Callable[[], _T]]:
         """Get a callable for getting or constructing an instance of the annotated type. This will call the repository's
         get method looking up the un-annotated type, this will attempt to instantiate an instance of the type if no

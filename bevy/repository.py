@@ -2,8 +2,8 @@ from typing import Generic, TypeVar, Type
 
 from bevy.contextvar import ContextVarDefaultFactory as _ContextVarDefaultFactory
 from bevy.options import Option, Value, Null
+from bevy.provider_state import ProviderState as _ProviderState
 from bevy.providers.provider import Provider
-from bevy.repository_cache import RepositoryCache as _RepositoryCache
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
@@ -49,7 +49,7 @@ class Repository(_NullRepository[_K, _V]):
         providers: tuple[Provider[_K, _V]] = (),
     ):
         self._parent = parent or _NullRepository()
-        self._providers: dict[Provider[_K, _V], _RepositoryCache[_K, _V]] = {}
+        self._providers: dict[Provider[_K, _V], _ProviderState[_K, _V]] = {}
 
         self.add_providers(*providers)
 
@@ -58,7 +58,7 @@ class Repository(_NullRepository[_K, _V]):
         to lookup and create instances that will be stored and returned by the repository.
         """
         self._providers = {
-            provider: _RepositoryCache(self)
+            provider: _ProviderState(self)
             for provider in providers
             if provider not in self._providers
         } | self._providers
