@@ -18,7 +18,7 @@ _T = TypeVar("_T")
 _A: TypeAlias = Annotated[Type[_T], Hashable]
 
 
-def get_type(annotated: _A) -> Option[_T]:
+def _get_type(annotated: _A) -> Option[_T]:
     """Get the type being annotated by a typing.Annotated instance."""
     match get_args(annotated):
         case (type() as type_, _):
@@ -38,6 +38,7 @@ class AnnotatedProvider(Provider[_A, _T]):
         get method looking up the un-annotated type, this will attempt to instantiate an instance of the type if no
         providers have an instance cached."""
         match get_type(key):
+        match _get_type(key):
             case Value(type_):
                 return Value(partial(cache.repository.get, type_))
             case Null(message):
@@ -46,3 +47,4 @@ class AnnotatedProvider(Provider[_A, _T]):
     def supports(self, key: _A, _) -> bool:
         """Checks if the given key is indeed a typing.Annotated wrapped type."""
         return bool(get_type(key)) and get_origin(key) is Annotated
+        return bool(_get_type(key)) and get_origin(key) is Annotated
