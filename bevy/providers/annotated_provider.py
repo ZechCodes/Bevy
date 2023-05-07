@@ -28,16 +28,25 @@ def _get_type(annotated: _A) -> Option[_T]:
 
 
 class AnnotatedProvider(Provider[_A, _T]):
-    """The annotated provider supports typing.Annotated annotations. It will attempt to instantiate the annotated type
-    if it's not found in the cache."""
+    """The annotated provider supports `typing.Annotated` annotations. It will attempt to instantiate the annotated type
+    if it's not found in the cache.
+
+    **Example**
+
+        @inject
+        def example(
+            arg: Annotated[Dependency, "example-annotation"] = dependency()
+        ):
+            ...
+    """
 
     def factory(
         self, key: _A, cache: _ProviderState[_A, _T]
     ) -> Option[Callable[[], _T]]:
-        """Get a callable for getting or constructing an instance of the annotated type. This will call the repository's
-        get method looking up the un-annotated type, this will attempt to instantiate an instance of the type if no
-        providers have an instance cached."""
-        match get_type(key):
+        """Returns a callable that will get or construct an instance of the annotated type. If no instances exist in the
+        repository matching the annotation, this will call the `Repository.get` method looking for the un-annotated
+        type. That will attempt to instantiate an instance of the type if no providers have an instance cached.
+        """
         match _get_type(key):
             case Value(type_):
                 return Value(partial(cache.repository.get, type_))
@@ -45,6 +54,5 @@ class AnnotatedProvider(Provider[_A, _T]):
                 return Null(message)
 
     def supports(self, key: _A, _) -> bool:
-        """Checks if the given key is indeed a typing.Annotated wrapped type."""
-        return bool(get_type(key)) and get_origin(key) is Annotated
+        """Only allows the `AnnotatedProvider` to work with `typing.Annotated` wrapped types."""
         return bool(_get_type(key)) and get_origin(key) is Annotated
