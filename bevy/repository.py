@@ -1,6 +1,8 @@
 from typing import Generic, TypeVar, Type
 
-from bevy.contextvar import ContextVarDefaultFactory as _ContextVarDefaultFactory
+from bevy.factory_contextvars import (
+    ContextVarDefaultFactory as _ContextVarDefaultFactory,
+)
 from bevy.options import Option, Value, Null
 from bevy.provider_state import ProviderState as _ProviderState
 from bevy.providers.provider import Provider
