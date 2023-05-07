@@ -12,6 +12,7 @@ from typing import (
 
 from bevy.options import Option, Value, Null
 from bevy.providers.base import Provider
+from bevy.repository_cache import RepositoryCache as _RepositoryCache
 
 _T = TypeVar("_T")
 _A: TypeAlias = Annotated[Type[_T], Hashable]
@@ -30,16 +31,18 @@ class AnnotatedProvider(Provider[_A, _T]):
     """The annotated provider supports typing.Annotated annotations. It will attempt to instantiate the annotated type
     if it's not found in the cache."""
 
-    def factory(self, annotated: _A) -> Option[Callable[[], _T]]:
+    def factory(
+        self, key: _A, cache: _RepositoryCache[_A, _T]
+    ) -> Option[Callable[[], _T]]:
         """Get a callable for getting or constructing an instance of the annotated type. This will call the repository's
         get method looking up the un-annotated type, this will attempt to instantiate an instance of the type if no
         providers have an instance cached."""
-        match get_type(annotated):
+        match get_type(key):
             case Value(type_):
-                return Value(partial(self._repository.get, type_))
+                return Value(partial(cache.repository.get, type_))
             case Null(message):
                 return Null(message)
 
-    def supports(self, annotated: _A) -> bool:
+    def supports(self, key: _A, _) -> bool:
         """Checks if the given key is indeed a typing.Annotated wrapped type."""
-        return bool(get_type(annotated)) and get_origin(annotated) is Annotated
+        return bool(get_type(key)) and get_origin(key) is Annotated

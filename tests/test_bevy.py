@@ -31,7 +31,7 @@ def test_repository_get(repository):
     class TestType:
         ...
 
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     instance = repository.get(TestType)
 
     assert isinstance(instance, TestType)
@@ -41,7 +41,7 @@ def test_repository_caching(repository):
     class TestType:
         ...
 
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     instance_a = repository.get(TestType)
     instance_b = repository.get(TestType)
 
@@ -55,7 +55,7 @@ def test_injection_descriptor(repository):
     class TestType:
         dep: Dep = dependency()
 
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     instance = TestType()
 
     assert isinstance(instance.dep, Dep)
@@ -68,7 +68,7 @@ def test_injection_descriptor_is_shared(repository):
     class TestType:
         dep: Dep = dependency()
 
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     instance_a = TestType()
     instance_b = TestType()
 
@@ -86,7 +86,7 @@ def test_function_parameter_injection(repository):
     def test_function(param_a: DepA = dependency(), param_b: DepB = dependency()):
         return param_a, param_b
 
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
 
     ret_a, ret_b = test_function()
     assert isinstance(ret_a, DepA)
@@ -98,7 +98,7 @@ def test_annotated_provider(repository):
     def test_function(param: Annotated[str, "Testing"] = dependency()) -> str:
         return param
 
-    repository.add_providers(AnnotatedProvider)
+    repository.add_providers(AnnotatedProvider())
     repository.set(Annotated[str, "Testing"], "testing")
 
     assert test_function() == "testing"
@@ -108,7 +108,7 @@ def test_annotated_provider_on_class(repository):
     class TestType:
         dep: Annotated[str, "Testing"] = dependency()
 
-    repository.add_providers(AnnotatedProvider)
+    repository.add_providers(AnnotatedProvider())
     repository.set(Annotated[str, "Testing"], "testing")
     assert TestType().dep == "testing"
 
@@ -118,7 +118,7 @@ def test_annotated_dependency_not_set(repository):
     def test_function(param: Annotated[str, "Testing"] = dependency()) -> str:
         return param
 
-    repository.add_providers(AnnotatedProvider, TypeProvider)
+    repository.add_providers(AnnotatedProvider(), TypeProvider())
     assert test_function() == ""
 
 
@@ -130,7 +130,7 @@ def test_multiple_annotated(repository):
     ) -> tuple[str, str]:
         return param_a, param_b
 
-    repository.add_providers(AnnotatedProvider)
+    repository.add_providers(AnnotatedProvider())
     repository.set(Annotated[str, "TestA"], "test_a")
     repository.set(Annotated[str, "TestB"], "test_b")
 
@@ -150,12 +150,12 @@ def test_bevy_constructor(repository):
     def test_function(param: Dep = dependency()) -> tuple[str, str]:
         return param.msg
 
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     assert test_function() == "test"
 
 
 def test_repository_branching(repository):
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     repository.set(int, 10)
 
     branch = repository.branch()
@@ -163,7 +163,7 @@ def test_repository_branching(repository):
 
 
 def test_repository_branching_no_propagation(repository):
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     repository.set(int, 10)
 
     branch = repository.branch()
@@ -171,7 +171,7 @@ def test_repository_branching_no_propagation(repository):
 
 
 def test_repository_branching_create(repository):
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     repository.set(int, 10)
 
     branch = repository.branch()
@@ -187,7 +187,7 @@ def test_context_forking(repository):
 
 
 def test_context_forking_inheritance(repository):
-    repository.add_providers(TypeProvider)
+    repository.add_providers(TypeProvider())
     repository.set(int, 10)
 
     fork = repository.fork_context()

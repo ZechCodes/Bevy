@@ -3,6 +3,7 @@ from typing import Generic, TypeVar, Type
 from bevy.contextvar import ContextVarDefaultFactory as _ContextVarDefaultFactory
 from bevy.options import Option, Value, Null
 from bevy.providers.base import Provider
+from bevy.repository_cache import RepositoryCache as _RepositoryCache
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
@@ -41,32 +42,39 @@ class Repository(_NullRepository[_K, _V]):
         _ContextVarDefaultFactory("bevy_context", default=lambda: Repository.factory())
     )
 
-    def __init__(self, parent: "Repository | None" = None):
+    def __init__(
+        self,
+        parent: "Repository | None" = None,
+        *,
+        providers: tuple[Provider[_K, _V]] = (),
+    ):
         self._parent = parent or _NullRepository()
-        self._providers: tuple[Provider[_K, _V]] = []
+        self._providers: dict[Provider[_K, _V], _RepositoryCache[_K, _V]] = {}
 
-    def add_providers(self, *providers: Type[Provider[_K, _V]]):
-        """Creates providers and adds them to the repository. These providers will be used to lookup and create
-        instances that will be stored and returned by the repository."""
-        self._providers = (
-            *(provider(self) for provider in providers),
-            *self._providers,
+        self.add_providers(*providers)
+
+    def add_providers(self, *providers: Provider[_K, _V]):
+        """Adds providers to the repository. These providers will be used to lookup and create instances that will be
+        stored and returned by the repository."""
+        self._providers.update(
+            (provider, _RepositoryCache(self))
+            for provider in providers
+            if provider not in self._providers
         )
 
     def branch(self) -> "Repository[_K, _V]":
-        branch = type(self)(self)
-
-        providers = (provider.get_clone_factory() for provider in self._providers)
-        branch.add_providers(*providers)
-
-        return branch
+        """Creates a new repository that inherits the providers from the current repository. Dependencies not found on
+        the new repository can be propagated to the branched parent repository. This allows the branch repository to
+        inherit dependencies from the parent repository and protects the parent from changes to the branch.
+        """
+        return type(self)(parent=self, providers=(*self._providers,))
 
     def create(self, key: _K) -> Option[_V]:
         """Attempts to create an instance that adheres to the type _V and that corresponds to the key by looking for a
         provider that supports the key. Returns a Null option when no provider is found for the key, otherwise returns a
         Value option containing the instance created by the provider."""
-        for provider in self._providers:
-            match provider.create(key):
+        for provider, repo in self._providers.items():
+            match provider.create(key, repo):
                 case Value(result):
                     return Value(result)
 
@@ -79,8 +87,8 @@ class Repository(_NullRepository[_K, _V]):
         When `allow_propagation` is set to True (default) this will search any parent repositories for matching cached
         values.
         """
-        for provider in self._providers:
-            match provider.find(key):
+        for provider, repo in self._providers.items():
+            match provider.find(key, repo):
                 case Value() as result:
                     return result
 
@@ -117,8 +125,8 @@ class Repository(_NullRepository[_K, _V]):
     def set(self, key: _K, value: _V) -> Option[_V]:
         """Attempts to cache a value. A Null option is returned when no providers support the key, otherwise a Value
         option containing the value that was placed in the cache is returned."""
-        for provider in self._providers:
-            match provider.set(key, value):
+        for provider, repo in self._providers.items():
+            match provider.set(key, value, repo):
                 case Value(cached_value):
                     return Value(cached_value)
 
@@ -129,7 +137,7 @@ class Repository(_NullRepository[_K, _V]):
         from bevy.providers import AnnotatedProvider, TypeProvider
 
         repository = cls()
-        repository.add_providers(AnnotatedProvider, TypeProvider)
+        repository.add_providers(AnnotatedProvider(), TypeProvider())
         return repository
 
     @classmethod

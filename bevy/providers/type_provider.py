@@ -16,7 +16,7 @@ class BevyConstructable(Protocol[_T]):
 class TypeProvider(Provider[Type[_T], _T]):
     """The type provider supports any types and will attempt to instantiate them with no args."""
 
-    def factory(self, key: Type[_T]) -> Option[Callable[[], _T]]:
+    def factory(self, key: Type[_T], _) -> Option[Callable[[], _T]]:
         """Return a constructor callable for the key if it's a type. This will look for special dunder bevy constructor
         methods which will be preferred over the type callable."""
         match key:
@@ -27,6 +27,6 @@ class TypeProvider(Provider[Type[_T], _T]):
             case _:
                 return Null()
 
-    def supports(self, key: Type[_T]) -> bool:
+    def supports(self, key: Type[_T], _) -> bool:
         """Returns True only if the key is a type."""
         return isinstance(key, type)
