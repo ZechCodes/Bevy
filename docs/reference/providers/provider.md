@@ -1,0 +1,1 @@
+::: bevy.providers.provider

@@ -1,0 +1,30 @@
+site_name: Bevy v2.0 Docs
+
+theme:
+  name: material
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_members_full_path: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            separate_signature: true
+
+nav:
+  - Getting Started: index.md
+  - Reference:
+    - Repositories: reference/repositories.md
+    - Injectors: reference/injectors.md
+    - Providers:
+      - Base Provider: reference/providers/provider.md
+      - Annotated Provider: reference/providers/annotated-provider.md
+      - Type Provider: reference/providers/type-provider.md
+    - Options: reference/options.md
+    - Internals:
+      - Factory Contextvars: reference/factory-contextvar.md
+      - Provider States: reference/provider-state.md
