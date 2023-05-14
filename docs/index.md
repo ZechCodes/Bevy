@@ -35,3 +35,7 @@ from bevy import dependency
 class Example:
     attr: Demo = dependency()
 ```
+
+## Check It Out
+
+Bevy is available under an MIT license and you can see all the code on the [GitHub](https://github.com/ZechCodes/Bevy).
