@@ -1,3 +1,4 @@
+from asyncio import iscoroutinefunction
 from functools import wraps
 from inspect import signature, get_annotations
 from typing import Any, Callable, TypeVar, ParamSpec, TypeAlias
@@ -39,6 +40,14 @@ def inject(func: _C) -> Callable[_P, _R]:
             if name not in params.arguments
         }
         return func(*params.args, **params.kwargs)
+
+    if iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_injector(*args, **kwargs):
+            return await injector(*args, **kwargs)
+
+        return async_injector
 
     return injector
 
