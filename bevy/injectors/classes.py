@@ -21,6 +21,17 @@ class Dependency(Generic[_K]):
         self._key: Option[_K] = Null()
 
     def __get__(self, instance: object, owner: Type):
+        if instance is None:
+            return self
+
+        return self._inject_dependency()
+
+    def __set_name__(self, owner: Type, name: str):
+        ns = _get_class_namespace(owner)
+        annotations = get_annotations(owner, globals=ns, eval_str=True)
+        self._key = Value(annotations[name])
+
+    def _inject_dependency(self):
         match self._key:
             case Value(key):
                 repo = get_repository()
@@ -28,11 +39,6 @@ class Dependency(Generic[_K]):
 
             case Null():
                 raise Exception("The dependency has not been setup")
-
-    def __set_name__(self, owner: Type, name: str):
-        ns = _get_class_namespace(owner)
-        annotations = get_annotations(owner, globals=ns, eval_str=True)
-        self._key = Value(annotations[name])
 
 
 def dependency() -> Any:
