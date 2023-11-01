@@ -9,6 +9,28 @@ from bevy.repository import get_repository
 _K = TypeVar("_K")
 
 
+class LazyAnnotationResolver:
+    def __init__(self, annotation, cls):
+        self.annotation = annotation
+        self.cls = cls
+        self._resolved_type = Null() if isinstance(annotation, str) else Value(annotation)
+
+    @property
+    def resolved_type(self) -> Option[Type]:
+        match self._resolved_type:
+            case Value() as resolved_type:
+                return resolved_type
+
+            case Null():
+                resolved_type = self._resolve()
+                self._resolved_type = Value(resolved_type)
+                return self._resolved_type
+
+    def _resolve(self):
+        ns = _get_class_namespace(self.cls)
+        return ns[self.annotation]
+
+
 class Dependency(Generic[_K]):
     """This class can be used to indicate fields that need to be injected. It also acts as a descriptor that can
     discover the key that needs to be injected and handle injecting the corresponding instance for that key when
@@ -19,7 +41,7 @@ class Dependency(Generic[_K]):
     """
 
     def __init__(self):
-        self._key: Option[_K] = Null()
+        self._key_resolver: LazyAnnotationResolver | None = LazyAnnotationResolver(None, None)
 
     def __get__(self, instance: object, owner: Type):
         if instance is None:
@@ -31,12 +53,11 @@ class Dependency(Generic[_K]):
         return self._inject_dependency()
 
     def __set_name__(self, owner: Type, name: str):
-        ns = _get_class_namespace(owner)
-        annotations = get_annotations(owner, globals=ns, eval_str=True)
-        self._key = Value(annotations[name])
+        annotations = get_annotations(owner)
+        self._key_resolver = LazyAnnotationResolver(annotations[name], owner)
 
     def _inject_dependency(self):
-        match self._key:
+        match self._key_resolver.resolved_type:
             case Value(key):
                 repo = get_repository()
                 return repo.get(key)

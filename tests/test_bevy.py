@@ -1,3 +1,5 @@
+import sys
+from dataclasses import dataclass
 from typing import Annotated
 
 from pytest import fixture
@@ -192,3 +194,29 @@ def test_context_forking_inheritance(repository):
 
     fork = repository.fork_context()
     assert fork.get(int) is repository.get(int)
+
+
+def test_dataclass_dependency_injection():
+    class Dep:
+        ...
+
+    @dataclass
+    class Test:
+        dep: Dep = dependency()
+
+    repo = Repository.factory()
+    Repository.set_repository(repo)
+
+    dep = Dep()
+    repo.set(Dep, dep)
+
+    inst = Test()
+    assert inst.dep is dep
+
+
+def test_forward_references():
+    class Test:
+        dep: "Dep" = dependency()
+
+    class Dep:
+        ...
