@@ -3,7 +3,7 @@ Bevy makes using *Dependency Injection* in *Python* a breeze so that you can foc
 
 ## Installation
 ```shell script
-pip install bevy>2.0.0b1
+pip install bevy>2.0.0
 ```
 
 ## Dependency Injection
