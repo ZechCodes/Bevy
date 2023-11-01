@@ -1,4 +1,5 @@
 import sys
+import dataclasses
 from inspect import get_annotations
 from typing import Any, Generic, Type, TypeVar
 
@@ -22,6 +23,9 @@ class Dependency(Generic[_K]):
 
     def __get__(self, instance: object, owner: Type):
         if instance is None:
+            if hasattr(owner, dataclasses._PARAMS):
+                return dataclasses.field(default_factory=self._inject_dependency)
+
             return self
 
         return self._inject_dependency()
