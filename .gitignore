@@ -1,7 +1,1 @@
-.venv
-.idea
-__pycache__
-/dist
-.DS_Store
-/bevy.egg-info
-/site
+.python-version
