@@ -1,222 +1,148 @@
-import sys
-from dataclasses import dataclass
-from typing import Annotated
+from tramp.optionals import Optional
 
-from pytest import fixture
-
-from bevy import dependency, inject, Repository, get_repository
-from bevy.providers.annotated_provider import AnnotatedProvider
-from bevy.providers.type_provider import TypeProvider
+from bevy import dependency, inject, Registry
+from bevy.hooks import Hook
 
 
-class TestRepository(Repository):
-    @classmethod
-    def factory(cls):
-        return cls()
+class DummyObject:
+    def __init__(self, value=None):
+        self.value = value
 
 
-@fixture
-def repository():
-    Repository.set_repository(TestRepository.factory())
-    return get_repository()
+def test_containers():
+    registry = Registry()
+    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    container = registry.create_container()
+
+    instance = container.get(DummyObject)
+    assert isinstance(instance, DummyObject)
+    assert container.get(DummyObject) is instance
 
 
-def test_repository_exists(repository):
-    assert isinstance(get_repository(), Repository)
+def test_inherit_from_parent_container():
+    registry = Registry()
+    registry.add_factory(lambda _: DummyObject(), DummyObject)
+
+    parent = registry.create_container()
+    child = parent.branch()
+
+    instance = parent.get(DummyObject)
+    assert child.get(DummyObject) is instance
 
 
-def test_repository_type_overridden(repository):
-    assert isinstance(get_repository(), TestRepository)
+def test_child_overrides_parent_container():
+    registry = Registry()
+    registry.add_factory(lambda _: DummyObject(), DummyObject)
+
+    parent = registry.create_container()
+    child = parent.branch()
+
+    child_instance = child.get(DummyObject)
+    parent_instance = parent.get(DummyObject)
+    assert child_instance is not parent_instance
+    assert child_instance is child.get(DummyObject)
+    assert parent_instance is parent.get(DummyObject)
 
 
-def test_repository_get(repository):
-    class TestType:
-        ...
+def test_injection():
+    def test(d: DummyObject = dependency()):
+        assert isinstance(d, DummyObject)
 
-    repository.add_providers(TypeProvider())
-    instance = repository.get(TestType)
-
-    assert isinstance(instance, TestType)
-
-
-def test_repository_caching(repository):
-    class TestType:
-        ...
-
-    repository.add_providers(TypeProvider())
-    instance_a = repository.get(TestType)
-    instance_b = repository.get(TestType)
-
-    assert instance_a is instance_b
+    registry = Registry()
+    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    container = registry.create_container()
+    container.call(test)
 
 
-def test_injection_descriptor(repository):
-    class Dep:
-        ...
-
-    class TestType:
-        dep: Dep = dependency()
-
-    repository.add_providers(TypeProvider())
-    instance = TestType()
-
-    assert isinstance(instance.dep, Dep)
-
-
-def test_injection_descriptor_is_shared(repository):
-    class Dep:
-        ...
-
-    class TestType:
-        dep: Dep = dependency()
-
-    repository.add_providers(TypeProvider())
-    instance_a = TestType()
-    instance_b = TestType()
-
-    assert instance_a.dep is instance_b.dep
-
-
-def test_function_parameter_injection(repository):
-    class DepA:
-        ...
-
-    class DepB:
-        ...
-
+def test_injection_wrapper():
     @inject
-    def test_function(param_a: DepA = dependency(), param_b: DepB = dependency()):
-        return param_a, param_b
+    def test(d: DummyObject = dependency()):
+        assert isinstance(d, DummyObject)
 
-    repository.add_providers(TypeProvider())
+    with Registry() as registry:
+        registry.add_factory(lambda _: DummyObject(), DummyObject)
 
-    ret_a, ret_b = test_function()
-    assert isinstance(ret_a, DepA)
-    assert isinstance(ret_b, DepB)
+        test()
 
 
-def test_annotated_provider(repository):
+def test_injection_factories():
     @inject
-    def test_function(param: Annotated[str, "Testing"] = dependency()) -> str:
-        return param
+    def test(d: DummyObject = dependency(lambda _: DummyObject("a"))):
+        assert isinstance(d, DummyObject) and d.value == "a"
 
-    repository.add_providers(AnnotatedProvider())
-    repository.set(Annotated[str, "Testing"], "testing")
-
-    assert test_function() == "testing"
+    with Registry() as registry:
+        test()
 
 
-def test_annotated_provider_on_class(repository):
-    class TestType:
-        dep: Annotated[str, "Testing"] = dependency()
+def test_get_instance_hook():
+    values = ["a", "b"]
+    index = 0
+    def hook(_, dependency_type):
+        nonlocal index
+        if dependency_type is DummyObject:
+            old_index, index = index, index + 1
+            return Optional.Some(DummyObject(values[old_index]))
 
-    repository.add_providers(AnnotatedProvider())
-    repository.set(Annotated[str, "Testing"], "testing")
-    assert TestType().dep == "testing"
+        return Optional.Nothing()
 
+    registry = Registry()
+    registry.add_hook(Hook.GET_INSTANCE, hook)
+    container = registry.create_container()
 
-def test_annotated_dependency_not_set(repository):
-    @inject
-    def test_function(param: Annotated[str, "Testing"] = dependency()) -> str:
-        return param
-
-    repository.add_providers(AnnotatedProvider(), TypeProvider())
-    assert test_function() == ""
-
-
-def test_multiple_annotated(repository):
-    @inject
-    def test_function(
-        param_a: Annotated[str, "TestA"] = dependency(),
-        param_b: Annotated[str, "TestB"] = dependency(),
-    ) -> tuple[str, str]:
-        return param_a, param_b
-
-    repository.add_providers(AnnotatedProvider())
-    repository.set(Annotated[str, "TestA"], "test_a")
-    repository.set(Annotated[str, "TestB"], "test_b")
-
-    assert test_function() == ("test_a", "test_b")
+    assert container.get(DummyObject).value == values[0]
+    assert container.get(DummyObject).value == values[1]
 
 
-def test_bevy_constructor(repository):
-    class Dep:
-        def __init__(self, msg: str):
-            self.msg = msg
+def test_create_instance_hook():
+    values = ["a", "b"]
+    index = 0
+    def hook(_, dependency_type):
+        nonlocal index
+        if dependency_type is DummyObject:
+            old_index, index = index, index + 1
+            return Optional.Some(DummyObject(values[old_index]))
 
-        @classmethod
-        def __bevy_constructor__(cls):
-            return cls("test")
+        return Optional.Nothing()
 
-    @inject
-    def test_function(param: Dep = dependency()) -> tuple[str, str]:
-        return param.msg
+    registry = Registry()
+    registry.add_hook(Hook.CREATE_INSTANCE, hook)
+    container = registry.create_container()
 
-    repository.add_providers(TypeProvider())
-    assert test_function() == "test"
-
-
-def test_repository_branching(repository):
-    repository.add_providers(TypeProvider())
-    repository.set(int, 10)
-
-    branch = repository.branch()
-    assert branch.get(int) is repository.get(int)
+    assert container.get(DummyObject).value == values[0]
+    assert container.get(DummyObject).value == values[0]
 
 
-def test_repository_branching_no_propagation(repository):
-    repository.add_providers(TypeProvider())
-    repository.set(int, 10)
+def test_created_instance_hook():
+    runs = 0
+    def hook(_, value):
+        nonlocal runs
+        if isinstance(value, DummyObject):
+            runs += 1
 
-    branch = repository.branch()
-    assert not branch.find(int, allow_propagation=False)
+    registry = Registry()
+    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_hook(Hook.CREATED_INSTANCE, hook)
 
+    container = registry.create_container()
+    container.get(DummyObject)
+    container.get(DummyObject)
 
-def test_repository_branching_create(repository):
-    repository.add_providers(TypeProvider())
-    repository.set(int, 10)
-
-    branch = repository.branch()
-    branch.create(int)
-    assert branch.find(int).value_or(-1) is 0
-    assert repository.find(int).value_or(-1) is 10
-
-
-def test_context_forking(repository):
-    fork = repository.fork_context()
-    assert get_repository() is fork
-    assert fork is not repository
+    assert runs == 1
 
 
-def test_context_forking_inheritance(repository):
-    repository.add_providers(TypeProvider())
-    repository.set(int, 10)
+def test_got_instance_hook():
+    runs = 0
+    def hook(_, value):
+        nonlocal runs
+        if isinstance(value, DummyObject):
+            runs += 1
 
-    fork = repository.fork_context()
-    assert fork.get(int) is repository.get(int)
+    registry = Registry()
+    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_hook(Hook.GOT_INSTANCE, hook)
 
+    container = registry.create_container()
+    container.get(DummyObject)
+    container.get(DummyObject)
 
-def test_dataclass_dependency_injection():
-    class Dep:
-        ...
-
-    @dataclass
-    class Test:
-        dep: Dep = dependency()
-
-    repo = Repository.factory()
-    Repository.set_repository(repo)
-
-    dep = Dep()
-    repo.set(Dep, dep)
-
-    inst = Test()
-    assert inst.dep is dep
-
-
-def test_forward_references():
-    class Test:
-        dep: "Dep" = dependency()
-
-    class Dep:
-        ...
+    assert runs == 2
