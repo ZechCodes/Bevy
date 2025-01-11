@@ -2,12 +2,12 @@ from tramp.optionals import Optional
 
 from bevy import dependency, inject, Registry
 from bevy.hooks import Hook, hooks
+from bevy.ext import type_factory
 
 
 class DummyObject:
     def __init__(self, value=None):
         self.value = value
-
 
 def test_containers():
     registry = Registry()
@@ -161,3 +161,11 @@ def test_unsupported_dependency_hook():
     container = registry.create_container()
 
     assert container.get(DummyObject).value == "a"
+
+
+def test_type_factory_hook():
+    registry = Registry()
+    type_factory.register_hook(registry)
+
+    container = registry.create_container()
+    assert isinstance(container.get(DummyObject), DummyObject)
