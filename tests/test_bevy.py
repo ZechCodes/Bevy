@@ -170,3 +170,23 @@ def test_type_factory_hook():
 
     container = registry.create_container()
     assert isinstance(container.get(DummyObject), DummyObject)
+
+
+def test_type_init_injection():
+    class Dep:
+        @inject
+        def __init__(self, value: DummyObject = dependency()):
+            self.obj = value
+
+    with Registry() as outer_registry:
+        outer_registry.add_factory(lambda _: DummyObject(), DummyObject)
+
+        with outer_registry.create_container() as outer_container:
+            outer_dummy = outer_container.get(DummyObject)
+
+            registry = Registry()
+            registry.add_factory(lambda _: DummyObject(100), DummyObject)
+            container = registry.create_container()
+            inner_dummy = container.call(Dep).obj
+            assert inner_dummy.value == 100
+            assert inner_dummy is not outer_dummy
