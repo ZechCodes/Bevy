@@ -70,7 +70,12 @@ class Container(ContextVarContextManager, var=global_container):
 
         return instance
 
-    def _call[**P, R](self, func: t.Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+    def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], *args: P.args, **kwargs: P.kwargs) -> R:
+        if isinstance(func, type):
+            instance = func.__new__(func, *args, **kwargs)
+            self.call(instance.__init__, *args, **kwargs)
+            return instance
+
         f = _unwrap_function(func)
         sig = signature(f)
         ns = f.__globals__
