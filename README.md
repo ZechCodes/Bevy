@@ -3,7 +3,7 @@ Bevy makes using *Dependency Injection* in *Python* a breeze so that you can foc
 
 ## Installation
 ```shell script
-pip install bevy>2.0.0
+pip install bevy>3.0.0
 ```
 
 ## Dependency Injection
@@ -19,7 +19,7 @@ Python doesn't have an actual interface implementation like many other languages
 - Tests can provide mock implementations of dependencies without needing to rely on patching or duck typing. They can provide the mock to Bevy which can then ensure it is used when necessary.
 
 ## How It Works
-Bevy makes use of Python's contextvars to store a repository object global to the context. You can then use `bevy.inject` and `bevy.dependency` to inject dependencies into functions and classes. 
+Bevy makes use of Python's contextvars to store a registry object global to the context. You can then use `bevy.inject` and `bevy.dependency` to inject dependencies into functions and classes. 
 
 The `dependency` function returns a descriptor that can detect the type hints that have been set on a class attribute. It can then create and return a dependency that matches the type hints.
 
@@ -39,9 +39,9 @@ class Example:
 def example(foo: Thing = dependency()):
     ...
 ```
-Each dependency once created is stored in the context global repository's cache to be reused by other functions and classes that depend on them. This sharing is very useful for database connections, config files, authenticated API sessions, etc.
+Each dependency once created is stored in the context global container to be reused by other functions and classes that depend on them. This sharing is very useful for database connections, config files, authenticated API sessions, etc.
 
-**Setting Values In the Repository**
+**Setting Values In the Container**
 
 It is possible to provide a value to the context's global repository that will be used as a dependency.You can get the current repository using the `bevy.get_repository` function, you can then use that repository's `set` method to assign an instance to a given key.
 ```python
