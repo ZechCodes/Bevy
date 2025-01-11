@@ -9,6 +9,7 @@ class DummyObject:
     def __init__(self, value=None):
         self.value = value
 
+
 def test_containers():
     registry = Registry()
     registry.add_factory(lambda _: DummyObject(), DummyObject)
