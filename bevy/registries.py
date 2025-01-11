@@ -22,3 +22,14 @@ class Registry(ContextVarContextManager, var=global_registry):
 
     def create_container(self) -> "containers.Container":
         return containers.Container(self)
+
+
+def get_registry(registry: Registry | None = None) -> Registry:
+    if registry is not None:
+        return registry
+
+    registry = get_global_registry()
+    if registry is None:
+        registry = Registry()
+
+    return registry
