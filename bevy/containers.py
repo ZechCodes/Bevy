@@ -82,7 +82,7 @@ class Container(ContextVarContextManager, var=global_container):
             for name, parameter in sig.parameters.items()
             if isinstance(parameter.default, Dependency) and name not in params.arguments
         }
-        return f(*params.args, **params.kwargs)
+        return func(*params.args, **params.kwargs)
 
     def _create_instance(self, dependency: t.Type[Instance]) -> Instance:
         match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
