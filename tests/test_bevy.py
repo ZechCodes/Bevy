@@ -1,7 +1,7 @@
 from tramp.optionals import Optional
 
 from bevy import dependency, inject, Registry
-from bevy.hooks import Hook
+from bevy.hooks import Hook, hooks
 
 
 class DummyObject:
@@ -146,3 +146,18 @@ def test_got_instance_hook():
     container.get(DummyObject)
 
     assert runs == 2
+
+
+def test_unsupported_dependency_hook():
+    @hooks.HANDLE_UNSUPPORTED_DEPENDENCY
+    def hook(_, dependency_type):
+        if dependency_type is DummyObject:
+            return Optional.Some(DummyObject("a"))
+
+        return Optional.Nothing()
+
+    registry = Registry()
+    hook.register_hook(registry)
+    container = registry.create_container()
+
+    assert container.get(DummyObject).value == "a"
