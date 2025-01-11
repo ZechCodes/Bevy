@@ -71,11 +71,14 @@ class Container(ContextVarContextManager, var=global_container):
         return instance
 
     def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], *args: P.args, **kwargs: P.kwargs) -> R:
-        if isinstance(func, type):
-            instance = func.__new__(func, *args, **kwargs)
-            self.call(instance.__init__, *args, **kwargs)
-            return instance
+        match func:
+            case type():
+                return self._call_type(func, *args, **kwargs)
 
+            case _:
+                return self._call_function(func, *args, **kwargs)
+
+    def _call_function[**P, R](self, func: t.Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
         f = _unwrap_function(func)
         sig = signature(f)
         ns = f.__globals__
@@ -88,6 +91,11 @@ class Container(ContextVarContextManager, var=global_container):
             if isinstance(parameter.default, Dependency) and name not in params.arguments
         }
         return func(*params.args, **params.kwargs)
+
+    def _call_type[T](self, type_: t.Type[T], *args, **kwargs) -> T:
+        instance = type_.__new__(type_, *args, **kwargs)
+        self.call(instance.__init__, *args, **kwargs)
+        return instance
 
     def _create_instance(self, dependency: t.Type[Instance]) -> Instance:
         match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
