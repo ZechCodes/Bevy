@@ -12,6 +12,9 @@ class InjectionFunctionWrapper[**P, R]:
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.call_using(containers.get_container(), *args, **kwargs)
 
+    def __get__(self, instance, owner):
+        return InjectionFunctionWrapper(self._func.__get__(instance, owner))
+
     def call_using(self, container: "containers.Container", *args: P.args, **kwargs: P.kwargs) -> R:
         return container.call(self._func, *args, **kwargs)
 
