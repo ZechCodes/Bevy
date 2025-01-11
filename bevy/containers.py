@@ -96,7 +96,12 @@ class Container(ContextVarContextManager, var=global_container):
                         break
 
                 else:
-                    raise TypeError(f"No value found for {dependency}")
+                    match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency):
+                        case Optional.Some(v):
+                            instance = v
+
+                        case Optional.Nothing():
+                            raise TypeError(f"No value found for {dependency}")
 
         return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
 

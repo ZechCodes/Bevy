@@ -14,14 +14,14 @@ class Hook(Enum):
     GOT_INSTANCE = "got_instance"
     CREATE_INSTANCE = "create_instance"
     CREATED_INSTANCE = "created_instance"
+    HANDLE_UNSUPPORTED_DEPENDENCY = "handle_unsupported_dependency"
 
 
 class HookManager:
     def __init__(self):
         self.hooks = set()
 
-    def add_hook(self, hook: HookFunction):
-        self.hooks.add(hook)
+    def add_hook(self, hook: HookFunction):        self.hooks.add(hook)
 
     def handle[T](self, container: "Container", value: T) -> Optional[Any]:
         for hook in self.hooks:
