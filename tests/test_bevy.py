@@ -1,6 +1,7 @@
 from tramp.optionals import Optional
 
 from bevy import dependency, inject, Registry
+from bevy.factories import create_type_factory
 from bevy.hooks import Hook, hooks
 from bevy.ext import type_factory
 
@@ -12,7 +13,7 @@ class DummyObject:
 
 def test_containers():
     registry = Registry()
-    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_factory(create_type_factory(DummyObject))
     container = registry.create_container()
 
     instance = container.get(DummyObject)
@@ -22,7 +23,7 @@ def test_containers():
 
 def test_inherit_from_parent_container():
     registry = Registry()
-    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_factory(create_type_factory(DummyObject))
 
     parent = registry.create_container()
     child = parent.branch()
@@ -33,7 +34,7 @@ def test_inherit_from_parent_container():
 
 def test_child_overrides_parent_container():
     registry = Registry()
-    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_factory(create_type_factory(DummyObject))
 
     parent = registry.create_container()
     child = parent.branch()
@@ -50,7 +51,7 @@ def test_injection():
         assert isinstance(d, DummyObject)
 
     registry = Registry()
-    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_factory(create_type_factory(DummyObject))
     container = registry.create_container()
     container.call(test)
 
@@ -61,14 +62,14 @@ def test_injection_wrapper():
         assert isinstance(d, DummyObject)
 
     with Registry() as registry:
-        registry.add_factory(lambda _: DummyObject(), DummyObject)
+        registry.add_factory(create_type_factory(DummyObject))
 
         test()
 
 
 def test_injection_factories():
     @inject
-    def test(d: DummyObject = dependency(lambda _: DummyObject("a"))):
+    def test(d: DummyObject = dependency(create_type_factory(DummyObject, "a"))):
         assert isinstance(d, DummyObject) and d.value == "a"
 
     with Registry() as registry:
@@ -121,7 +122,7 @@ def test_created_instance_hook():
             runs += 1
 
     registry = Registry()
-    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_factory(create_type_factory(DummyObject))
     registry.add_hook(Hook.CREATED_INSTANCE, hook)
 
     container = registry.create_container()
@@ -139,7 +140,7 @@ def test_got_instance_hook():
             runs += 1
 
     registry = Registry()
-    registry.add_factory(lambda _: DummyObject(), DummyObject)
+    registry.add_factory(create_type_factory(DummyObject))
     registry.add_hook(Hook.GOT_INSTANCE, hook)
 
     container = registry.create_container()
@@ -179,13 +180,13 @@ def test_type_init_injection():
             self.obj = value
 
     with Registry() as outer_registry:
-        outer_registry.add_factory(lambda _: DummyObject(), DummyObject)
+        outer_registry.add_factory(create_type_factory(DummyObject))
 
         with outer_registry.create_container() as outer_container:
             outer_dummy = outer_container.get(DummyObject)
 
             registry = Registry()
-            registry.add_factory(lambda _: DummyObject(100), DummyObject)
+            registry.add_factory(create_type_factory(DummyObject, 100))
             container = registry.create_container()
             inner_dummy = container.call(Dep).obj
             assert inner_dummy.value == 100
