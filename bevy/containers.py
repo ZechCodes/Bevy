@@ -150,23 +150,38 @@ def get_container() -> Container:
 
 
 @t.overload
-def get_container(obj: "Container | registries.Registry") -> Container:
+def get_container(obj: Container | None) -> Container:
     ...
 
 
-def get_container(*args) -> Container:
+@t.overload
+def get_container(*, using_registry: "registries.Registry") -> Container:
+    ...
+
+
+@t.overload
+def get_container(obj: Container | None, *, using_registry: "registries.Registry") -> Container:
+    ...
+
+
+def get_container(*args, **kwargs) -> Container:
     match args:
-        case (Container() as container):
+        case (Container() as container,):
             return container
 
-        case (registries.Registry() as registry):
-            return registry.create_container()
+        case () | (None,):
+            match kwargs:
+                case {"using_registry": registries.Registry() as registry}:
+                    return registry.create_container()
 
-        case ():
-            if container := get_global_container():
-                return container
-            else:
-                return registries.get_registry().create_container()
+                case {}:
+                    return get_global_container()
+
+                case _:
+                    names = (name for name in kwargs if name not in {"using_registry"})
+                    raise NameError(
+                        f"Invalid keyword name(s): {', '.join(names)}"
+                    )
 
         case _:
-            raise ValueError(f"Invalid args: {args}\nExpected either a Container, Registry, or no parameters.")
+            raise ValueError(f"Invalid positional arguments: {args}\nExpected no parameters, a Container, or None.")
