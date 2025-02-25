@@ -63,6 +63,9 @@ class Container(ContextVarContextManager, var=global_container):
 
                     instance = dep
 
+            case _:
+                raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
+
         instance = self.registry.hooks[Hook.GOT_INSTANCE].filter(self, instance)
         if not using_default:
             self.instances[dependency] = instance
@@ -114,6 +117,12 @@ class Container(ContextVarContextManager, var=global_container):
 
                         case Optional.Nothing():
                             raise TypeError(f"No value found for {dependency}")
+
+                        case _:
+                            raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
+
+            case _:
+                raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
 
         return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
 
