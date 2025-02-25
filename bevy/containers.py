@@ -3,11 +3,11 @@ from inspect import get_annotations, signature
 
 from tramp.optionals import Optional
 
+import bevy.injections as injections
 import bevy.registries as registries
 from bevy.context_vars import ContextVarContextManager, get_global_container, global_container
 from bevy.dependencies import Dependency
 from bevy.hooks import Hook
-from bevy.injections import InjectionFunctionWrapper
 
 type Instance = t.Any
 
@@ -23,10 +23,10 @@ class Container(ContextVarContextManager, var=global_container):
         return Container(registry=self.registry, parent=self)
 
     def call[**P, R](
-        self, func: t.Callable[P, R] | InjectionFunctionWrapper[P, R], *args: P.args, **kwargs: P.kwargs
+        self, func: "t.Callable[P, R] | injections.InjectionFunctionWrapper[P, R]", *args: P.args, **kwargs: P.kwargs
     ) -> R:
         match func:
-            case InjectionFunctionWrapper() as wrapper:
+            case injections.InjectionFunctionWrapper() as wrapper:
                 return wrapper.call_using(self, *args, **kwargs)
 
             case _:
