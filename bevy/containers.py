@@ -3,10 +3,9 @@ from inspect import get_annotations, signature
 
 from tramp.optionals import Optional
 
+import bevy.registries as registries
 from bevy.context_vars import ContextVarContextManager, get_global_container, global_container
 from bevy.dependencies import Dependency
-import bevy.registries as registries
-
 from bevy.hooks import Hook
 from bevy.injections import InjectionFunctionWrapper
 
