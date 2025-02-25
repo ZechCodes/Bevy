@@ -13,6 +13,9 @@ type Instance = t.Any
 
 
 class Container(ContextVarContextManager, var=global_container):
+    """Stores instances for dependencies and provides utilities for injecting dependencies into callables at runtime.
+
+    Containers can be branched to isolate dependencies while still sharing the same registry and preexisting instances."""
     def __init__(self, registry: "registries.Registry", *, parent: "Container | None" = None):
         super().__init__()
         self.registry = registry
@@ -20,11 +23,16 @@ class Container(ContextVarContextManager, var=global_container):
         self._parent = parent
 
     def branch(self) -> "Container":
+        """Creates a branch off of the current container, isolating dependencies from the parent container. Dependencies
+        existing on the parent container will be shared with the branched container."""
         return Container(registry=self.registry, parent=self)
 
     def call[**P, R](
         self, func: "t.Callable[P, R] | injections.InjectionFunctionWrapper[P, R]", *args: P.args, **kwargs: P.kwargs
     ) -> R:
+        """Calls a function or class with the provided arguments and keyword arguments, injecting dependencies from the
+        container. This will create instances of any dependencies that are not already stored in the container or its
+        parents."""
         match func:
             case injections.InjectionFunctionWrapper() as wrapper:
                 return wrapper.call_using(self, *args, **kwargs)
@@ -41,6 +49,9 @@ class Container(ContextVarContextManager, var=global_container):
         ...
 
     def get[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> T | D:
+        """Gets an instance of the desired dependency from the container. If the dependency is not already stored in the
+        container or its parents, a new instance will be created and stored for reuse. When a default is given it will
+        be returned instead of creating a new instance, the default is not stored."""
         using_default = False
         match self.registry.hooks[Hook.GET_INSTANCE].handle(self, dependency):
             case Optional.Some(v):
@@ -165,6 +176,17 @@ def get_container(obj: Container | None, *, using_registry: "registries.Registry
 
 
 def get_container(*args, **kwargs) -> Container:
+    """Gets a container from the global context, a provided container, or a registry.
+
+    With no parameters it returns the global container. Note that this will create a new container if the global context
+    does not already have one.
+
+    When given a container it returns that container unless it is None. When it is None it returns the global container.
+    Note that this will create a new container if the provided container is None and the global context does not already
+    have one.
+
+    A registry can be passed to use in place of the global registry with the using_registry keyword argument. Containers
+    created by this registry will not be stored in the global context."""
     match args:
         case (Container() as container,):
             return container
