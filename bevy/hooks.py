@@ -22,22 +22,22 @@ class Hook(Enum):
 
 class HookManager:
     def __init__(self):
-        self.hooks = set()
+        self.callbacks = set()
 
-    def add_hook(self, hook: HookFunction):
-        self.hooks.add(hook)
+    def add_callback(self, hook: HookFunction):
+        self.callbacks.add(hook)
 
     def handle[T](self, container: "Container", value: T) -> Optional[Any]:
-        for hook in self.hooks:
-            match hook(container, value):
+        for callback in self.callbacks:
+            match callback(container, value):
                 case Optional.Some() as v:
                     return v
 
         return Optional.Nothing()
 
     def filter[T](self, container: "Container", value: T) -> T:
-        for hook in self.hooks:
-            match hook(container, value):
+        for callback in self.callbacks:
+            match callback(container, value):
                 case Optional.Some(v):
                     value = v
                 case Optional.Nothing():

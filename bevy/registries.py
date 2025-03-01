@@ -45,10 +45,10 @@ class Registry(GlobalContextMixin, var=global_registry):
     def add_hook(self, *args):
         match args:
             case [hooks.Hook() as hook_type, hook] if callable(hook):
-                self.hooks[hook_type].add_hook(hook)
+                self.hooks[hook_type].add_callback(hook)
 
             case [hooks.HookWrapper(hook_type) as hook]:
-                self.hooks[hook_type].add_hook(hook)
+                self.hooks[hook_type].add_callback(hook)
 
             case _:
                 raise ValueError(f"Unexpected arguments to add_hook: {args}")
