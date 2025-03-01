@@ -21,13 +21,17 @@ class Hook(Enum):
 
 
 class HookManager:
+    """A utility type that makes it easier to work with collections of functions waiting for the
+    hook to be triggered."""
     def __init__(self):
         self.callbacks = set()
 
     def add_callback(self, hook: HookFunction):
+        """Adds a function that will be called when the hook is triggered."""
         self.callbacks.add(hook)
 
     def handle[T](self, container: "Container", value: T) -> Optional[Any]:
+        """Iterates each callback and returns the first result."""
         for callback in self.callbacks:
             match callback(container, value):
                 case Optional.Some() as v:
@@ -36,6 +40,7 @@ class HookManager:
         return Optional.Nothing()
 
     def filter[T](self, container: "Container", value: T) -> T:
+        """Iterates all callbacks and updates the value when a callback returns a Some result."""
         for callback in self.callbacks:
             match callback(container, value):
                 case Optional.Some(v):
