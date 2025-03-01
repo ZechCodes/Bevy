@@ -6,7 +6,7 @@ from tramp.optionals import Optional
 import bevy.injections as injections
 import bevy.registries as registries
 from bevy.context_vars import GlobalContextMixin, get_global_container, global_container
-from bevy.dependencies import Dependency
+from bevy.dependencies import DependencyMetadata
 from bevy.hooks import Hook
 
 type Instance = t.Any
@@ -101,7 +101,7 @@ class Container(GlobalContextMixin, var=global_container):
         params.arguments |= {
             name: self.get(annotations[name]) if parameter.default.factory is None else parameter.default.factory(self)
             for name, parameter in sig.parameters.items()
-            if isinstance(parameter.default, Dependency) and name not in params.arguments
+            if isinstance(parameter.default, DependencyMetadata) and name not in params.arguments
         }
         return func(*params.args, **params.kwargs)
 

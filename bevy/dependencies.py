@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from bevy.factories import Factory
 
 
-class Dependency:
+class DependencyMetadata:
     def __init__(self, factory: "Callable[[Container], Any] | None" = None):
         self.factory = factory
 
@@ -21,4 +21,4 @@ def dependency[T](factory: "Callable[[Container], T] | Factory[None, T]") -> T:
 
 
 def dependency[T](factory: "Callable[[Container], T] | Factory[None, T] | None" = None) -> T | Any:
-    return Dependency(factory)
+    return DependencyMetadata(factory)
