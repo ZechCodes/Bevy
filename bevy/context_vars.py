@@ -10,6 +10,7 @@ global_registry: "ContextVar[Registry]" = ContextVar("global_registry")
 
 
 def get_global_registry() -> "Registry":
+    """Gets the global registry. If no registry exists, creates a new one."""
     try:
         registry = global_registry.get()
     except LookupError:
@@ -21,6 +22,7 @@ def get_global_registry() -> "Registry":
 
 
 def get_global_container() -> "Container":
+    """Gets the global container. If no container exists, creates a new one using the global registry."""
     try:
         container = global_container.get()
     except LookupError:
@@ -32,6 +34,7 @@ def get_global_container() -> "Container":
 
 
 class GlobalContextMixin:
+    """This mixin allows instances to be loaded into a predefined contextvar using a context manager."""
     def __init_subclass__(cls, *, var: ContextVar, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._context_var = var
