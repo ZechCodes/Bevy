@@ -3,7 +3,7 @@ from tramp.optionals import Optional
 from bevy import dependency, inject, Registry
 from bevy.factories import create_type_factory
 from bevy.hooks import Hook, hooks
-from bevy.bundled import type_factory
+from bevy.bundled.type_factory_hook import type_factory
 
 
 class DummyObject:
