@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from functools import update_wrapper
 from typing import Sequence, Type
+from typing import overload, Sequence, Type
 import bevy.registries as r
 
 
@@ -11,6 +12,14 @@ class Factory[**P, T]:
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
         return self.factory(*args, **kwargs)
+
+    @overload
+    def register_factory(self):
+        ...
+
+    @overload
+    def register_factory(self, registry: "r.Registry | None"):
+        ...
 
     def register_factory(self, registry: "r.Registry | None" = None):
         registry = r.get_registry(registry)
