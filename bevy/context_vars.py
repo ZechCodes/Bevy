@@ -31,7 +31,7 @@ def get_global_container() -> "Container":
     return container
 
 
-class ContextVarContextManager:
+class GlobalContextMixin:
     def __init_subclass__(cls, *, var: ContextVar, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._context_var = var

@@ -5,14 +5,14 @@ from tramp.optionals import Optional
 
 import bevy.injections as injections
 import bevy.registries as registries
-from bevy.context_vars import ContextVarContextManager, get_global_container, global_container
+from bevy.context_vars import GlobalContextMixin, get_global_container, global_container
 from bevy.dependencies import Dependency
 from bevy.hooks import Hook
 
 type Instance = t.Any
 
 
-class Container(ContextVarContextManager, var=global_container):
+class Container(GlobalContextMixin, var=global_container):
     """Stores instances for dependencies and provides utilities for injecting dependencies into callables at runtime.
 
     Containers can be branched to isolate dependencies while still sharing the same registry and preexisting instances."""

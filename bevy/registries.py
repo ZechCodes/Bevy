@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import overload, Type, TYPE_CHECKING
 
-from bevy.context_vars import ContextVarContextManager, get_global_registry, global_registry
+from bevy.context_vars import GlobalContextMixin, get_global_registry, global_registry
 import bevy.containers as containers
 import bevy.hooks as hooks
 from bevy.factories import Factory
@@ -9,7 +9,7 @@ from bevy.factories import Factory
 type DependencyFactory[T] = "Callable[[containers.Container], T]"
 
 
-class Registry(ContextVarContextManager, var=global_registry):
+class Registry(GlobalContextMixin, var=global_registry):
     def __init__(self):
         super().__init__()
         self.hooks: dict[hooks.Hook, hooks.HookManager] = defaultdict(hooks.HookManager)
