@@ -73,7 +73,15 @@ class _HookDecoratorDescriptor:
         self.hook_type: Optional[Hook] = Optional.Nothing()
 
     def __get__(self, instance, owner):
-        return HookDecorator(self.hook_type.value)
+        match self.hook_type:
+            case Optional.Some(hook_type):
+                return HookDecorator(hook_type)
+
+            case Optional.Nothing():
+                raise ValueError("Hook type is not yet set. Accessed before owning class definition fully created.")
+
+            case _:
+                raise ValueError("Invalid value for hook type.")
 
     def __set_name__(self, owner, name):
         self.hook_type = Optional.Some(Hook[name])
