@@ -1,9 +1,15 @@
+import os
+from unittest import mock
+
+from pytest import raises
 from tramp.optionals import Optional
 
-from bevy import dependency, inject, Registry
+from bevy import dependency, get_registry, inject, Registry
+from bevy.bundled.type_factory_hook import type_factory
+from bevy.context_vars import GlobalContextDisabledError
 from bevy.factories import create_type_factory
 from bevy.hooks import Hook, hooks
-from bevy.bundled.type_factory_hook import type_factory
+from containers import get_container
 
 
 class DummyObject:
@@ -191,3 +197,12 @@ def test_type_init_injection():
             inner_dummy = container.call(Dep).obj
             assert inner_dummy.value == 100
             assert inner_dummy is not outer_dummy
+
+
+@mock.patch.dict(os.environ, {"BEVY_ENABLE_GLOBAL_CONTEXT": "False"})
+def test_no_global_context():
+    with raises(GlobalContextDisabledError):
+        get_registry()
+
+    with raises(GlobalContextDisabledError):
+        get_container()
