@@ -68,23 +68,24 @@ class HookWrapper[**P, R]:
         registry.add_hook(self)
 
 
-type _HookFunctionDecorator[**P, R] = Callable[[Callable[P, R]], HookWrapper[P, R]]
+class _HookDecoratorDescriptor:
+    def __init__(self):
+        self.hook_type: Optional[Hook] = Optional.Nothing()
+
+    def __get__(self, instance, owner):
+        return HookDecorator(self.hook_type.value)
+
+    def __set_name__(self, owner, name):
+        self.hook_type = Optional.Some(Hook[name])
 
 
-class HookDecoratorMeta(type):
-    def __getattr__(cls, name):
-        if hook := getattr(Hook, name, None):
-            return cls(hook)
+class HookDecorator[**P, R]:
 
-        return super().__getattribute__(name)
-
-
-class HookDecorator[**P, R](metaclass=HookDecoratorMeta):
-    GET_INSTANCE: _HookFunctionDecorator[P, R]
-    GOT_INSTANCE: _HookFunctionDecorator[P, R]
-    CREATE_INSTANCE: _HookFunctionDecorator[P, R]
-    CREATED_INSTANCE: _HookFunctionDecorator[P, R]
-    HANDLE_UNSUPPORTED_DEPENDENCY: _HookFunctionDecorator[P, R]
+    GET_INSTANCE = _HookDecoratorDescriptor()
+    GOT_INSTANCE = _HookDecoratorDescriptor()
+    CREATE_INSTANCE = _HookDecoratorDescriptor()
+    CREATED_INSTANCE = _HookDecoratorDescriptor()
+    HANDLE_UNSUPPORTED_DEPENDENCY = _HookDecoratorDescriptor()
 
     def __init__(self, hook_type: Hook):
         self.hook_type = hook_type
