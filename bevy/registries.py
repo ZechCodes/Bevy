@@ -1,15 +1,17 @@
 from collections import defaultdict
-from typing import overload, Type, TYPE_CHECKING
+from typing import overload, Type
 
-from bevy.context_vars import GlobalContextMixin, get_global_registry, global_registry
 import bevy.containers as containers
 import bevy.hooks as hooks
+from bevy.context_vars import get_global_registry, global_registry, GlobalContextMixin
 from bevy.factories import Factory
 
 type DependencyFactory[T] = "Callable[[containers.Container], T]"
 
 
 class Registry(GlobalContextMixin, var=global_registry):
+    """Registries hold factories and hooks for creating and managing instances of objects. Containers are created from
+    registries, and containers are used to create and cache instances of objects."""
     def __init__(self):
         super().__init__()
         self.hooks: dict[hooks.Hook, hooks.HookManager] = defaultdict(hooks.HookManager)
@@ -24,6 +26,9 @@ class Registry(GlobalContextMixin, var=global_registry):
         ...
 
     def add_factory(self, *args):
+        """Adds a factory to the registry. Factories are used to create instances of objects. If an instance of Factory
+        is passed its register_factory method is called to register it with the registry. If a callable and type is
+        passed, the callable is stored as a factory for the type."""
         match args:
             case [Factory() as factory]:
                 factory.register_factory(self)
@@ -39,13 +44,15 @@ class Registry(GlobalContextMixin, var=global_registry):
         ...
 
     @overload
-    def add_hook(self, hook_type: "hooks.Hook", hook: "hooks.HookFunction"):
+    def add_hook(self, hook_type: "hooks.Hook", func: "hooks.HookFunction"):
         ...
 
     def add_hook(self, *args):
+        """Adds a callback to a hook. If a HookWrapper is passed, the hook is added to the registry. If a Hook type and
+        a callable are passed, the callable is added as a callback to the hook."""
         match args:
-            case [hooks.Hook() as hook_type, hook] if callable(hook):
-                self.hooks[hook_type].add_callback(hook)
+            case [hooks.Hook() as hook_type, func] if callable(func):
+                self.hooks[hook_type].add_callback(func)
 
             case [hooks.HookWrapper(hook_type) as hook]:
                 self.hooks[hook_type].add_callback(hook)
@@ -55,6 +62,7 @@ class Registry(GlobalContextMixin, var=global_registry):
 
 
     def create_container(self) -> "containers.Container":
+        """Creates a new container bound to the registry."""
         return containers.Container(self)
 
 
