@@ -1,6 +1,6 @@
-from enum import Enum
-from typing import Any, Callable, Type, TYPE_CHECKING
 import functools
+from enum import Enum
+from typing import Any, Callable, TYPE_CHECKING
 
 from tramp.optionals import Optional
 
@@ -52,6 +52,7 @@ class HookManager:
 
 
 class HookWrapper[**P, R]:
+    """Wraps a hook callback function to make it easier to register with a registry."""
     __match_args__ = ("hook_type",)
 
     def __init__(self, hook_type: Hook, func: Callable[P, R]):
@@ -64,6 +65,7 @@ class HookWrapper[**P, R]:
         return self.func(container, value)
 
     def register_hook(self, registry: "r.Registry | None" = None):
+        """Adds the callback to a registry for the hook type."""
         registry = r.get_registry(registry)
         registry.add_hook(self)
 
@@ -88,7 +90,14 @@ class _HookDecoratorDescriptor:
 
 
 class HookDecorator[**P, R]:
+    """A decorator that wraps a function in a hook type to simplifying adding to a registry. This class is aliased as
+    "hooks" for convenience. It provides decorators for each hook type for even simpler syntax.
 
+    Example:
+        @hooks.GET_INSTANCE
+        def foobar(container: Container, some_thing: Thing) -> Thing:
+            ...
+    """
     GET_INSTANCE = _HookDecoratorDescriptor()
     GOT_INSTANCE = _HookDecoratorDescriptor()
     CREATE_INSTANCE = _HookDecoratorDescriptor()
