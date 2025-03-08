@@ -58,12 +58,30 @@ class Registry(GlobalContextMixin, var=global_registry):
         return containers.Container(self)
 
 
-def get_registry(registry: Registry | None = None) -> Registry:
-    if registry is not None:
-        return registry
+@overload
+def get_registry(registry: Registry | None) -> Registry:
+    ...
 
-    registry = get_global_registry()
-    if registry is None:
-        registry = Registry()
 
-    return registry
+@overload
+def get_registry() -> Registry:
+    ...
+
+
+def get_registry(*args) -> Registry:
+    """Returns a registry. If a registry is passed, it is returned. If no registry is passed or None is passed, the
+    global registry is returned. This creates a new global registry if it is needed and doesn't already exist."""
+    match args:
+        case [Registry() as registry]:
+            return registry
+
+        case [None]:
+            return get_global_registry()
+
+        case []:
+            return get_global_registry()
+
+        case _:
+            raise ValueError(f"Unexpected arguments to get_registry: {args}")
+
+
