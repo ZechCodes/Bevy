@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from functools import update_wrapper
 from typing import overload, Sequence, Type
+
 import bevy.registries as r
 
 
@@ -41,4 +42,6 @@ def factory[**P, T](*dependency_types: Type[T]) -> "Callable[[r.DependencyFactor
 
 
 def create_type_factory[T](dependency_type: Type[T], *args, **kwargs) -> Factory[None, T]:
+    """Creates a factory for a type that can be added to a registry. It takes the type and any arguments that should be
+    passed to the type constructor."""
     return Factory([dependency_type], lambda _: dependency_type(*args, **kwargs))
