@@ -1,1 +1,0 @@
-::: bevy.providers.annotated_provider

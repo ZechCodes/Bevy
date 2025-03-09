@@ -1,41 +1,17 @@
-# Bevy
+# Welcome to MkDocs
 
-Bevy is a refreshingly simple dependency injection framework for Python. It's as simple as using the `bevy.inject` decorator, the `bevy.dependency` descriptor, and type hints to declare dependencies on your functions, methods, and class objects.
+For full documentation visit [mkdocs.org](https://www.mkdocs.org).
 
-## Getting Started
+## Commands
 
-Install bevy using pip:
-```bash
-pip install bevy
-```
-Then, you only need to import the core functions from `bevy`:
-```python
-from bevy import inject, dependency
-```
+* `mkdocs new [dir-name]` - Create a new project.
+* `mkdocs serve` - Start the live-reloading docs server.
+* `mkdocs build` - Build the documentation site.
+* `mkdocs -h` - Print help message and exit.
 
-## Usage
+## Project layout
 
-### Injecting Function Parameters
-
-Bevy fully understands function parameters and will correctly handle positional only, positional, keyword, and keyword only arguments. It also understands what is being passed into the function and will only inject the dependencies that aren't already being passed.
-```python
-from bevy import inject, dependency
-
-@inject
-def example(arg: Demo = dependency()):
-    ...
-```
-
-### Injecting Class Attributes
-
-Bevy also understands class attributes and can inject them on class instances. To help keep instantiation, Bevy lazily inject dependencies on demand.
-```python
-from bevy import dependency
-
-class Example:
-    attr: Demo = dependency()
-```
-
-## Check It Out
-
-Bevy is available under an MIT license and you can see all the code on the [GitHub](https://github.com/ZechCodes/Bevy).
+    mkdocs.yml    # The configuration file.
+    docs/
+        index.md  # The documentation homepage.
+        ...       # Other markdown pages, images and other files.
