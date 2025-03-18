@@ -1,8 +1,7 @@
 import functools
 from enum import Enum
-from typing import Any, Callable, TYPE_CHECKING
-
 from tramp.optionals import Optional
+from typing import Any, Callable, TYPE_CHECKING
 
 import bevy.registries as r
 
