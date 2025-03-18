@@ -17,6 +17,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
+tramp = "^0.1.17"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
