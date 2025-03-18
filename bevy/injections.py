@@ -1,3 +1,4 @@
+import inspect
 import typing as t
 from functools import update_wrapper
 
@@ -19,6 +20,7 @@ class InjectionFunctionWrapper[**P, R]:
         self._func = func
         update_wrapper(self, func)
 
+    @inspect.markcoroutinefunction
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.call_using(containers.get_container(), *args, **kwargs)
 
