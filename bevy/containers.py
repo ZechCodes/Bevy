@@ -12,6 +12,13 @@ from bevy.hooks import Hook
 type Instance = t.Any
 
 
+def issubclass_or_raises[T](cls: T, class_or_tuple: t.Type[T] | tuple[t.Type[T], ...], exception: Exception) -> bool:
+    try:
+        return issubclass(cls, class_or_tuple)
+    except TypeError as e:
+        raise exception from e
+
+
 class Container(GlobalContextMixin, var=global_container):
     """Stores instances for dependencies and provides utilities for injecting dependencies into callables at runtime.
 
@@ -117,7 +124,11 @@ class Container(GlobalContextMixin, var=global_container):
 
             case Optional.Nothing():
                 for factory_type, factory in self.registry.factories.items():
-                    if issubclass(dependency, factory_type):
+                    if issubclass_or_raises(
+                        dependency,
+                        factory_type,
+                        TypeError(f"Cannot check if {dependency!r} is a subclass of {factory_type!r}")
+                    ):
                         instance = factory(self)
                         break
 
@@ -139,7 +150,11 @@ class Container(GlobalContextMixin, var=global_container):
 
     def _get_existing_instance(self, dependency: t.Type[Instance]) -> Optional[Instance]:
         for instance_type, instance in self.instances.items():
-            if issubclass(dependency, instance_type):
+            if issubclass_or_raises(
+                dependency,
+                instance_type,
+                TypeError(f"Cannot check if {dependency} is a subclass of {instance_type}")
+            ):
                 return Optional.Some(instance)
 
         return Optional.Nothing()
