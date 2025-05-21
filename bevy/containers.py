@@ -123,32 +123,58 @@ class Container(GlobalContextMixin, var=global_container):
                 instance = v
 
             case Optional.Nothing():
-                for factory_type, factory in self.registry.factories.items():
-                    if issubclass_or_raises(
-                        dependency,
-                        factory_type,
-                        TypeError(f"Cannot check if {dependency!r} is a subclass of {factory_type!r}")
-                    ):
+                match self._find_factory_for_type(dependency):
+                    case Optional.Some(factory):
                         instance = factory(self)
-                        break
 
-                else:
-                    match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency):
-                        case Optional.Some(v):
-                            instance = v
+                    case Optional.Nothing():
+                        instance = self._handle_unsupported_dependency(dependency)
 
-                        case Optional.Nothing():
-                            raise TypeError(f"No value found for {dependency}")
-
-                        case _:
-                            raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
+                    case _:
+                        raise RuntimeError(f"Impossible state reached.")
 
             case _:
-                raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
+                raise ValueError(
+                    f"Invalid value returned from hook for dependency: {dependency}, must be a {Optional.__qualname__}."
+                )
 
         return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
 
+    def _handle_unsupported_dependency(self, dependency):
+        match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency):
+            case Optional.Some(v):
+                return v
+
+            case Optional.Nothing():
+                raise TypeError(f"No handler found that can handle dependency: {dependency!r}")
+
+            case _:
+                raise ValueError(
+                    f"Invalid value returned from hook for dependency: {dependency}, must be a "
+                    f"{Optional.__qualname__}."
+                )
+
+    def _find_factory_for_type(self, dependency):
+        if not isinstance(dependency, type):
+            return Optional.Nothing()
+
+        for factory_type, factory in self.registry.factories.items():
+            if issubclass_or_raises(
+                dependency,
+                factory_type,
+                TypeError(f"Cannot check if {dependency!r} is a subclass of {factory_type!r}")
+            ):
+                return Optional.Some(factory)
+
+        return Optional.Nothing()
+
     def _get_existing_instance(self, dependency: t.Type[Instance]) -> Optional[Instance]:
+        if dependency in self.instances:
+            return Optional.Some(self.instances[dependency])
+
+        if not isinstance(dependency, type):
+            return Optional.Nothing()
+
         for instance_type, instance in self.instances.items():
             if issubclass_or_raises(
                 dependency,
