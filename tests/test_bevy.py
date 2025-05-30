@@ -1,6 +1,8 @@
 import os
+from functools import wraps
 from unittest import mock
 
+import pytest
 from pytest import raises
 from tramp.optionals import Optional
 
@@ -237,3 +239,30 @@ def test_method_injection_with_positional_only():
     with Registry().create_container() as container:
         container.add(DummyObject())
         Test().test()
+
+
+@pytest.mark.xfail(
+    reason="Bevy does not currently support injection into wrapping decorators."
+)
+def test_decorators():
+    injections = set()
+
+    def decorator(func):
+        @inject
+        @wraps(func)
+        def wrapper(a: DummyObject = dependency()):
+            injections.add(f"wrapper({id(a)} {type(a).__name__})")
+            return func()
+
+        return wrapper
+
+    @inject
+    @decorator
+    def test(a: DummyObject = dependency()):
+        injections.add(f"test({id(a)} {type(a).__name__})")
+
+    with Registry().create_container() as container:
+        container.add(obj := DummyObject())
+        test()
+
+        assert injections == {f"test({id(obj)} DummyObject)", f"wrapper({id(obj)} DummyObject)"}
