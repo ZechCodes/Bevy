@@ -29,6 +29,25 @@ class Container(GlobalContextMixin, var=global_container):
         self.instances: dict[t.Type[Instance], Instance] = {}
         self._parent = parent
 
+    @t.overload
+    def add(self, instance: Instance):
+        ...
+
+    @t.overload
+    def add(self, for_dependency: t.Type[Instance], instance: Instance):
+        ...
+
+    def add(self, *args):
+        match args:
+            case [instance]:
+                self.instances[type(instance)] = instance
+
+            case [for_dependency, instance]:
+                self.instances[for_dependency] = instance
+
+            case _:
+                raise ValueError(f"Unexpected arguments to add: {args}")
+
     def branch(self) -> "Container":
         """Creates a branch off of the current container, isolating dependencies from the parent container. Dependencies
         existing on the parent container will be shared with the branched container."""
