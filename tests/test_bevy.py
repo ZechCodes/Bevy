@@ -205,3 +205,35 @@ def test_no_global_context():
 
     with raises(GlobalContextDisabledError):
         get_container()
+
+
+def test_positional_only_injection():
+    @inject
+    def test(a: DummyObject = dependency(), /):
+        assert isinstance(a, DummyObject)
+
+    with Registry().create_container() as container:
+        container.add(DummyObject())
+        test()
+
+
+def test_positional_only_with_conflicting_kwarg():
+    @inject
+    def test(a: DummyObject = dependency(), /, **kwargs):
+        assert kwargs == {"a": "foobar"}
+        assert isinstance(a, DummyObject)
+
+    with Registry().create_container() as container:
+        container.add(DummyObject())
+        test(a="foobar")
+
+
+def test_method_injection_with_positional_only():
+    class Test:
+        @inject
+        def test(self, a: DummyObject = dependency(), /):
+            assert isinstance(a, DummyObject)
+
+    with Registry().create_container() as container:
+        container.add(DummyObject())
+        Test().test()
