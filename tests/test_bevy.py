@@ -4,12 +4,11 @@ from unittest import mock
 from pytest import raises
 from tramp.optionals import Optional
 
-from bevy import dependency, get_registry, inject, Registry
+from bevy import dependency, get_registry, get_container, inject, Registry
 from bevy.bundled.type_factory_hook import type_factory
 from bevy.context_vars import GlobalContextDisabledError
 from bevy.factories import create_type_factory
 from bevy.hooks import Hook, hooks
-from containers import get_container
 
 
 class DummyObject:
