@@ -124,7 +124,7 @@ class Container(GlobalContextMixin, var=global_container):
 
     def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs) -> R:
         f = _unwrap_function(func)
-        sig = signature(f)
+        sig = signature(func)
         ns = getattr(f, "__globals__", {})  # If there's no __init__ method use an empty namespace
         annotations = get_annotations(f, globals=ns, eval_str=True)
 
@@ -211,9 +211,6 @@ class Container(GlobalContextMixin, var=global_container):
 
 
 def _unwrap_function(func: object) -> Any:
-    if isinstance(func, MethodType):
-        return func
-
     if hasattr(func, "__wrapped__"):
         return _unwrap_function(func.__wrapped__)
 
