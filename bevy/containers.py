@@ -26,7 +26,10 @@ class Container(GlobalContextMixin, var=global_container):
     def __init__(self, registry: "registries.Registry", *, parent: "Container | None" = None):
         super().__init__()
         self.registry = registry
-        self.instances: dict[t.Type[Instance], Instance] = {}
+        self.instances: dict[t.Type[Instance], Instance] = {
+            Container: self,
+            registries.Registry: registry,
+        }
         self._parent = parent
 
     @t.overload
