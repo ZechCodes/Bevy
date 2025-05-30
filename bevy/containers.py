@@ -67,7 +67,7 @@ class Container(GlobalContextMixin, var=global_container):
                 return wrapper.call_using(self, *args, **kwargs)
 
             case _:
-                return self._call(func, *args, **kwargs)
+                return self._call(func, args, kwargs)
 
     @t.overload
     def get[T: Instance](self, dependency: t.Type[T]) -> T:
@@ -112,15 +112,15 @@ class Container(GlobalContextMixin, var=global_container):
 
         return instance
 
-    def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], *args: P.args, **kwargs: P.kwargs) -> R:
+    def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], args: P.args, kwargs: P.kwargs) -> R:
         match func:
             case type():
-                return self._call_type(func, *args, **kwargs)
+                return self._call_type(func, args, kwargs)
 
             case _:
-                return self._call_function(func, *args, **kwargs)
+                return self._call_function(func, args, kwargs)
 
-    def _call_function[**P, R](self, func: t.Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
+    def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs) -> R:
         f = _unwrap_function(func)
         sig = signature(f)
         ns = getattr(f, "__globals__", {})  # If there's no __init__ method use an empty namespace
@@ -134,7 +134,7 @@ class Container(GlobalContextMixin, var=global_container):
         }
         return func(*params.args, **params.kwargs)
 
-    def _call_type[T](self, type_: t.Type[T], *args, **kwargs) -> T:
+    def _call_type[T](self, type_: t.Type[T], args, kwargs) -> T:
         instance = type_.__new__(type_, *args, **kwargs)
         self.call(instance.__init__, *args, **kwargs)
         return instance
