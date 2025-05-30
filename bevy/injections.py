@@ -27,7 +27,9 @@ class InjectionFunctionWrapper[**P, R]:
     def __get__(self, instance, owner):
         return InjectionFunctionWrapper(t.cast(_DescriptorProtocol, self._func).__get__(instance, owner))
 
-    def call_using(self, container: "containers.Container", *args: P.args, **kwargs: P.kwargs) -> R:
+    def call_using(
+        self, container: "containers.Container", /, *args: P.args, **kwargs: P.kwargs
+    ) -> R:
         """Calls the wrapped function using the provided container for dependency injection."""
         return container.call(self._func, *args, **kwargs)
 

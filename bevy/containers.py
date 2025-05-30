@@ -35,7 +35,7 @@ class Container(GlobalContextMixin, var=global_container):
         return Container(registry=self.registry, parent=self)
 
     def call[**P, R](
-        self, func: "t.Callable[P, R] | injections.InjectionFunctionWrapper[P, R]", *args: P.args, **kwargs: P.kwargs
+        self, func: "t.Callable[P, R] | injections.InjectionFunctionWrapper[P, R]", /, *args: P.args, **kwargs: P.kwargs
     ) -> R:
         """Calls a function or class with the provided arguments and keyword arguments, injecting dependencies from the
         container. This will create instances of any dependencies that are not already stored in the container or its
