@@ -1,5 +1,7 @@
 import typing as t
 from inspect import get_annotations, signature
+from types import MethodType
+from typing import Any
 
 from tramp.optionals import Optional
 
@@ -208,7 +210,10 @@ class Container(GlobalContextMixin, var=global_container):
         return Optional.Nothing()
 
 
-def _unwrap_function(func):
+def _unwrap_function(func: object) -> Any:
+    if isinstance(func, MethodType):
+        return func
+
     if hasattr(func, "__wrapped__"):
         return _unwrap_function(func.__wrapped__)
 
