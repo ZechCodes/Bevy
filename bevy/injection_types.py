@@ -116,7 +116,6 @@ class Options:
     def __init__(
         self,
         qualifier: Optional[str] = None,
-        from_config: Optional[str] = None,
         default_factory: Optional[Callable] = None
     ):
         """
@@ -124,11 +123,9 @@ class Options:
         
         Args:
             qualifier: String qualifier to distinguish multiple implementations
-            from_config: Reserved for future use - configuration key binding  
             default_factory: Factory function to create default value if dependency not found
         """
         self.qualifier = qualifier
-        self.from_config = from_config
         self.default_factory = default_factory
     
     def __repr__(self) -> str:
@@ -136,8 +133,6 @@ class Options:
         parts = []
         if self.qualifier:
             parts.append(f"qualifier='{self.qualifier}'")
-        if self.from_config:
-            parts.append(f"from_config='{self.from_config}'")
         if self.default_factory:
             parts.append(f"default_factory={self.default_factory.__name__}")
         

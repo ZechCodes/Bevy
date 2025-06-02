@@ -1,22 +1,19 @@
 import time
 import typing as t
 from contextvars import ContextVar
-from inspect import get_annotations, signature
-from types import MethodType
+from inspect import signature
 from typing import Any
 
 from tramp.optionals import Optional
 
-import bevy.injections as injections
 import bevy.registries as registries
-from bevy.context_vars import GlobalContextMixin, get_global_container, global_container
+from bevy.context_vars import get_global_container, global_container, GlobalContextMixin
 # DependencyMetadata removed - using injection system
 from bevy.hooks import Hook, InjectionContext, PostInjectionContext
 from bevy.injection_types import (
-    InjectionStrategy, TypeMatchingStrategy, DependencyResolutionError,
-    extract_injection_info, is_optional_type, get_non_none_type
+    DependencyResolutionError, get_non_none_type, InjectionStrategy, is_optional_type, TypeMatchingStrategy,
 )
-from bevy.injections import get_injection_info, analyze_function_signature
+from bevy.injections import analyze_function_signature, get_injection_info
 
 type Instance = t.Any
 
@@ -52,13 +49,22 @@ class Container(GlobalContextMixin, var=global_container):
     def add(self, for_dependency: t.Type[Instance], instance: Instance):
         ...
 
-    def add(self, *args):
+    @t.overload
+    def add(self, for_dependency: t.Type[Instance], instance: Instance, *, qualifier: str):
+        ...
+
+    def add(self, *args, **kwargs):
         match args:
             case [instance]:
                 self.instances[type(instance)] = instance
 
             case [for_dependency, instance]:
-                self.instances[for_dependency] = instance
+                qualifier = kwargs.get('qualifier')
+                if qualifier:
+                    # Store qualified instance with (type, qualifier) key
+                    self.instances[(for_dependency, qualifier)] = instance
+                else:
+                    self.instances[for_dependency] = instance
 
             case _:
                 raise ValueError(f"Unexpected arguments to add: {args}")
@@ -299,6 +305,89 @@ class Container(GlobalContextMixin, var=global_container):
         )
         self.registry.hooks[Hook.POST_INJECTION_CALL].handle(self, post_context)
 
+    def _resolve_qualified_dependency(self, param_type: type, qualifier: str, injection_context: InjectionContext):
+        """
+        Resolve a qualified dependency from the container.
+        
+        Args:
+            param_type: Type to resolve
+            qualifier: String qualifier to distinguish multiple implementations
+            injection_context: Rich context for hooks
+            
+        Returns:
+            Resolved qualified dependency instance
+            
+        Raises:
+            DependencyResolutionError: If qualified dependency cannot be resolved
+        """
+        if injection_context.debug_mode:
+            print(f"[BEVY DEBUG] Resolving qualified {param_type} with qualifier '{qualifier}'")
+        
+        # Check for existing qualified instance
+        qualified_key = (param_type, qualifier)
+        if qualified_key in self.instances:
+            return self.instances[qualified_key]
+        
+        # Check parent container
+        if self._parent:
+            try:
+                return self._parent._resolve_qualified_dependency(param_type, qualifier, injection_context)
+            except DependencyResolutionError:
+                pass  # Continue to try creating new instance
+        
+        # Try to create new qualified instance using factories
+        try:
+            # For now, we'll try to create instance normally and store it as qualified
+            # In the future, we could have qualified factories
+            instance = self._create_instance_with_hooks(param_type, injection_context)
+            self.instances[qualified_key] = instance
+            return instance
+        except DependencyResolutionError:
+            raise DependencyResolutionError(
+                dependency_type=param_type,
+                parameter_name=injection_context.parameter_name,
+                message=f"Cannot resolve qualified dependency {param_type.__name__} with qualifier '{qualifier}' for parameter '{injection_context.parameter_name}'"
+            )
+
+    def _resolve_qualified_dependency_legacy(self, param_type: type, qualifier: str, debug_mode: bool):
+        """
+        Resolve a qualified dependency (legacy method for _resolve_single_type).
+        
+        Args:
+            param_type: Type to resolve
+            qualifier: String qualifier
+            debug_mode: Whether to log debug info
+            
+        Returns:
+            Resolved qualified dependency instance
+        """
+        if debug_mode:
+            print(f"[BEVY DEBUG] Resolving qualified {param_type} with qualifier '{qualifier}'")
+        
+        # Check for existing qualified instance
+        qualified_key = (param_type, qualifier)
+        if qualified_key in self.instances:
+            return self.instances[qualified_key]
+        
+        # Check parent container  
+        if self._parent:
+            try:
+                return self._parent._resolve_qualified_dependency_legacy(param_type, qualifier, debug_mode)
+            except:
+                pass  # Continue to try creating new instance
+        
+        # Try to create new qualified instance
+        try:
+            instance = self._create_instance(param_type)
+            self.instances[qualified_key] = instance
+            return instance
+        except Exception:
+            raise DependencyResolutionError(
+                dependency_type=param_type,
+                parameter_name="unknown",
+                message=f"Cannot resolve qualified dependency {param_type.__name__} with qualifier '{qualifier}'"
+            )
+
     def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
         """
         Resolve a dependency using the hook system with rich context.
@@ -311,19 +400,21 @@ class Container(GlobalContextMixin, var=global_container):
         Returns:
             Resolved dependency instance
         """
+        # Extract actual type if optional
+        is_optional = is_optional_type(param_type)
+        actual_type = get_non_none_type(param_type) if is_optional else param_type
         
-        # Handle optional types (Type | None)
-        if is_optional_type(param_type):
-            actual_type = get_non_none_type(param_type)
-            try:
-                return self._resolve_single_type_with_hooks(actual_type, options, injection_context)
-            except DependencyResolutionError:
-                # Optional dependency not found
+        try:
+            return self._resolve_single_type_with_hooks(actual_type, options, injection_context)
+        except DependencyResolutionError:
+            if is_optional:
+                # Optional dependency not found - return None
                 if injection_context.debug_mode:
                     print(f"[BEVY DEBUG] Optional dependency {injection_context.parameter_name} not found, using None")
                 return None
-        else:
-            return self._resolve_single_type_with_hooks(param_type, options, injection_context)
+            else:
+                # Required dependency not found - re-raise
+                raise
     
     def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
         """
@@ -345,19 +436,7 @@ class Container(GlobalContextMixin, var=global_container):
         
         # Handle qualified dependencies
         if options and options.qualifier:
-            raise NotImplementedError(
-                f"Qualified dependencies not yet implemented. "
-                f"Cannot resolve {param_type} with qualifier '{options.qualifier}'. "
-                f"This feature will be added in a future update."
-            )
-        
-        # Handle configuration binding
-        if options and options.from_config:
-            raise NotImplementedError(
-                f"Configuration binding not yet implemented. "
-                f"Cannot resolve {param_type} from config key '{options.from_config}'. "
-                f"This feature will be added in a future update."
-            )
+            return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
         
         # Handle default factory - use it instead of normal resolution
         if options and options.default_factory:
@@ -444,16 +523,15 @@ class Container(GlobalContextMixin, var=global_container):
             Exception if dependency cannot be resolved and strict_mode is True
         """
         
-        # Handle optional types (Type | None)
-        if is_optional_type(param_type):
-            actual_type = get_non_none_type(param_type)
-            try:
-                return self._resolve_single_type(actual_type, options, type_matching, debug_mode)
-            except Exception:
+        actual_type = get_non_none_type(param_type)
+        try:
+            return self._resolve_single_type(actual_type, options, type_matching, debug_mode)
+        except Exception:
+            if is_optional_type(param_type):
                 # Optional dependency not found
                 return None
-        else:
-            return self._resolve_single_type(param_type, options, type_matching, debug_mode)
+
+            raise
 
     def _resolve_single_type(self, param_type, options, type_matching, debug_mode):
         """
@@ -476,19 +554,7 @@ class Container(GlobalContextMixin, var=global_container):
         
         # Handle qualified dependencies
         if options and options.qualifier:
-            raise NotImplementedError(
-                f"Qualified dependencies not yet implemented. "
-                f"Cannot resolve {param_type} with qualifier '{options.qualifier}'. "
-                f"This feature will be added in a future update."
-            )
-        
-        # Handle configuration binding
-        if options and options.from_config:
-            raise NotImplementedError(
-                f"Configuration binding not yet implemented. "
-                f"Cannot resolve {param_type} from config key '{options.from_config}'. "
-                f"This feature will be added in a future update."
-            )
+            return self._resolve_qualified_dependency_legacy(param_type, options.qualifier, debug_mode)
         
         # Handle default factory
         if options and options.default_factory:
