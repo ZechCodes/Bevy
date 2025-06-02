@@ -22,9 +22,9 @@ Example:
     ... ):
     ...     pass
 """
-
-from typing import Annotated, Optional, Callable, get_origin, get_args
 from enum import Enum
+from types import UnionType
+from typing import Annotated, Callable, get_args, get_origin, Optional, Union
 
 
 class DependencyResolutionError(Exception):
@@ -154,6 +154,7 @@ def extract_injection_info(annotation):
         actual_type = args[0]
         options = args[1] if len(args) > 1 else None
         return actual_type, options
+
     return annotation, None
 
 
@@ -171,11 +172,9 @@ def is_optional_type(type_annotation) -> bool:
     if origin is not None:
         args = get_args(type_annotation)
         # Check for Union types that include None
-        if hasattr(origin, '__name__') and origin.__name__ == 'UnionType':
+        if origin in {Union, UnionType}:
             return type(None) in args
-        # Handle typing.Union
-        if str(origin).startswith('typing.Union'):
-            return type(None) in args
+
     return False
 
 
@@ -192,12 +191,9 @@ def get_non_none_type(type_annotation):
     origin = get_origin(type_annotation)
     if origin is not None:
         args = get_args(type_annotation)
-        # Handle Union types with None
-        if hasattr(origin, '__name__') and origin.__name__ == 'UnionType':
+        # Check for Union types that include None
+        if origin in {Union, UnionType}:
             non_none_types = [arg for arg in args if arg is not type(None)]
             return non_none_types[0] if non_none_types else type_annotation
-        # Handle typing.Union
-        if str(origin).startswith('typing.Union'):
-            non_none_types = [arg for arg in args if arg is not type(None)]
-            return non_none_types[0] if non_none_types else type_annotation
+
     return type_annotation
