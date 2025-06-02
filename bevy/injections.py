@@ -1,9 +1,9 @@
 """
-New dependency injection decorator system with type-safe annotations.
+Dependency injection decorator system with type-safe annotations.
 
 This module provides the @injectable and @auto_inject decorators for 
 configuring and enabling dependency injection on functions using the
-new Inject[T] type annotation system.
+Inject[T] type annotation system.
 
 Example:
     Basic usage with container:

@@ -492,14 +492,14 @@ def old_function(service: UserService = dependency()):
     return service.process()
 ```
 
-### New System (3.1 beta)
+### Current System (3.1 beta)
 ```python
-# NEW - Bevy 3.1 beta
+# Bevy 3.1 beta
 from bevy import injectable, auto_inject, Inject
 
 @auto_inject
 @injectable
-def new_function(service: Inject[UserService]):
+def process_user(service: Inject[UserService]):
     return service.process()
 ```
 

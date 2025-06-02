@@ -191,7 +191,7 @@ registry.add_factory(some_factory)
 
 ## Type System
 
-The new type system provides full IDE support while enabling powerful dependency features:
+The type system provides full IDE support while enabling powerful dependency features:
 
 - `Inject[T]` - Basic dependency injection
 - `Inject[T, Options(...)]` - Dependency with configuration  
@@ -249,4 +249,4 @@ def lenient_function(service: Inject[MissingService]):
 
 ## Migration from Earlier Versions
 
-If you're upgrading from Bevy 3.0 beta, see our [Migration Guide](docs/migration.md) for step-by-step instructions on updating your code to use the new injection system.
+If you're upgrading from Bevy 3.0 beta, see our [Migration Guide](docs/migration.md) for step-by-step instructions on updating your code.

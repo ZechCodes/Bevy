@@ -1,10 +1,10 @@
 # Migration Guide: Bevy 3.0 Beta to 3.1 Beta
 
-This guide will help you migrate your code from Bevy 3.0 beta to the new 3.1 beta injection system.
+This guide will help you migrate your code from Bevy 3.0 beta to Bevy 3.1 beta.
 
 ## Overview of Changes
 
-Bevy 3.1 beta introduces a completely new dependency injection system with the following key improvements:
+Bevy 3.1 beta introduces a dependency injection system with the following key improvements:
 
 - ✅ **Type-safe**: Full IDE autocomplete and type checking with `Inject[T]`
 - ✅ **Python 3.12+ features**: Uses modern type system with `type` keyword
@@ -318,7 +318,7 @@ def app_startup(
     pass
 ```
 
-## New Features Available
+## Features Available
 
 ### 1. Injection Strategies
 
@@ -354,7 +354,7 @@ def debug_function(service: Inject[UserService]):
 
 ### 3. Rich Hook System
 
-New hooks with detailed context:
+Hooks with detailed context:
 
 ```python
 from bevy.hooks import hooks
@@ -392,10 +392,10 @@ def lenient_func(service: Inject[UserService]):
 - [ ] Replace `dependency()` defaults with `Inject[T]` annotations
 - [ ] Update factory usage to use `Options(default_factory=...)`
 - [ ] Register `type_factory` hook for automatic type creation
-- [ ] Update class constructors to use new injection system
+- [ ] Update class constructors to use injection system
 - [ ] Test container setup and dependency resolution
-- [ ] Update any custom hooks to use new hook types
-- [ ] Consider using new optional dependency features
+- [ ] Update any custom hooks to use hook types  
+- [ ] Consider using optional dependency features
 - [ ] Enable debug mode during migration for troubleshooting
 
 ## Troubleshooting
@@ -426,10 +426,10 @@ def lenient_func(service: Inject[UserService]):
 
 ## Performance Considerations
 
-The new system generally performs better due to:
+The system generally performs better due to:
 
 - **Cached analysis**: Function signatures are analyzed once and cached
-- **Optimized type checking**: Faster type resolution with new algorithms
+- **Optimized type checking**: Faster type resolution with modern algorithms
 - **Reduced overhead**: Less dynamic inspection at runtime
 
 However, be aware that:
@@ -440,7 +440,7 @@ However, be aware that:
 
 ## Conclusion
 
-While the migration requires updating your decorators and type annotations, the new system provides:
+While the migration requires updating your decorators and type annotations, the system provides:
 
 - **Better type safety** with full IDE support
 - **More powerful hooks** for extensibility  
