@@ -190,9 +190,9 @@ def auto_inject(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Import here to avoid circular imports
-        from bevy.context_vars import get_container
+        from bevy.context_vars import get_global_container
         
-        container = get_container()
+        container = get_global_container()
         return container.call(func, *args, **kwargs)
     
     # Preserve injection metadata
