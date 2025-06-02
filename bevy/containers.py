@@ -526,7 +526,7 @@ class Container(GlobalContextMixin, var=global_container):
         actual_type = get_non_none_type(param_type)
         try:
             return self._resolve_single_type(actual_type, options, type_matching, debug_mode)
-        except Exception:
+        except DependencyResolutionError:
             if is_optional_type(param_type):
                 # Optional dependency not found
                 return None
@@ -556,14 +556,11 @@ class Container(GlobalContextMixin, var=global_container):
         if options and options.qualifier:
             return self._resolve_qualified_dependency_legacy(param_type, options.qualifier, debug_mode)
         
-        # Handle default factory
+        # Handle default factory - use it instead of normal resolution
         if options and options.default_factory:
-            try:
-                return self.get(param_type)
-            except Exception:
-                if debug_mode:
-                    print(f"[BEVY DEBUG] Using default factory for {param_type}")
-                return options.default_factory()
+            if debug_mode:
+                print(f"[BEVY DEBUG] Using default factory for {param_type}")
+            return options.default_factory()
         
         # Standard resolution using container.get()
         return self.get(param_type)
