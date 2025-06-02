@@ -6,7 +6,7 @@ import pytest
 from pytest import raises
 from tramp.optionals import Optional
 
-from bevy import dependency, get_registry, get_container, inject, Registry
+from bevy import get_registry, get_container, injectable, auto_inject, Inject, Registry
 from bevy.bundled.type_factory_hook import type_factory
 from bevy.context_vars import GlobalContextDisabledError
 from bevy.factories import create_type_factory
@@ -54,7 +54,8 @@ def test_child_overrides_parent_container():
 
 
 def test_injection():
-    def test(d: DummyObject = dependency()):
+    @injectable
+    def test(d: Inject[DummyObject]):
         assert isinstance(d, DummyObject)
 
     registry = Registry()
@@ -64,8 +65,9 @@ def test_injection():
 
 
 def test_injection_wrapper():
-    @inject
-    def test(d: DummyObject = dependency()):
+    @auto_inject
+    @injectable
+    def test(d: Inject[DummyObject]):
         assert isinstance(d, DummyObject)
 
     with Registry() as registry:
@@ -75,8 +77,11 @@ def test_injection_wrapper():
 
 
 def test_injection_factories():
-    @inject
-    def test(d: DummyObject = dependency(create_type_factory(DummyObject, "a"))):
+    from bevy import Options
+    
+    @auto_inject
+    @injectable
+    def test(d: Inject[DummyObject, Options(default_factory=lambda: DummyObject("a"))]):
         assert isinstance(d, DummyObject) and d.value == "a"
 
     with Registry() as registry:
@@ -182,8 +187,8 @@ def test_type_factory_hook():
 
 def test_type_init_injection():
     class Dep:
-        @inject
-        def __init__(self, value: DummyObject = dependency()):
+        @injectable
+        def __init__(self, value: Inject[DummyObject]):
             self.obj = value
 
     with Registry() as outer_registry:
@@ -210,8 +215,9 @@ def test_no_global_context():
 
 
 def test_positional_only_injection():
-    @inject
-    def test(a: DummyObject = dependency(), /):
+    @auto_inject
+    @injectable
+    def test(a: Inject[DummyObject], /):
         assert isinstance(a, DummyObject)
 
     with Registry().create_container() as container:
@@ -220,8 +226,9 @@ def test_positional_only_injection():
 
 
 def test_positional_only_with_conflicting_kwarg():
-    @inject
-    def test(a: DummyObject = dependency(), /, **kwargs):
+    @auto_inject
+    @injectable
+    def test(a: Inject[DummyObject], /, **kwargs):
         assert kwargs == {"a": "foobar"}
         assert isinstance(a, DummyObject)
 
@@ -232,8 +239,9 @@ def test_positional_only_with_conflicting_kwarg():
 
 def test_method_injection_with_positional_only():
     class Test:
-        @inject
-        def test(self, a: DummyObject = dependency(), /):
+        @auto_inject
+        @injectable
+        def test(self, a: Inject[DummyObject], /):
             assert isinstance(a, DummyObject)
 
     with Registry().create_container() as container:
@@ -248,17 +256,19 @@ def test_decorators():
     injections = set()
 
     def decorator(func):
-        @inject
+        @auto_inject
+        @injectable
         @wraps(func)
-        def wrapper(a: DummyObject = dependency()):
+        def wrapper(a: Inject[DummyObject]):
             injections.add(f"wrapper({id(a)} {type(a).__name__})")
             return func()
 
         return wrapper
 
-    @inject
+    @auto_inject
+    @injectable
     @decorator
-    def test(a: DummyObject = dependency()):
+    def test(a: Inject[DummyObject]):
         injections.add(f"test({id(a)} {type(a).__name__})")
 
     with Registry().create_container() as container:
