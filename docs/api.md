@@ -96,8 +96,7 @@ class Options:
 ```
 
 **Parameters:**
-- `qualifier: str` - Named qualifier for multiple instances of same type
-- `from_config: str` - Configuration key to bind dependency from
+- `qualifier: str` - Named qualifier for multiple instances of same type  
 - `default_factory: Callable` - Factory function to use when dependency not found
 
 **Usage Examples:**
@@ -109,11 +108,6 @@ def func(
     primary_db: Inject[Database, Options(qualifier="primary")],
     backup_db: Inject[Database, Options(qualifier="backup")]
 ):
-    pass
-
-# Configuration binding
-@injectable
-def func(config: Inject[dict, Options(from_config="app.settings")]):
     pass
 
 # Default factory

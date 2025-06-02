@@ -292,12 +292,11 @@ class TestTypeSystem:
         """Test Options class functionality."""
         opts = Options(
             qualifier="primary",
-            from_config="db.url",
             default_factory=lambda: Database("default")
         )
         
         assert opts.qualifier == "primary"
-        assert opts.from_config == "db.url"
+        assert opts.from_config is None  # Not implemented
         result = opts.default_factory()
         assert isinstance(result, Database)
         assert result.name == "default"
