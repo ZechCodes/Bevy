@@ -508,10 +508,10 @@ def old_function(
 ):
     pass
 
-# NEW (3.1 beta)
+# Current (3.1 beta)
 @auto_inject
 @injectable
-def new_function(
+def process_user(
     service: Inject[UserService],
     db: Inject[Database, Options(default_factory=custom_factory)]
 ):
@@ -521,7 +521,7 @@ def new_function(
 ## Best Practices
 
 1. **Type Hints**: Always use proper type annotations with `Inject[T]`
-2. **IDE Support**: The new system preserves full IDE autocomplete and type checking
+2. **IDE Support**: The system preserves full IDE autocomplete and type checking
 3. **Container Management**: Use container branching for test isolation
 4. **Hook Registration**: Register `type_factory` hook for convenience
 5. **Optional Dependencies**: Use `T | None` for non-critical dependencies

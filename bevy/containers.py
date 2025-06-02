@@ -8,7 +8,7 @@ from tramp.optionals import Optional
 import bevy.injections as injections
 import bevy.registries as registries
 from bevy.context_vars import GlobalContextMixin, get_global_container, global_container
-# DependencyMetadata removed - using new injection system
+# DependencyMetadata removed - using injection system
 from bevy.hooks import Hook
 
 type Instance = t.Any
@@ -233,7 +233,7 @@ class Container(GlobalContextMixin, var=global_container):
 
     def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
         """
-        Resolve a dependency using the new hook system with rich context.
+        Resolve a dependency using the hook system with rich context.
         
         Args:
             param_type: Type to resolve
@@ -260,7 +260,7 @@ class Container(GlobalContextMixin, var=global_container):
     
     def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
         """
-        Resolve a single non-optional type using the new hook system.
+        Resolve a single non-optional type using the hook system.
         
         Args:
             param_type: Type to resolve
