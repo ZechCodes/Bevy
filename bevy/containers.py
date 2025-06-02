@@ -121,15 +121,20 @@ class Container(GlobalContextMixin, var=global_container):
                 return self._call_function(func, args, kwargs)
 
     def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs) -> R:
+        import time
+        start_time = time.time()
+        
         # Import here to avoid circular imports
         from bevy.injection_types import (
             InjectionStrategy, TypeMatchingStrategy,
             extract_injection_info, is_optional_type, get_non_none_type
         )
         from bevy.injections import get_injection_info, analyze_function_signature
+        from bevy.hooks import InjectionContext, PostInjectionContext
         
         # Get function signature 
         sig = signature(func)
+        function_name = getattr(func, '__name__', str(func))
         
         # Check if function has injection metadata from @injectable decorator
         injection_info = get_injection_info(func)
@@ -137,12 +142,14 @@ class Container(GlobalContextMixin, var=global_container):
         if injection_info:
             # Use metadata from @injectable decorator
             injection_params = injection_info['params']
+            injection_strategy = injection_info['strategy']
             type_matching = injection_info['type_matching']
             strict_mode = injection_info['strict_mode']
             debug_mode = injection_info['debug_mode']
         else:
             # Analyze function dynamically using ANY_NOT_PASSED strategy
             injection_params = analyze_function_signature(func, InjectionStrategy.ANY_NOT_PASSED)
+            injection_strategy = InjectionStrategy.ANY_NOT_PASSED
             type_matching = TypeMatchingStrategy.SUBCLASS
             strict_mode = True
             debug_mode = False
@@ -151,15 +158,39 @@ class Container(GlobalContextMixin, var=global_container):
         bound_args = sig.bind_partial(*args, **kwargs)
         bound_args.apply_defaults()
         
+        # Track injected parameters for hooks
+        injected_params = {}
+        
         # Inject missing dependencies
         for param_name, (param_type, options) in injection_params.items():
             if param_name not in bound_args.arguments:
+                # Create injection context for hooks
+                injection_context = InjectionContext(
+                    function_name=function_name,
+                    parameter_name=param_name,
+                    requested_type=param_type,
+                    options=options,
+                    injection_strategy=injection_strategy,
+                    type_matching=type_matching,
+                    strict_mode=strict_mode,
+                    debug_mode=debug_mode,
+                    injection_chain=[function_name]  # TODO: Track full call stack
+                )
+                
+                # Call INJECTION_REQUEST hook
+                self.registry.hooks[Hook.INJECTION_REQUEST].handle(self, injection_context)
+                
                 # This parameter needs injection
                 try:
-                    injected_value = self._resolve_dependency(
-                        param_type, options, type_matching, strict_mode, debug_mode
+                    injected_value = self._resolve_dependency_with_hooks(
+                        param_type, options, injection_context
                     )
                     bound_args.arguments[param_name] = injected_value
+                    injected_params[param_name] = injected_value
+                    
+                    # Call INJECTION_RESPONSE hook
+                    injection_context.result = injected_value  # Add result to context
+                    self.registry.hooks[Hook.INJECTION_RESPONSE].handle(self, injection_context)
                     
                     if debug_mode:
                         print(f"[BEVY DEBUG] Injected {param_name}: {param_type} = {injected_value}")
@@ -169,18 +200,155 @@ class Container(GlobalContextMixin, var=global_container):
                         # Check if this is an optional type
                         if is_optional_type(param_type):
                             bound_args.arguments[param_name] = None
+                            injected_params[param_name] = None
                             if debug_mode:
                                 print(f"[BEVY DEBUG] Optional dependency {param_name} not found, using None")
                         else:
+                            # Call MISSING_INJECTABLE hook before raising
+                            self.registry.hooks[Hook.MISSING_INJECTABLE].handle(self, injection_context)
                             raise
                     else:
                         # Non-strict mode: inject None for missing dependencies
                         bound_args.arguments[param_name] = None
+                        injected_params[param_name] = None
                         if debug_mode:
                             print(f"[BEVY DEBUG] Non-strict mode: {param_name} not found, using None")
         
         # Call function with resolved arguments
-        return func(*bound_args.args, **bound_args.kwargs)
+        result = func(*bound_args.args, **bound_args.kwargs)
+        
+        # Call POST_INJECTION_CALL hook
+        execution_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        post_context = PostInjectionContext(
+            function_name=function_name,
+            injected_params=injected_params,
+            result=result,
+            injection_strategy=injection_strategy,
+            debug_mode=debug_mode,
+            execution_time_ms=execution_time
+        )
+        self.registry.hooks[Hook.POST_INJECTION_CALL].handle(self, post_context)
+        
+        return result
+
+    def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
+        """
+        Resolve a dependency using the new hook system with rich context.
+        
+        Args:
+            param_type: Type to resolve
+            options: Options object with qualifier, etc.
+            injection_context: Rich context for hooks
+            
+        Returns:
+            Resolved dependency instance
+        """
+        from bevy.injection_types import is_optional_type, get_non_none_type
+        
+        # Handle optional types (Type | None)
+        if is_optional_type(param_type):
+            actual_type = get_non_none_type(param_type)
+            try:
+                return self._resolve_single_type_with_hooks(actual_type, options, injection_context)
+            except Exception:
+                # Optional dependency not found
+                if injection_context.debug_mode:
+                    print(f"[BEVY DEBUG] Optional dependency {injection_context.parameter_name} not found, using None")
+                return None
+        else:
+            return self._resolve_single_type_with_hooks(param_type, options, injection_context)
+    
+    def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
+        """
+        Resolve a single non-optional type using the new hook system.
+        
+        Args:
+            param_type: Type to resolve
+            options: Options object
+            injection_context: Rich context for hooks
+            
+        Returns:
+            Resolved instance
+            
+        Raises:
+            Exception if type cannot be resolved
+        """
+        if injection_context.debug_mode:
+            print(f"[BEVY DEBUG] Resolving {param_type} with options {options}")
+        
+        # Handle qualified dependencies
+        if options and options.qualifier:
+            raise NotImplementedError(
+                f"Qualified dependencies not yet implemented. "
+                f"Cannot resolve {param_type} with qualifier '{options.qualifier}'. "
+                f"This feature will be added in a future update."
+            )
+        
+        # Handle configuration binding
+        if options and options.from_config:
+            raise NotImplementedError(
+                f"Configuration binding not yet implemented. "
+                f"Cannot resolve {param_type} from config key '{options.from_config}'. "
+                f"This feature will be added in a future update."
+            )
+        
+        # Handle default factory - use it instead of normal resolution
+        if options and options.default_factory:
+            if injection_context.debug_mode:
+                print(f"[BEVY DEBUG] Using default factory for {param_type}")
+            return options.default_factory()
+        
+        # Try to resolve from container - check for existing instance first
+        try:
+            # Check if instance already exists
+            if existing := self._get_existing_instance(param_type):
+                return existing.value
+            
+            # Try to create new instance
+            return self._create_instance_with_hooks(param_type, injection_context)
+            
+        except Exception as e:
+            # Call FACTORY_MISSING_TYPE hook if no factory found
+            self.registry.hooks[Hook.FACTORY_MISSING_TYPE].handle(self, injection_context)
+            raise e
+    
+    def _create_instance_with_hooks(self, dependency, injection_context):
+        """
+        Create an instance with hook integration for richer context.
+        
+        Args:
+            dependency: Type to create
+            injection_context: Rich context for hooks
+            
+        Returns:
+            Created instance
+        """
+        # Use existing create_instance logic but with hook integration
+        match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
+            case Optional.Some(v):
+                instance = v
+
+            case Optional.Nothing():
+                match self._find_factory_for_type(dependency):
+                    case Optional.Some(factory):
+                        instance = factory(self)
+
+                    case Optional.Nothing():
+                        instance = self._handle_unsupported_dependency(dependency)
+
+                    case _:
+                        raise RuntimeError(f"Impossible state reached.")
+
+            case _:
+                raise ValueError(
+                    f"Invalid value returned from hook for dependency: {dependency}, must be a {Optional.__qualname__}."
+                )
+
+        # Store the instance and apply created instance hooks
+        filtered_instance = self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
+        self.instances[dependency] = filtered_instance
+        
+        return filtered_instance
 
     def _resolve_dependency(self, param_type, options, type_matching, strict_mode, debug_mode):
         """
