@@ -8,6 +8,7 @@ from tramp.optionals import Optional
 
 import bevy.registries as registries
 from bevy.context_vars import get_global_container, global_container, GlobalContextMixin
+from bevy.debug import create_debug_logger
 # DependencyMetadata removed - using injection system
 from bevy.hooks import Hook, InjectionContext, PostInjectionContext
 from bevy.injection_types import (
@@ -263,10 +264,11 @@ class Container(GlobalContextMixin, var=global_container):
         injection_context: InjectionContext
     ) -> Any:
         """Handle failed dependency injection."""
+        debug = create_debug_logger(injection_context.debug_mode)
+        
         if injection_context.strict_mode:
             if is_optional_type(param_type):
-                if injection_context.debug_mode:
-                    print(f"[BEVY DEBUG] Optional dependency {param_name} not found, using None")
+                debug.optional_dependency_none(param_name)
                 return None
             else:
                 # Call MISSING_INJECTABLE hook before raising
@@ -274,18 +276,18 @@ class Container(GlobalContextMixin, var=global_container):
                 raise exception
         else:
             # Non-strict mode: inject None for missing dependencies
-            if injection_context.debug_mode:
-                print(f"[BEVY DEBUG] Non-strict mode: {param_name} not found, using None")
+            debug.non_strict_mode_none(param_name)
             return None
 
     def _handle_injection_success(self, injected_value: Any, injection_context: InjectionContext) -> Any:
         """Handle successful dependency injection."""
+        debug = create_debug_logger(injection_context.debug_mode)
+        
         # Call INJECTION_RESPONSE hook
         injection_context.result = injected_value  # Add result to context
         self.registry.hooks[Hook.INJECTION_RESPONSE].handle(self, injection_context)
         
-        if injection_context.debug_mode:
-            print(f"[BEVY DEBUG] Injected {injection_context.parameter_name}: {injection_context.requested_type} = {injected_value}")
+        debug.injected_parameter(injection_context.parameter_name, injection_context.requested_type, injected_value)
         
         return injected_value
 
@@ -320,8 +322,8 @@ class Container(GlobalContextMixin, var=global_container):
         Raises:
             DependencyResolutionError: If qualified dependency cannot be resolved
         """
-        if injection_context.debug_mode:
-            print(f"[BEVY DEBUG] Resolving qualified {param_type} with qualifier '{qualifier}'")
+        debug = create_debug_logger(injection_context.debug_mode)
+        debug.resolving_qualified(param_type, qualifier)
         
         # Check for existing qualified instance
         qualified_key = (param_type, qualifier)
@@ -361,8 +363,8 @@ class Container(GlobalContextMixin, var=global_container):
         Returns:
             Resolved qualified dependency instance
         """
-        if debug_mode:
-            print(f"[BEVY DEBUG] Resolving qualified {param_type} with qualifier '{qualifier}'")
+        debug = create_debug_logger(debug_mode)
+        debug.resolving_qualified(param_type, qualifier)
         
         # Check for existing qualified instance
         qualified_key = (param_type, qualifier)
@@ -409,8 +411,8 @@ class Container(GlobalContextMixin, var=global_container):
         except DependencyResolutionError:
             if is_optional:
                 # Optional dependency not found - return None
-                if injection_context.debug_mode:
-                    print(f"[BEVY DEBUG] Optional dependency {injection_context.parameter_name} not found, using None")
+                debug = create_debug_logger(injection_context.debug_mode)
+                debug.optional_dependency_none(injection_context.parameter_name)
                 return None
             else:
                 # Required dependency not found - re-raise
@@ -431,8 +433,8 @@ class Container(GlobalContextMixin, var=global_container):
         Raises:
             Exception if type cannot be resolved
         """
-        if injection_context.debug_mode:
-            print(f"[BEVY DEBUG] Resolving {param_type} with options {options}")
+        debug = create_debug_logger(injection_context.debug_mode)
+        debug.resolving_dependency(param_type, options)
         
         # Handle qualified dependencies
         if options and options.qualifier:
@@ -440,8 +442,7 @@ class Container(GlobalContextMixin, var=global_container):
         
         # Handle default factory - use it instead of normal resolution
         if options and options.default_factory:
-            if injection_context.debug_mode:
-                print(f"[BEVY DEBUG] Using default factory for {param_type}")
+            debug.using_default_factory(param_type)
             return options.default_factory()
         
         # Try to resolve from container - check for existing instance first
@@ -549,8 +550,8 @@ class Container(GlobalContextMixin, var=global_container):
         Raises:
             Exception if type cannot be resolved
         """
-        if debug_mode:
-            print(f"[BEVY DEBUG] Resolving {param_type} with options {options}")
+        debug = create_debug_logger(debug_mode)
+        debug.resolving_dependency(param_type, options)
         
         # Handle qualified dependencies
         if options and options.qualifier:
@@ -558,8 +559,7 @@ class Container(GlobalContextMixin, var=global_container):
         
         # Handle default factory - use it instead of normal resolution
         if options and options.default_factory:
-            if debug_mode:
-                print(f"[BEVY DEBUG] Using default factory for {param_type}")
+            debug.using_default_factory(param_type)
             return options.default_factory()
         
         # Standard resolution using container.get()
