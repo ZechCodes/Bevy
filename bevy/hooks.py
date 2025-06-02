@@ -1,8 +1,9 @@
 import functools
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Callable, Optional as OptionalType, TYPE_CHECKING
+
 from tramp.optionals import Optional
-from typing import Any, Callable, TYPE_CHECKING, Optional as OptionalType
 
 import bevy.registries as r
 
@@ -50,7 +51,7 @@ class Hook(Enum):
     CREATED_INSTANCE = "created_instance"
     HANDLE_UNSUPPORTED_DEPENDENCY = "handle_unsupported_dependency"
     
-    # New injection-specific hooks
+    # Injection-specific hooks
     INJECTION_REQUEST = "injection_request"      # Before resolving a dependency for injection
     INJECTION_RESPONSE = "injection_response"    # After resolving a dependency for injection
     POST_INJECTION_CALL = "post_injection_call"  # After calling function with injected dependencies
@@ -142,7 +143,7 @@ class HookDecorator[**P, R]:
     CREATED_INSTANCE = _HookDecoratorDescriptor()
     HANDLE_UNSUPPORTED_DEPENDENCY = _HookDecoratorDescriptor()
     
-    # New injection-specific hook decorators
+    # Injection-specific hook decorators
     INJECTION_REQUEST = _HookDecoratorDescriptor()
     INJECTION_RESPONSE = _HookDecoratorDescriptor()
     POST_INJECTION_CALL = _HookDecoratorDescriptor()
