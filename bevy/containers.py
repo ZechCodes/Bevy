@@ -36,7 +36,11 @@ class Container(GlobalContextMixin, var=global_container):
     def __init__(self, registry: "registries.Registry", *, parent: "Container | None" = None):
         super().__init__()
         self.registry = registry
-        self.instances: dict[t.Type[Instance], Instance] = {
+        # Unified instances cache - can store:
+        # - Type -> Instance (regular instances)
+        # - (Type, qualifier) -> Instance (qualified instances) 
+        # - Callable -> Instance (factory-cached instances)
+        self.instances: dict[t.Type[Instance] | tuple | t.Callable, Instance] = {
             Container: self,
             registries.Registry: registry,
         }
@@ -351,44 +355,6 @@ class Container(GlobalContextMixin, var=global_container):
                 message=f"Cannot resolve qualified dependency {param_type.__name__} with qualifier '{qualifier}' for parameter '{injection_context.parameter_name}'"
             )
 
-    def _resolve_qualified_dependency_legacy(self, param_type: type, qualifier: str, debug_mode: bool):
-        """
-        Resolve a qualified dependency (legacy method for _resolve_single_type).
-        
-        Args:
-            param_type: Type to resolve
-            qualifier: String qualifier
-            debug_mode: Whether to log debug info
-            
-        Returns:
-            Resolved qualified dependency instance
-        """
-        debug = create_debug_logger(debug_mode)
-        debug.resolving_qualified(param_type, qualifier)
-        
-        # Check for existing qualified instance
-        qualified_key = (param_type, qualifier)
-        if qualified_key in self.instances:
-            return self.instances[qualified_key]
-        
-        # Check parent container  
-        if self._parent:
-            try:
-                return self._parent._resolve_qualified_dependency_legacy(param_type, qualifier, debug_mode)
-            except:
-                pass  # Continue to try creating new instance
-        
-        # Try to create new qualified instance
-        try:
-            instance = self._create_instance(param_type)
-            self.instances[qualified_key] = instance
-            return instance
-        except Exception:
-            raise DependencyResolutionError(
-                dependency_type=param_type,
-                parameter_name="unknown",
-                message=f"Cannot resolve qualified dependency {param_type.__name__} with qualifier '{qualifier}'"
-            )
 
     def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
         """
@@ -442,8 +408,32 @@ class Container(GlobalContextMixin, var=global_container):
         
         # Handle default factory - use it instead of normal resolution
         if options and options.default_factory:
+            # Check factory cache first (if caching is enabled)
+            if options.cache_factory_result and options.default_factory in self.instances:
+                return self.instances[options.default_factory]
+            
+            # Check parent container's factory cache
+            if options.cache_factory_result and self._parent:
+                if parent_result := self._parent._get_factory_cache_result(options.default_factory):
+                    # Cache in this container too for faster future access
+                    self.instances[options.default_factory] = parent_result
+                    return parent_result
+            
             debug.using_default_factory(param_type)
-            return options.default_factory()
+            # Check if factory accepts parameters for dependency injection
+            factory_sig = signature(options.default_factory)
+            if len(factory_sig.parameters) > 0:
+                # Factory accepts parameters, use container for dependency injection
+                instance = self.call(options.default_factory)
+            else:
+                # Factory takes no parameters, call directly
+                instance = options.default_factory()
+            
+            # Cache the result if caching is enabled
+            if options.cache_factory_result:
+                self.instances[options.default_factory] = instance
+            
+            return instance
         
         # Try to resolve from container - check for existing instance first
         try:
@@ -555,12 +545,50 @@ class Container(GlobalContextMixin, var=global_container):
         
         # Handle qualified dependencies
         if options and options.qualifier:
-            return self._resolve_qualified_dependency_legacy(param_type, options.qualifier, debug_mode)
+            # Create a dummy injection context for the legacy path
+            from bevy.hooks import InjectionContext
+            from bevy.injection_types import InjectionStrategy, TypeMatchingStrategy
+            injection_context = InjectionContext(
+                function_name="legacy_resolution",
+                parameter_name="unknown",
+                requested_type=param_type,
+                options=options,
+                injection_strategy=InjectionStrategy.REQUESTED_ONLY,
+                type_matching=TypeMatchingStrategy.SUBCLASS,
+                strict_mode=True,
+                debug_mode=debug_mode,
+                injection_chain=[]
+            )
+            return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
         
         # Handle default factory - use it instead of normal resolution
         if options and options.default_factory:
+            # Check factory cache first (if caching is enabled)
+            if options.cache_factory_result and options.default_factory in self.instances:
+                return self.instances[options.default_factory]
+            
+            # Check parent container's factory cache
+            if options.cache_factory_result and self._parent:
+                if parent_result := self._parent._get_factory_cache_result(options.default_factory):
+                    # Cache in this container too for faster future access
+                    self.instances[options.default_factory] = parent_result
+                    return parent_result
+            
             debug.using_default_factory(param_type)
-            return options.default_factory()
+            # Check if factory accepts parameters for dependency injection
+            factory_sig = signature(options.default_factory)
+            if len(factory_sig.parameters) > 0:
+                # Factory accepts parameters, use container for dependency injection
+                instance = self.call(options.default_factory)
+            else:
+                # Factory takes no parameters, call directly
+                instance = options.default_factory()
+            
+            # Cache the result if caching is enabled
+            if options.cache_factory_result:
+                self.instances[options.default_factory] = instance
+            
+            return instance
         
         # Standard resolution using container.get()
         return self.get(param_type)
@@ -611,6 +639,24 @@ class Container(GlobalContextMixin, var=global_container):
                     f"{Optional.__qualname__}."
                 )
 
+    def _get_factory_cache_result(self, factory: t.Callable) -> t.Any | None:
+        """
+        Get cached result for a factory function, checking parent containers.
+        
+        Args:
+            factory: The factory function to look up
+            
+        Returns:
+            Cached result if found, None otherwise
+        """
+        if factory in self.instances:
+            return self.instances[factory]
+        
+        if self._parent:
+            return self._parent._get_factory_cache_result(factory)
+        
+        return None
+
     def _find_factory_for_type(self, dependency):
         if not isinstance(dependency, type):
             return Optional.Nothing()
@@ -633,6 +679,10 @@ class Container(GlobalContextMixin, var=global_container):
             return Optional.Nothing()
 
         for instance_type, instance in self.instances.items():
+            # Skip qualified instances (tuple keys) and factory-cached instances (callable keys)
+            if isinstance(instance_type, tuple) or callable(instance_type):
+                continue
+                
             if issubclass_or_raises(
                 dependency,
                 instance_type,

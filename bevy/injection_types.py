@@ -116,7 +116,8 @@ class Options:
     def __init__(
         self,
         qualifier: Optional[str] = None,
-        default_factory: Optional[Callable] = None
+        default_factory: Optional[Callable] = None,
+        cache_factory_result: bool = True
     ):
         """
         Initialize injection options.
@@ -124,9 +125,13 @@ class Options:
         Args:
             qualifier: String qualifier to distinguish multiple implementations
             default_factory: Factory function to create default value if dependency not found
+            cache_factory_result: Whether to cache the result of default_factory calls.
+                                True (default): Same factory = same instance (performance)
+                                False: Fresh instance on each call (testing scenarios)
         """
         self.qualifier = qualifier
         self.default_factory = default_factory
+        self.cache_factory_result = cache_factory_result
     
     def __repr__(self) -> str:
         """Readable representation of options."""
@@ -135,6 +140,8 @@ class Options:
             parts.append(f"qualifier='{self.qualifier}'")
         if self.default_factory:
             parts.append(f"default_factory={self.default_factory.__name__}")
+        if not self.cache_factory_result:
+            parts.append("cache_factory_result=False")
         
         return f"Options({', '.join(parts)})"
 
