@@ -249,4 +249,4 @@ def lenient_function(service: Inject[MissingService]):
 
 ## Migration from Earlier Versions
 
-If you're upgrading from Bevy 2.x, see our [Migration Guide](docs/migration.md) for step-by-step instructions on updating your code to use the new injection system.
+If you're upgrading from Bevy 3.0 beta, see our [Migration Guide](docs/migration.md) for step-by-step instructions on updating your code to use the new injection system.

@@ -480,11 +480,11 @@ mock_email.send_email.assert_called_once()
 print(result)  # "Mock email sent"
 ```
 
-## Migration from Bevy 2.x
+## Migration from Bevy 3.0 Beta
 
-### Old System (2.x)
+### Old System (3.0 beta)
 ```python
-# OLD - Bevy 2.x
+# OLD - Bevy 3.0 beta
 from bevy import inject, dependency
 
 @inject
@@ -492,9 +492,9 @@ def old_function(service: UserService = dependency()):
     return service.process()
 ```
 
-### New System (3.x)
+### New System (3.1 beta)
 ```python
-# NEW - Bevy 3.x
+# NEW - Bevy 3.1 beta
 from bevy import injectable, auto_inject, Inject
 
 @auto_inject
