@@ -486,12 +486,12 @@ os.environ["BEVY_ENABLE_GLOBAL_CONTEXT"] = "False"
 container = get_container()  # Error!
 ```
 
-## Migration from Bevy 2.x
+## Migration from Bevy 3.0 Beta
 
 ### API Changes
 
-| Bevy 2.x | Bevy 3.x |
-|----------|----------|
+| Bevy 3.0 Beta | Bevy 3.1 Beta |
+|---------------|---------------|
 | `@inject` | `@injectable` or `@auto_inject` + `@injectable` |
 | `dependency()` | `Inject[T]` |
 | `dependency(factory)` | `Inject[T, Options(default_factory=factory)]` |
@@ -500,7 +500,7 @@ container = get_container()  # Error!
 ### Example Migration
 
 ```python
-# OLD (2.x)
+# OLD (3.0 beta)
 @inject
 def old_function(
     service: UserService = dependency(),
@@ -508,7 +508,7 @@ def old_function(
 ):
     pass
 
-# NEW (3.x)
+# NEW (3.1 beta)
 @auto_inject
 @injectable
 def new_function(

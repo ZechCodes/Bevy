@@ -1,10 +1,10 @@
-# Migration Guide: Bevy 2.x to 3.x
+# Migration Guide: Bevy 3.0 Beta to 3.1 Beta
 
-This guide will help you migrate your code from Bevy 2.x to the new 3.x injection system.
+This guide will help you migrate your code from Bevy 3.0 beta to the new 3.1 beta injection system.
 
 ## Overview of Changes
 
-Bevy 3.x introduces a completely new dependency injection system with the following key improvements:
+Bevy 3.1 beta introduces a completely new dependency injection system with the following key improvements:
 
 - ✅ **Type-safe**: Full IDE autocomplete and type checking with `Inject[T]`
 - ✅ **Python 3.12+ features**: Uses modern type system with `type` keyword
@@ -17,7 +17,7 @@ Bevy 3.x introduces a completely new dependency injection system with the follow
 
 ### 1. Decorator Changes
 
-**Before (2.x):**
+**Before (3.0 beta):**
 ```python
 from bevy import inject, dependency
 
@@ -26,7 +26,7 @@ def process_data(service: UserService = dependency()):
     return service.process()
 ```
 
-**After (3.x):**
+**After (3.1 beta):**
 ```python
 from bevy import injectable, auto_inject, Inject
 
@@ -44,13 +44,13 @@ def process_data(service: Inject[UserService]):
 
 ### 2. Type Annotations
 
-**Before (2.x):**
+**Before (3.0 beta):**
 ```python
 # Default parameter approach
 def func(service: UserService = dependency()): pass
 ```
 
-**After (3.x):**
+**After (3.1 beta):**
 ```python
 # Type annotation approach
 def func(service: Inject[UserService]): pass
@@ -58,7 +58,7 @@ def func(service: Inject[UserService]): pass
 
 ### 3. Factory Functions
 
-**Before (2.x):**
+**Before (3.0 beta):**
 ```python
 def custom_factory(container):
     return UserService("custom")
@@ -68,7 +68,7 @@ def func(service: UserService = dependency(custom_factory)):
     pass
 ```
 
-**After (3.x):**
+**After (3.1 beta):**
 ```python
 from bevy import Options
 
@@ -166,7 +166,7 @@ def func(
 
 ### Step 4: Update Container Setup
 
-**Before (2.x):**
+**Before (3.0 beta):**
 ```python
 from bevy import get_registry
 from bevy.factories import create_type_factory
@@ -175,7 +175,7 @@ registry = get_registry()
 registry.add_factory(create_type_factory(UserService))
 ```
 
-**After (3.x):**
+**After (3.1 beta):**
 ```python
 from bevy import get_registry
 from bevy.bundled.type_factory_hook import type_factory
@@ -191,7 +191,7 @@ registry.add_factory(create_type_factory(UserService))
 
 ### Step 5: Update Class Dependencies
 
-**Before (2.x):**
+**Before (3.0 beta):**
 ```python
 class UserService:
     @inject
@@ -199,7 +199,7 @@ class UserService:
         self.db = db
 ```
 
-**After (3.x):**
+**After (3.1 beta):**
 ```python
 class UserService:
     @injectable
