@@ -300,7 +300,6 @@ class TestTypeSystem:
         )
         
         assert opts.qualifier == "primary"
-        assert opts.from_config is None  # Not implemented
         result = opts.default_factory()
         assert isinstance(result, Database)
         assert result.name == "default"
@@ -320,31 +319,66 @@ class TestTypeSystem:
 
 
 class TestQualifiersAndOptions:
-    """Test qualified dependencies and options (when implemented)."""
+    """Test qualified dependencies and options."""
     
-    def test_qualifier_not_implemented_error(self):
-        """Test that qualified dependencies raise NotImplementedError."""
+    def test_qualified_dependencies(self):
+        """Test that qualified dependencies work correctly."""
+        registry = Registry()
+        container = Container(registry)
+        
+        # Add qualified instances
+        primary_db = Database("PrimaryDB")
+        backup_db = Database("BackupDB")
+        
+        container.add(Database, primary_db, qualifier="primary")
+        container.add(Database, backup_db, qualifier="backup")
+        
+        @injectable
+        def func_with_qualifiers(
+            primary: Inject[Database, Options(qualifier="primary")],
+            backup: Inject[Database, Options(qualifier="backup")]
+        ):
+            return f"Primary: {primary.name}, Backup: {backup.name}"
+        
+        result = container.call(func_with_qualifiers)
+        assert "Primary: PrimaryDB" in result
+        assert "Backup: BackupDB" in result
+    
+    def test_missing_qualified_dependency(self):
+        """Test that missing qualified dependencies raise DependencyResolutionError."""
         registry = Registry()
         container = Container(registry)
         
         @injectable
-        def func_with_qualifier(db: Inject[Database, Options(qualifier="primary")]):
+        def func_with_qualifier(db: Inject[Database, Options(qualifier="missing")]):
             return db.name
         
-        with pytest.raises(NotImplementedError, match="Qualified dependencies not yet implemented"):
+        with pytest.raises(Exception, match="Cannot resolve qualified dependency"):
             container.call(func_with_qualifier)
     
-    def test_config_binding_not_implemented_error(self):
-        """Test that config binding raises NotImplementedError."""
+    def test_qualified_vs_unqualified(self):
+        """Test that qualified and unqualified instances are separate."""
         registry = Registry()
         container = Container(registry)
         
-        @injectable
-        def func_with_config(config: Inject[dict, Options(from_config="app.settings")]):
-            return config
+        # Add unqualified instance
+        regular_db = Database("RegularDB")
+        container.add(Database, regular_db)
         
-        with pytest.raises(NotImplementedError, match="Configuration binding not yet implemented"):
-            container.call(func_with_config)
+        # Add qualified instance  
+        special_db = Database("SpecialDB")
+        container.add(Database, special_db, qualifier="special")
+        
+        @injectable
+        def func_mixed(
+            regular: Inject[Database],
+            special: Inject[Database, Options(qualifier="special")]
+        ):
+            return f"Regular: {regular.name}, Special: {special.name}"
+        
+        result = container.call(func_mixed)
+        assert "Regular: RegularDB" in result
+        assert "Special: SpecialDB" in result
 
 
 class TestEdgeCases:
