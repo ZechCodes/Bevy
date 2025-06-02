@@ -1,5 +1,6 @@
 import time
 import typing as t
+from contextvars import ContextVar
 from inspect import get_annotations, signature
 from types import MethodType
 from typing import Any
@@ -12,12 +13,15 @@ from bevy.context_vars import GlobalContextMixin, get_global_container, global_c
 # DependencyMetadata removed - using injection system
 from bevy.hooks import Hook, InjectionContext, PostInjectionContext
 from bevy.injection_types import (
-    InjectionStrategy, TypeMatchingStrategy,
+    InjectionStrategy, TypeMatchingStrategy, DependencyResolutionError,
     extract_injection_info, is_optional_type, get_non_none_type
 )
 from bevy.injections import get_injection_info, analyze_function_signature
 
 type Instance = t.Any
+
+# Context variable to track current injection chain across factory calls
+_current_injection_chain: ContextVar[list[str]] = ContextVar('current_injection_chain', default=[])
 
 
 def issubclass_or_raises[T](cls: T, class_or_tuple: t.Type[T] | tuple[t.Type[T], ...], exception: Exception) -> bool:
@@ -124,98 +128,166 @@ class Container(GlobalContextMixin, var=global_container):
                 return self._call_type(func, args, kwargs)
 
             case _:
-                return self._call_function(func, args, kwargs)
+                return self._call_function(func, args, kwargs, injection_chain=None)
 
-    def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs) -> R:
+    def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs, injection_chain: list[str] = None) -> R:
         start_time = time.time()
         
-        # Get function signature 
-        sig = signature(func)
+        # Prepare function metadata and injection context
         function_name = getattr(func, '__name__', str(func))
-        
-        # Check if function has injection metadata from @injectable decorator
-        injection_info = get_injection_info(func)
-        
-        if injection_info:
-            # Use metadata from @injectable decorator
-            injection_params = injection_info['params']
-            injection_strategy = injection_info['strategy']
-            type_matching = injection_info['type_matching']
-            strict_mode = injection_info['strict_mode']
-            debug_mode = injection_info['debug_mode']
-        else:
-            # Analyze function dynamically using ANY_NOT_PASSED strategy
-            injection_params = analyze_function_signature(func, InjectionStrategy.ANY_NOT_PASSED)
-            injection_strategy = InjectionStrategy.ANY_NOT_PASSED
-            type_matching = TypeMatchingStrategy.SUBCLASS
-            strict_mode = True
-            debug_mode = False
+        current_injection_chain = self._build_injection_chain(function_name, injection_chain)
+        injection_config = self._get_injection_configuration(func)
         
         # Bind provided arguments
+        sig = signature(func)
         bound_args = sig.bind_partial(*args, **kwargs)
         bound_args.apply_defaults()
         
-        # Track injected parameters for hooks
-        injected_params = {}
-        
         # Inject missing dependencies
-        for param_name, (param_type, options) in injection_params.items():
-            if param_name not in bound_args.arguments:
-                # Create injection context for hooks
-                injection_context = InjectionContext(
-                    function_name=function_name,
-                    parameter_name=param_name,
-                    requested_type=param_type,
-                    options=options,
-                    injection_strategy=injection_strategy,
-                    type_matching=type_matching,
-                    strict_mode=strict_mode,
-                    debug_mode=debug_mode,
-                    injection_chain=[function_name]  # TODO: Track full call stack
-                )
-                
-                # Call INJECTION_REQUEST hook
-                self.registry.hooks[Hook.INJECTION_REQUEST].handle(self, injection_context)
-                
-                # This parameter needs injection
-                try:
-                    injected_value = self._resolve_dependency_with_hooks(
-                        param_type, options, injection_context
-                    )
-                except Exception as e:
-                    if strict_mode:
-                        # Check if this is an optional type
-                        if is_optional_type(param_type):
-                            bound_args.arguments[param_name] = None
-                            injected_params[param_name] = None
-                            if debug_mode:
-                                print(f"[BEVY DEBUG] Optional dependency {param_name} not found, using None")
-                        else:
-                            # Call MISSING_INJECTABLE hook before raising
-                            self.registry.hooks[Hook.MISSING_INJECTABLE].handle(self, injection_context)
-                            raise
-                    else:
-                        # Non-strict mode: inject None for missing dependencies
-                        bound_args.arguments[param_name] = None
-                        injected_params[param_name] = None
-                        if debug_mode:
-                            print(f"[BEVY DEBUG] Non-strict mode: {param_name} not found, using None")
-                else:
-                    # Dependency resolution succeeded - safe to call hooks and update state
-                    bound_args.arguments[param_name] = injected_value
-                    injected_params[param_name] = injected_value
-                    
-                    # Call INJECTION_RESPONSE hook
-                    injection_context.result = injected_value  # Add result to context
-                    self.registry.hooks[Hook.INJECTION_RESPONSE].handle(self, injection_context)
-                    
-                    if debug_mode:
-                        print(f"[BEVY DEBUG] Injected {param_name}: {param_type} = {injected_value}")
+        injected_params = self._inject_missing_dependencies(
+            injection_config, bound_args, function_name, current_injection_chain
+        )
         
         # Call function with resolved arguments
         result = func(*bound_args.args, **bound_args.kwargs)
         
-        # Call POST_INJECTION_CALL hook
+        # Call post-execution hook
+        self._call_post_injection_hook(
+            function_name, injected_params, result, 
+            injection_config['strategy'], injection_config['debug_mode'], 
+            start_time
+        )
+        
+        return result
+
+    def _build_injection_chain(self, function_name: str, injection_chain: list[str] = None) -> list[str]:
+        """Build the injection chain for tracking nested dependency calls."""
+        context_chain = _current_injection_chain.get([])
+        
+        if injection_chain is None and context_chain:
+            # We're in a nested call (e.g., from a factory), use context chain
+            return context_chain + [function_name]
+        elif injection_chain is None:
+            # Top-level call
+            return [function_name]
+        else:
+            # Explicit chain provided
+            return injection_chain + [function_name]
+
+    def _get_injection_configuration(self, func) -> dict:
+        """Get injection configuration from function metadata or defaults."""
+        injection_info = get_injection_info(func)
+        
+        if injection_info:
+            # Use metadata from @injectable decorator
+            return {
+                'params': injection_info['params'],
+                'strategy': injection_info['strategy'],
+                'type_matching': injection_info['type_matching'],
+                'strict_mode': injection_info['strict_mode'],
+                'debug_mode': injection_info['debug_mode']
+            }
+        else:
+            # Analyze function dynamically using ANY_NOT_PASSED strategy
+            return {
+                'params': analyze_function_signature(func, InjectionStrategy.ANY_NOT_PASSED),
+                'strategy': InjectionStrategy.ANY_NOT_PASSED,
+                'type_matching': TypeMatchingStrategy.SUBCLASS,
+                'strict_mode': True,
+                'debug_mode': False
+            }
+
+    def _inject_missing_dependencies(
+        self, injection_config: dict, bound_args, function_name: str, current_injection_chain: list[str]
+    ) -> dict[str, Any]:
+        """Inject missing dependencies into bound arguments."""
+        injected_params = {}
+        
+        for param_name, (param_type, options) in injection_config['params'].items():
+            if param_name not in bound_args.arguments:
+                injected_value = self._inject_single_dependency(
+                    param_name, param_type, options, injection_config, 
+                    function_name, current_injection_chain
+                )
+                bound_args.arguments[param_name] = injected_value
+                injected_params[param_name] = injected_value
+        
+        return injected_params
+
+    def _inject_single_dependency(
+        self, param_name: str, param_type: type, options, injection_config: dict,
+        function_name: str, current_injection_chain: list[str]
+    ) -> Any:
+        """Inject a single dependency parameter."""
+        # Create injection context for hooks
+        injection_context = InjectionContext(
+            function_name=function_name,
+            parameter_name=param_name,
+            requested_type=param_type,
+            options=options,
+            injection_strategy=injection_config['strategy'],
+            type_matching=injection_config['type_matching'],
+            strict_mode=injection_config['strict_mode'],
+            debug_mode=injection_config['debug_mode'],
+            injection_chain=current_injection_chain.copy()
+        )
+        
+        # Call INJECTION_REQUEST hook
+        self.registry.hooks[Hook.INJECTION_REQUEST].handle(self, injection_context)
+        
+        # Set the context chain for nested factory calls
+        token = _current_injection_chain.set(current_injection_chain)
+        try:
+            injected_value = self._resolve_dependency_with_hooks(
+                param_type, options, injection_context
+            )
+        except DependencyResolutionError as e:
+            return self._handle_injection_failure(
+                e, param_type, param_name, injection_context
+            )
+        else:
+            return self._handle_injection_success(
+                injected_value, injection_context
+            )
+        finally:
+            _current_injection_chain.reset(token)
+
+    def _handle_injection_failure(
+        self, exception: DependencyResolutionError, param_type: type, param_name: str, 
+        injection_context: InjectionContext
+    ) -> Any:
+        """Handle failed dependency injection."""
+        if injection_context.strict_mode:
+            if is_optional_type(param_type):
+                if injection_context.debug_mode:
+                    print(f"[BEVY DEBUG] Optional dependency {param_name} not found, using None")
+                return None
+            else:
+                # Call MISSING_INJECTABLE hook before raising
+                self.registry.hooks[Hook.MISSING_INJECTABLE].handle(self, injection_context)
+                raise exception
+        else:
+            # Non-strict mode: inject None for missing dependencies
+            if injection_context.debug_mode:
+                print(f"[BEVY DEBUG] Non-strict mode: {param_name} not found, using None")
+            return None
+
+    def _handle_injection_success(self, injected_value: Any, injection_context: InjectionContext) -> Any:
+        """Handle successful dependency injection."""
+        # Call INJECTION_RESPONSE hook
+        injection_context.result = injected_value  # Add result to context
+        self.registry.hooks[Hook.INJECTION_RESPONSE].handle(self, injection_context)
+        
+        if injection_context.debug_mode:
+            print(f"[BEVY DEBUG] Injected {injection_context.parameter_name}: {injection_context.requested_type} = {injected_value}")
+        
+        return injected_value
+
+    def _call_post_injection_hook(
+        self, function_name: str, injected_params: dict, result: Any,
+        injection_strategy: InjectionStrategy, debug_mode: bool, start_time: float
+    ):
+        """Call the post-injection hook with execution context."""
         execution_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         post_context = PostInjectionContext(
             function_name=function_name,
@@ -226,8 +298,6 @@ class Container(GlobalContextMixin, var=global_container):
             execution_time_ms=execution_time
         )
         self.registry.hooks[Hook.POST_INJECTION_CALL].handle(self, post_context)
-        
-        return result
 
     def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
         """
@@ -247,7 +317,7 @@ class Container(GlobalContextMixin, var=global_container):
             actual_type = get_non_none_type(param_type)
             try:
                 return self._resolve_single_type_with_hooks(actual_type, options, injection_context)
-            except Exception:
+            except DependencyResolutionError:
                 # Optional dependency not found
                 if injection_context.debug_mode:
                     print(f"[BEVY DEBUG] Optional dependency {injection_context.parameter_name} not found, using None")
@@ -304,10 +374,19 @@ class Container(GlobalContextMixin, var=global_container):
             # Try to create new instance
             return self._create_instance_with_hooks(param_type, injection_context)
             
-        except Exception as e:
+        except DependencyResolutionError as e:
             # Call FACTORY_MISSING_TYPE hook if no factory found
             self.registry.hooks[Hook.FACTORY_MISSING_TYPE].handle(self, injection_context)
-            raise e
+            # Re-raise with proper parameter name if it's not already set
+            if e.parameter_name == "unknown":
+                raise DependencyResolutionError(
+                    dependency_type=param_type,
+                    parameter_name=injection_context.parameter_name,
+                    message=f"Cannot resolve dependency {param_type.__name__} for parameter '{injection_context.parameter_name}'"
+                ) from e
+            else:
+                # Parameter name already set, just re-raise
+                raise
     
     def _create_instance_with_hooks(self, dependency, injection_context):
         """
@@ -457,7 +536,11 @@ class Container(GlobalContextMixin, var=global_container):
                 return v
 
             case Optional.Nothing():
-                raise TypeError(f"No handler found that can handle dependency: {dependency!r}")
+                raise DependencyResolutionError(
+                    dependency_type=dependency, 
+                    parameter_name="unknown",  # Will be overridden by caller
+                    message=f"No handler found that can handle dependency: {dependency!r}"
+                )
 
             case _:
                 raise ValueError(

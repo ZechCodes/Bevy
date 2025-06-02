@@ -27,6 +27,22 @@ from typing import Annotated, Optional, Callable, get_origin, get_args
 from enum import Enum
 
 
+class DependencyResolutionError(Exception):
+    """
+    Raised when a dependency cannot be resolved during injection.
+    
+    This is the only exception that should be caught by the injection system
+    for fallback handling (optional dependencies, non-strict mode, etc.).
+    All other exceptions should bubble up normally.
+    """
+    def __init__(self, dependency_type: type, parameter_name: str, message: str = None):
+        self.dependency_type = dependency_type
+        self.parameter_name = parameter_name
+        if message is None:
+            message = f"Cannot resolve dependency {dependency_type.__name__} for parameter '{parameter_name}'"
+        super().__init__(message)
+
+
 # Type alias for dependency injection using Python 3.12+ syntax
 type Inject[T, Opts: object] = Annotated[T, Opts]
 

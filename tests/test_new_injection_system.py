@@ -241,7 +241,11 @@ class TestGlobalContainerIntegration:
         test_container = Container(registry)
         test_container.add(UserService("GlobalUserService"))
         test_container.add(Database("GlobalDatabase"))
-        global_container.set(test_container)
+        self.original_token = global_container.set(test_container)
+    
+    def teardown_method(self):
+        """Clean up global container state."""
+        global_container.reset(self.original_token)
     
     def test_auto_inject_basic(self):
         """Test basic @auto_inject functionality."""
