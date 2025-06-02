@@ -182,16 +182,6 @@ class Container(GlobalContextMixin, var=global_container):
                     injected_value = self._resolve_dependency_with_hooks(
                         param_type, options, injection_context
                     )
-                    bound_args.arguments[param_name] = injected_value
-                    injected_params[param_name] = injected_value
-                    
-                    # Call INJECTION_RESPONSE hook
-                    injection_context.result = injected_value  # Add result to context
-                    self.registry.hooks[Hook.INJECTION_RESPONSE].handle(self, injection_context)
-                    
-                    if debug_mode:
-                        print(f"[BEVY DEBUG] Injected {param_name}: {param_type} = {injected_value}")
-                        
                 except Exception as e:
                     if strict_mode:
                         # Check if this is an optional type
@@ -210,6 +200,17 @@ class Container(GlobalContextMixin, var=global_container):
                         injected_params[param_name] = None
                         if debug_mode:
                             print(f"[BEVY DEBUG] Non-strict mode: {param_name} not found, using None")
+                else:
+                    # Dependency resolution succeeded - safe to call hooks and update state
+                    bound_args.arguments[param_name] = injected_value
+                    injected_params[param_name] = injected_value
+                    
+                    # Call INJECTION_RESPONSE hook
+                    injection_context.result = injected_value  # Add result to context
+                    self.registry.hooks[Hook.INJECTION_RESPONSE].handle(self, injection_context)
+                    
+                    if debug_mode:
+                        print(f"[BEVY DEBUG] Injected {param_name}: {param_type} = {injected_value}")
         
         # Call function with resolved arguments
         result = func(*bound_args.args, **bound_args.kwargs)
