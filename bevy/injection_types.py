@@ -95,12 +95,6 @@ class Options:
         ... ):
         ...     pass
         
-        >>> # Configuration binding (when implemented)
-        >>> @injectable  
-        >>> def func(
-        ...     config: Inject[dict, Options(from_config="app.settings")]
-        ... ):
-        ...     pass
     """
     
     def __init__(
@@ -114,7 +108,7 @@ class Options:
         
         Args:
             qualifier: String qualifier to distinguish multiple implementations
-            from_config: Configuration key to bind value from (not yet implemented)
+            from_config: Reserved for future use - configuration key binding  
             default_factory: Factory function to create default value if dependency not found
         """
         self.qualifier = qualifier

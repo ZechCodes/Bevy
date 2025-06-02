@@ -115,11 +115,10 @@ from bevy import Options
 def advanced_processing(
     primary_db: Inject[DatabaseService, Options(qualifier="primary")],
     backup_db: Inject[DatabaseService, Options(qualifier="backup")], 
-    config: Inject[dict, Options(from_config="app.settings")],
     logger: Inject[Logger, Options(default_factory=lambda: Logger("default"))],
     data: str
 ):
-    # Use qualified dependencies, config binding, and default factories
+    # Use qualified dependencies and default factories
     pass
 ```
 
@@ -197,7 +196,6 @@ The type system provides full IDE support while enabling powerful dependency fea
 - `Inject[T, Options(...)]` - Dependency with configuration  
 - `Inject[T | None]` - Optional dependency
 - `Options(qualifier="name")` - Qualified dependencies
-- `Options(from_config="key")` - Configuration binding
 - `Options(default_factory=lambda: T())` - Default factory
 
 ## Hooks and Extensibility
