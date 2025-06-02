@@ -1,3 +1,4 @@
+import time
 import typing as t
 from inspect import get_annotations, signature
 from types import MethodType
@@ -9,7 +10,12 @@ import bevy.injections as injections
 import bevy.registries as registries
 from bevy.context_vars import GlobalContextMixin, get_global_container, global_container
 # DependencyMetadata removed - using injection system
-from bevy.hooks import Hook
+from bevy.hooks import Hook, InjectionContext, PostInjectionContext
+from bevy.injection_types import (
+    InjectionStrategy, TypeMatchingStrategy,
+    extract_injection_info, is_optional_type, get_non_none_type
+)
+from bevy.injections import get_injection_info, analyze_function_signature
 
 type Instance = t.Any
 
@@ -121,16 +127,7 @@ class Container(GlobalContextMixin, var=global_container):
                 return self._call_function(func, args, kwargs)
 
     def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs) -> R:
-        import time
         start_time = time.time()
-        
-        # Import here to avoid circular imports
-        from bevy.injection_types import (
-            InjectionStrategy, TypeMatchingStrategy,
-            extract_injection_info, is_optional_type, get_non_none_type
-        )
-        from bevy.injections import get_injection_info, analyze_function_signature
-        from bevy.hooks import InjectionContext, PostInjectionContext
         
         # Get function signature 
         sig = signature(func)
@@ -243,7 +240,6 @@ class Container(GlobalContextMixin, var=global_container):
         Returns:
             Resolved dependency instance
         """
-        from bevy.injection_types import is_optional_type, get_non_none_type
         
         # Handle optional types (Type | None)
         if is_optional_type(param_type):
@@ -367,7 +363,6 @@ class Container(GlobalContextMixin, var=global_container):
         Raises:
             Exception if dependency cannot be resolved and strict_mode is True
         """
-        from bevy.injection_types import is_optional_type, get_non_none_type
         
         # Handle optional types (Type | None)
         if is_optional_type(param_type):
