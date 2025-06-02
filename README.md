@@ -15,77 +15,238 @@ Python doesn't have an actual interface implementation like many other languages
 
 ## Why Do I Care?
 *Dependency Injection* and its reliance on abstract interfaces makes your code easier to maintain:
-- Changes can be made without needing to alter implementation details in unrelated code, so long as the interface isn’t modified in a substantial way.
+- Changes can be made without needing to alter implementation details in unrelated code, so long as the interface isn't modified in a substantial way.
 - Tests can provide mock implementations of dependencies without needing to rely on patching or duck typing. They can provide the mock to Bevy which can then ensure it is used when necessary.
 
 ## How It Works
-Bevy makes use of Python's contextvars to store a registry object global to the context. You can then use `bevy.inject` and `bevy.dependency` to inject dependencies into functions and classes. 
+Bevy uses Python 3.12+ type annotations with `Inject[T]` to declare dependencies, and decorators like `@injectable` and `@auto_inject` to enable dependency injection. The type system preserves IDE autocomplete and type checking while providing powerful dependency management.
 
-The `dependency` function returns a descriptor that can detect the type hints that have been set on a class attribute. It can then create and return a dependency that matches the type hints.
+### Basic Usage
 
-The `inject` decorator allows you to use the `dependecy` function to inject dependencies into functions. Each parameter that needs to be injected should have its default value set to `dependency()` and then the `inject` decorator will intelligently handle injecting those dependencies into the function arguments based on the parameter type hints. This injection is compatible with positional only, positional, keyword, and keyword only arguments.
-
-**Example**
-```py
-from bevy import inject, dependency
-
-class Thing:
-    ...
-
-class Example:
-    foo: Thing = dependency()
-
-@inject
-def example(foo: Thing = dependency()):
-    ...
-```
-Each dependency once created is stored in the context global container to be reused by other functions and classes that depend on them. This sharing is very useful for database connections, config files, authenticated API sessions, etc.
-
-**Setting Values In the Container**
-
-It is possible to provide a value to the context's global repository that will be used as a dependency.You can get the current repository using the `bevy.get_repository` function, you can then use that repository's `set` method to assign an instance to a given key.
+**Declaring Dependencies**
 ```python
-from bevy import get_repository
+from bevy import injectable, Inject
 
-get_repository().set(Thing, Thing("foobar"))
+class DatabaseService:
+    def query(self, sql: str):
+        return f"Executing: {sql}"
+
+class UserService:
+    def __init__(self):
+        pass
+    
+    def get_user(self, user_id: str):
+        return f"User {user_id}"
+
+@injectable
+def process_user_data(
+    user_service: Inject[UserService],
+    db_service: Inject[DatabaseService],
+    user_id: str
+):
+    user = user_service.get_user(user_id)
+    result = db_service.query(f"SELECT * FROM users WHERE id = {user_id}")
+    return f"Processed {user} with {result}"
 ```
-This would cause anything that has a dependency for `Thing` to have the instance `Thing("foobar")` injected.
 
-The `set` method will return an empty `bevy.options.Value` object if it succeeds in setting the value into the cache or will return a `bevy.options.Null` object if it fails.
-
-**Getting Values From the Repository**
-
-It is possible to get values directly from the repository using its `get` method.
+**Using with Container**
 ```python
-from bevy import get_repository
+from bevy import Container, Registry
 
-thing = get_repository().get(Thing)
+# Create container with services
+registry = Registry()
+container = Container(registry)
+container.add(UserService())
+container.add(DatabaseService())
+
+# Call function with dependency injection
+result = container.call(process_user_data, user_id="123")
+print(result)  # "Processed User 123 with Executing: SELECT * FROM users WHERE id = 123"
 ```
-If an instance of `Thing` is not found in the cache it will create an instance, save it in the cache for future use, and then return it.
 
-It is possible to get a value from the cache without creating an instance if it's not found using the `find` method. This method returns an `Option` type that can either be your value wrapped in a `Value` type or a `Null` type if the value was not found. You can use the `value_or` method to get your value or a default if it doesn't exist.
+**Global Container with @auto_inject**
 ```python
-thing = get_repository().find(Thing).value_or(None)
+from bevy import auto_inject, injectable, Inject, get_container
+
+# Set up global container
+container = get_container()
+container.add(UserService())
+container.add(DatabaseService())
+
+@auto_inject
+@injectable  
+def process_user_data(
+    user_service: Inject[UserService],
+    db_service: Inject[DatabaseService], 
+    user_id: str
+):
+    user = user_service.get_user(user_id)
+    result = db_service.query(f"SELECT * FROM users WHERE id = {user_id}")
+    return f"Processed {user} with {result}"
+
+# Call directly - dependencies injected automatically
+result = process_user_data(user_id="456")
 ```
-It is also possible to use match/case to unwrap the value with more flexibility.
+
+### Advanced Features
+
+**Optional Dependencies**
 ```python
-from bevy.options import Value, Null
-
-match get_repository().find(Thing):
-    case Value(value):
-        thing = value
-    case Null():
-        raise Exception("Could not find an instance of Thing")
+@injectable
+def handle_request(
+    user_service: Inject[UserService],
+    cache_service: Inject[CacheService | None],  # Optional dependency
+    request_id: str
+):
+    user = user_service.get_user(request_id)
+    
+    if cache_service:
+        cached_data = cache_service.get(request_id)
+        return f"Cached: {cached_data}"
+    else:
+        return f"No cache available for {user}"
 ```
 
-**Dependency Providers**
+**Dependency Options**
+```python
+from bevy import Options
 
-To make Bevy as flexible as possible, it has dependency providers. These are classes that can be registered with the repository to cache value instances, look up cached instances using a key type, and create new instances for a key type.
+@injectable
+def advanced_processing(
+    primary_db: Inject[DatabaseService, Options(qualifier="primary")],
+    backup_db: Inject[DatabaseService, Options(qualifier="backup")], 
+    config: Inject[dict, Options(from_config="app.settings")],
+    logger: Inject[Logger, Options(default_factory=lambda: Logger("default"))],
+    data: str
+):
+    # Use qualified dependencies, config binding, and default factories
+    pass
+```
 
-The default repository type has two dependency providers: an annotated provider and a type provider.
-- The **Type Provider** handles key types that are class types. So when a dependency annotation is `Thing`, for example, the type provider will handle looking through its cache for an instance of `Thing` and creating an instance if it is not found.
-- The **Annotated Provider** handles key types that are instances of `typing.Annotated`. It works very similarly to the type provider except it allows you to provide an annotation. This is helpful if you have multiple instances of the same type that need to exist together. You could have `Annotated[Thing, "testA"]` and `Annotated[Thing, "testB"]`, both of them would be able to point to distinct instances of `Thing` in the same repository cache.
+**Injection Strategies**
+```python
+from bevy import InjectionStrategy
 
-It is possible to add new providers to the repository using it's `add_providers` method which takes any number of provider types.
+# Only inject parameters explicitly marked with Inject[T]
+@injectable(strategy=InjectionStrategy.REQUESTED_ONLY)  # Default
+def explicit_injection(service: Inject[UserService], manual_param: str):
+    pass
 
-It is also possible to subclass `bevy.Repository`, provide a custom `factory` class method that returns an instance of `Repository` with whatever default providers you want set. Just call `Repository.set_repository` with an instance of the new repository type.
+# Inject any parameter not provided at call time
+@injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)
+def auto_injection(service: UserService, db: DatabaseService, manual_param: str):
+    pass
+
+# Only inject specific parameters
+@injectable(strategy=InjectionStrategy.ONLY, params=["service"])
+def selective_injection(service: UserService, db: DatabaseService, manual_param: str):
+    pass
+```
+
+**Configuration Options**
+```python
+@injectable(
+    strategy=InjectionStrategy.REQUESTED_ONLY,
+    strict=True,      # Raise errors for missing dependencies (default)
+    debug=True,       # Enable debug logging
+    type_matching=TypeMatchingStrategy.SUBCLASS  # Allow subclass matching
+)
+def configured_function(service: Inject[UserService]):
+    pass
+```
+
+## Container Management
+
+**Creating and Using Containers**
+```python
+from bevy import Registry, Container
+
+# Create registry and container
+registry = Registry()
+container = Container(registry)
+
+# Add instances
+container.add(UserService())
+container.add(DatabaseService, DatabaseService("production"))
+
+# Create branched containers for isolation
+test_container = container.branch()
+test_container.add(DatabaseService("test"))  # Override for testing
+
+# Get instances directly
+user_service = container.get(UserService)
+```
+
+**Global Container**
+```python
+from bevy import get_container, get_registry
+
+# Get global container (creates if needed)
+container = get_container()
+
+# Work with global registry
+registry = get_registry()
+registry.add_factory(some_factory)
+```
+
+## Type System
+
+The new type system provides full IDE support while enabling powerful dependency features:
+
+- `Inject[T]` - Basic dependency injection
+- `Inject[T, Options(...)]` - Dependency with configuration  
+- `Inject[T | None]` - Optional dependency
+- `Options(qualifier="name")` - Qualified dependencies
+- `Options(from_config="key")` - Configuration binding
+- `Options(default_factory=lambda: T())` - Default factory
+
+## Hooks and Extensibility
+
+Bevy provides a rich hook system for customization:
+
+```python
+from bevy.hooks import hooks, Hook
+
+@hooks.INJECTION_REQUEST
+def log_injection_request(container, context):
+    print(f"Injecting {context.requested_type} for {context.function_name}")
+
+@hooks.POST_INJECTION_CALL  
+def log_execution_time(container, context):
+    print(f"Function {context.function_name} took {context.execution_time_ms}ms")
+
+# Register hooks with registry
+registry = get_registry()
+log_injection_request.register_hook(registry)
+log_execution_time.register_hook(registry)
+```
+
+## Error Handling
+
+Bevy provides clear error messages and flexible error handling:
+
+```python
+# Strict mode (default) - raises errors for missing dependencies
+@injectable(strict=True)
+def strict_function(service: Inject[MissingService]):
+    pass
+
+# Non-strict mode - injects None for missing dependencies  
+@injectable(strict=False)
+def lenient_function(service: Inject[MissingService]):
+    if service is None:
+        # Handle missing dependency gracefully
+        pass
+```
+
+## Best Practices
+
+1. **Use type hints**: Always provide proper type annotations for dependencies
+2. **Prefer composition**: Design services that depend on interfaces rather than concrete implementations
+3. **Use containers for testing**: Create isolated test containers with mock dependencies
+4. **Leverage optional dependencies**: Use `T | None` for optional services
+5. **Configure appropriately**: Use strict mode in production, debug mode during development
+
+## Migration from Earlier Versions
+
+If you're upgrading from Bevy 2.x, see our [Migration Guide](docs/migration.md) for step-by-step instructions on updating your code to use the new injection system.

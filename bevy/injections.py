@@ -1,8 +1,32 @@
 """
-New dependency injection decorator system.
+New dependency injection decorator system with type-safe annotations.
 
 This module provides the @injectable and @auto_inject decorators for 
-configuring and enabling dependency injection on functions.
+configuring and enabling dependency injection on functions using the
+new Inject[T] type annotation system.
+
+Example:
+    Basic usage with container:
+    
+    >>> from bevy import injectable, Inject, Container, Registry
+    >>> 
+    >>> @injectable
+    >>> def process_data(service: Inject[UserService], data: str):
+    ...     return service.process(data)
+    >>> 
+    >>> container = Container(Registry())
+    >>> result = container.call(process_data, data="test")
+    
+    Global container with auto_inject:
+    
+    >>> from bevy import auto_inject, injectable, Inject
+    >>> 
+    >>> @auto_inject
+    >>> @injectable
+    >>> def process_data(service: Inject[UserService], data: str):
+    ...     return service.process(data)
+    >>> 
+    >>> result = process_data(data="test")  # Uses global container
 """
 
 import inspect
@@ -112,18 +136,38 @@ def injectable(
     
     This decorator analyzes the function signature and stores injection metadata
     but does not change the function's runtime behavior. Use @auto_inject to
-    enable automatic injection using the global container.
+    enable automatic injection using the global container, or call the function
+    via Container.call().
     
     Args:
-        strategy: How to determine which parameters to inject
-        params: Parameter names to inject (only used with ONLY strategy)
-        strict: Whether to raise errors for missing non-optional dependencies
-        type_matching: How strict to be about type matching
-        debug: Whether to log injection activities
-        cache_analysis: Whether to cache parameter analysis results
+        strategy: Controls which parameters are injected (default: REQUESTED_ONLY)
+        params: List of parameter names to inject (used with ONLY strategy)
+        strict: Whether to raise errors for missing dependencies (default: True)
+        type_matching: How to match types during resolution (default: SUBCLASS)
+        debug: Enable debug logging during injection (default: False)
+        cache_analysis: Cache function signature analysis for performance (default: True)
+    
+    Example:
+        Basic usage:
         
+        >>> @injectable
+        >>> def process_data(service: Inject[UserService], data: str):
+        ...     return service.process(data)
+        
+        With configuration:
+        
+        >>> @injectable(strategy=InjectionStrategy.ANY_NOT_PASSED, debug=True)
+        >>> def auto_inject_all(service: UserService, db: Database, data: str):
+        ...     return f"Processed {data} with {service} and {db}"
+        
+        Selective injection:
+        
+        >>> @injectable(strategy=InjectionStrategy.ONLY, params=["service"])
+        >>> def selective(service: UserService, manual: str):
+        ...     return f"{service} processed {manual}"
+    
     Returns:
-        Decorated function with injection metadata attached
+        The decorated function with injection metadata attached.
     """
     # Convert DEFAULT enums to actual strategies
     actual_strategy = (
@@ -166,11 +210,13 @@ def injectable(
 
 def auto_inject(func):
     """
-    Enable automatic injection using global container.
+    Enable automatic injection using the global container.
     
     This decorator wraps the function to automatically inject dependencies
     from the global container when the function is called. The function must
     be decorated with @injectable first.
+    
+    **Important:** @auto_inject must come before @injectable in the decorator chain.
     
     Args:
         func: Function to enable auto-injection for
@@ -180,6 +226,22 @@ def auto_inject(func):
         
     Raises:
         ValueError: If function is not decorated with @injectable
+    
+    Example:
+        >>> @auto_inject
+        >>> @injectable
+        >>> def process_data(service: Inject[UserService], data: str):
+        ...     return service.process(data)
+        >>> 
+        >>> # Can now call directly without container
+        >>> result = process_data(data="test")
+        
+        Error case (wrong decorator order):
+        
+        >>> @injectable
+        >>> @auto_inject  # Wrong order!
+        >>> def bad_function(service: Inject[UserService]):
+        ...     pass  # Raises ValueError
     """
     if not hasattr(func, '_bevy_injection_params'):
         raise ValueError(
