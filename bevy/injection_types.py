@@ -2,7 +2,25 @@
 Core types and enums for the Bevy dependency injection system.
 
 This module defines the type aliases, enums, and metadata classes used
-for type-safe dependency injection configuration.
+for type-safe dependency injection configuration with full IDE support.
+
+Example:
+    Basic dependency injection:
+    
+    >>> from bevy import injectable, Inject
+    >>> 
+    >>> @injectable
+    >>> def process_data(service: Inject[UserService]):
+    ...     return service.process()
+    
+    With options:
+    
+    >>> @injectable
+    >>> def advanced_processing(
+    ...     primary_db: Inject[Database, Options(qualifier="primary")],
+    ...     logger: Inject[Logger, Options(default_factory=lambda: Logger("app"))]
+    ... ):
+    ...     pass
 """
 
 from typing import Annotated, Optional, Callable, get_origin, get_args
@@ -14,7 +32,22 @@ type Inject[T, Opts: object] = Annotated[T, Opts]
 
 
 class InjectionStrategy(Enum):
-    """Strategy for determining which parameters to inject."""
+    """
+    Strategy for determining which parameters to inject.
+    
+    Example:
+        >>> @injectable(strategy=InjectionStrategy.REQUESTED_ONLY)
+        >>> def explicit_injection(service: Inject[UserService], manual: str):
+        ...     pass  # Only 'service' will be injected
+        
+        >>> @injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)
+        >>> def auto_injection(service: UserService, manual: str):
+        ...     pass  # Both 'service' and 'manual' can be injected if not provided
+        
+        >>> @injectable(strategy=InjectionStrategy.ONLY, params=["service"])
+        >>> def selective_injection(service: UserService, other: Database):
+        ...     pass  # Only 'service' will be injected, 'other' must be provided
+    """
     DEFAULT = "default"                  # Maps to REQUESTED_ONLY
     REQUESTED_ONLY = "requested_only"    # Only inject Inject[T] parameters
     ANY_NOT_PASSED = "any_not_passed"    # Inject any typed param not passed
@@ -22,7 +55,18 @@ class InjectionStrategy(Enum):
 
 
 class TypeMatchingStrategy(Enum):
-    """Strategy for matching types during dependency resolution."""
+    """
+    Strategy for matching types during dependency resolution.
+    
+    Example:
+        >>> @injectable(type_matching=TypeMatchingStrategy.EXACT_TYPE)
+        >>> def strict_matching(service: Inject[UserService]):
+        ...     pass  # Only exact UserService type accepted
+        
+        >>> @injectable(type_matching=TypeMatchingStrategy.SUBCLASS) 
+        >>> def flexible_matching(service: Inject[UserService]):
+        ...     pass  # UserService or any subclass accepted
+    """
     DEFAULT = "default"                  # Maps to SUBCLASS
     SUBCLASS = "subclass"                # Allow subclasses (current behavior)
     STRUCTURAL = "structural"            # Allow protocols/duck typing
@@ -30,7 +74,34 @@ class TypeMatchingStrategy(Enum):
 
 
 class Options:
-    """Metadata options for dependency injection."""
+    """
+    Metadata options for dependency injection.
+    
+    Used with Inject[T, Options(...)] to configure dependency behavior.
+    
+    Example:
+        >>> # Qualified dependencies
+        >>> @injectable
+        >>> def func(
+        ...     primary_db: Inject[Database, Options(qualifier="primary")],
+        ...     backup_db: Inject[Database, Options(qualifier="backup")]
+        ... ):
+        ...     pass
+        
+        >>> # Default factory
+        >>> @injectable
+        >>> def func(
+        ...     logger: Inject[Logger, Options(default_factory=lambda: Logger("app"))]
+        ... ):
+        ...     pass
+        
+        >>> # Configuration binding (when implemented)
+        >>> @injectable  
+        >>> def func(
+        ...     config: Inject[dict, Options(from_config="app.settings")]
+        ... ):
+        ...     pass
+    """
     
     def __init__(
         self,
@@ -43,7 +114,7 @@ class Options:
         
         Args:
             qualifier: String qualifier to distinguish multiple implementations
-            from_config: Configuration key to bind value from
+            from_config: Configuration key to bind value from (not yet implemented)
             default_factory: Factory function to create default value if dependency not found
         """
         self.qualifier = qualifier

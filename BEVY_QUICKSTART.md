@@ -5,7 +5,7 @@
 ## Installation
 
 ```bash
-pip install bevy>=3.0.0
+pip install bevy>=3.1.0
 ```
 
 ## Core Concepts
@@ -16,173 +16,218 @@ Dependency injection is a design pattern where objects your code depends on are 
 ### Key Components
 - **Registry**: Stores factories and hooks for creating dependencies
 - **Container**: Manages instances of dependencies and handles injection
-- **Dependencies**: Objects that are automatically created and injected
-- **Factories**: Functions that define how to create specific types
-- **Hooks**: Extension points for customizing dependency creation and lifecycle
+- **@injectable**: Decorator that enables dependency injection for functions
+- **@auto_inject**: Decorator that automatically uses the global container
+- **Inject[T]**: Type annotation that declares a parameter as injectable
+- **Options**: Configuration for dependency behavior (qualifiers, defaults, etc.)
 
 ### Important Rules
-- Functions using `dependency()` must be decorated with `@inject` OR called via `Container.call()`
-- By default, containers have no handlers - you must register factories or hooks to create instances
-- `dependency()` can optionally take a factory function that receives a container and returns an instance
+- Functions using `Inject[T]` must be decorated with `@injectable` OR called via `Container.call()`
+- Use `@auto_inject` + `@injectable` for automatic global container injection
+- Always use proper type hints with `Inject[T]` for IDE support
+- By default, containers have no handlers - register the `type_factory` hook or custom factories
 
 ## Basic Usage
 
-### 1. Simple Function Injection
+### 1. Simple Function Injection with Container
 
 ```python
-from bevy import inject, dependency, get_registry
-from bevy.factories import create_type_factory
-
+from bevy import injectable, Inject, Container, Registry
+from bevy.bundled.type_factory_hook import type_factory
 
 # Define your classes
 class Database:
     def __init__(self):
         self.connection = "Connected to DB"
 
-
 class UserService:
-    @inject  # Required when using dependency() in __init__
-    def __init__(self, db: Database = dependency()):
+    def __init__(self, db: Database):
         self.db = db
 
     def get_user(self, user_id: int):
         return f"User {user_id} from {self.db.connection}"
 
+# Set up container with type factory for auto-creation
+registry = Registry()
+type_factory.register_hook(registry)  # Enables automatic type creation
 
-# Register factories so the container knows how to create instances
-registry = get_registry()
-registry.add_factory(create_type_factory(Database))
-registry.add_factory(create_type_factory(UserService))
-
+container = Container(registry)
 
 # Use dependency injection
-@inject
-def get_user_data(user_id: int, service: UserService = dependency()):
+@injectable
+def get_user_data(user_id: int, service: Inject[UserService]):
     return service.get_user(user_id)
 
-
 # Call the function - dependencies are automatically injected
-result = get_user_data(123)
+result = container.call(get_user_data, user_id=123)
 print(result)  # "User 123 from Connected to DB"
 ```
 
-### 2. Container.call() Method
+### 2. Global Container with @auto_inject
 
 ```python
-from bevy import get_registry, get_container
-from bevy.factories import create_type_factory
+from bevy import injectable, auto_inject, Inject, get_container
+from bevy.bundled.type_factory_hook import type_factory
 
 class ApiClient:
     def __init__(self):
         self.base_url = "https://api.example.com"
 
 class DataProcessor:
-    def __init__(self, api: ApiClient = dependency()):
+    def __init__(self, api: ApiClient):
         self.api = api
     
     def process_data(self):
         return f"Processing data from {self.api.base_url}"
 
-# Register factory
-registry = get_registry()
-registry.add_factory(create_type_factory(ApiClient))
-
-# Use container.call() instead of @inject decorator
+# Set up global container
 container = get_container()
-processor = container.call(DataProcessor)
-result = processor.process_data()
+type_factory.register_hook(container.registry)
+
+# Use @auto_inject for automatic global injection
+@auto_inject
+@injectable
+def process_api_data(processor: Inject[DataProcessor]):
+    return processor.process_data()
+
+# Call directly - no need to use container.call()
+result = process_api_data()
+print(result)  # "Processing data from https://api.example.com"
 ```
 
-### 3. Custom Factories
+### 3. Optional Dependencies
 
 ```python
-from bevy import inject, dependency, get_registry
-from bevy.factories import create_type_factory
-
-class Config:
-    def __init__(self, env: str = "production"):
-        self.env = env
-        self.debug = env == "development"
-
-# Register a custom factory with parameters
-registry = get_registry()
-registry.add_factory(create_type_factory(Config, "development"))
-
-@inject
-def app_startup(config: Config = dependency()):
-    print(f"Starting app in {config.env} mode, debug={config.debug}")
-
-app_startup()  # "Starting app in development mode, debug=True"
-```
-
-### 4. Using Type Factory Hook for Auto-Creation
-
-```python
-from bevy import inject, dependency, get_registry
+from bevy import injectable, Inject, Container, Registry
 from bevy.bundled.type_factory_hook import type_factory
+
+class CacheService:
+    def get(self, key: str):
+        return f"cached_{key}"
+
+class UserService:
+    def get_user(self, user_id: str):
+        return f"User {user_id}"
+
+# Set up container with only UserService (no CacheService)
+registry = Registry()
+type_factory.register_hook(registry)
+container = Container(registry)
+container.add(UserService())  # Add UserService, but not CacheService
+
+@injectable
+def handle_request(
+    user_service: Inject[UserService],
+    cache_service: Inject[CacheService | None],  # Optional dependency
+    request_id: str
+):
+    user = user_service.get_user(request_id)
+    
+    if cache_service:
+        cached_data = cache_service.get(request_id)
+        return f"Cached: {cached_data} for {user}"
+    else:
+        return f"No cache available for {user}"
+
+result = container.call(handle_request, request_id="123")
+print(result)  # "No cache available for User 123"
+```
+
+### 4. Dependency Options and Default Factories
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
 
 class Logger:
     def __init__(self, name: str = "app"):
         self.name = name
-
-# Register the type factory hook to auto-create any class
-registry = get_registry()
-type_factory.register_hook(registry)
-
-@inject
-def log_message(logger: Logger = dependency()):
-    return f"[{logger.name}] Hello World"
-
-# No explicit factory needed - type_factory hook handles it
-result = log_message()  # "[app] Hello World"
-```
-
-### 5. Dependency Factory Functions
-
-```python
-from bevy import inject, dependency
-
-class ApiClient:
-    def __init__(self, timeout: int = 10):
-        self.timeout = timeout
-
-# Factory function that creates configured instances
-def create_api_client(container):
-    return ApiClient(timeout=30)
-
-@inject
-def process_api_data(client: ApiClient = dependency(create_api_client)):
-    return f"Processing with timeout: {client.timeout}"
-
-result = process_api_data()  # "Processing with timeout: 30"
-```
-
-### 6. Manual Container Management
-
-```python
-from bevy.registries import Registry
-from bevy.factories import create_type_factory
+    
+    def log(self, message: str):
+        return f"[{self.name}] {message}"
 
 class Database:
-    def __init__(self):
-        self.connection = "Connected to DB"
+    def __init__(self, url: str = "sqlite://"):
+        self.url = url
 
-# Create a custom registry and container
 registry = Registry()
-registry.add_factory(create_type_factory(Database))
+container = Container(registry)
 
-container = registry.create_container()
+@injectable
+def app_startup(
+    # Use default factory when dependency not found
+    logger: Inject[Logger, Options(default_factory=lambda: Logger("startup"))],
+    # Regular injection
+    db: Inject[Database, Options(default_factory=lambda: Database("postgres://localhost"))],
+):
+    logger.log(f"Starting app with database: {db.url}")
+    return f"App started with {logger.name} logger and {db.url}"
 
-# Get dependencies manually
-db = container.get(Database)
-print(db.connection)  # "Connected to DB"
+result = container.call(app_startup)
+print(result)  # "App started with startup logger and postgres://localhost"
 ```
 
-### 7. Container Branching & Isolation
+### 5. Injection Strategies
 
 ```python
-from bevy.registries import Registry
-from bevy.factories import create_type_factory
+from bevy import injectable, Inject, InjectionStrategy, Container, Registry
+from bevy.bundled.type_factory_hook import type_factory
+
+class UserService:
+    def __init__(self):
+        self.name = "UserService"
+
+class DatabaseService:
+    def __init__(self):
+        self.name = "DatabaseService"
+
+registry = Registry()
+type_factory.register_hook(registry)
+container = Container(registry)
+
+# Strategy 1: REQUESTED_ONLY (default) - only inject Inject[T] parameters
+@injectable
+def explicit_injection(
+    user_service: Inject[UserService],  # Will be injected
+    manual_param: str                   # Must be provided manually
+):
+    return f"Explicit: {user_service.name}, {manual_param}"
+
+# Strategy 2: ANY_NOT_PASSED - inject any typed parameter not provided
+@injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)
+def auto_injection(
+    user_service: UserService,    # Will be injected if not provided
+    db_service: DatabaseService,  # Will be injected if not provided
+    manual_param: str             # Will be injected if not provided AND has type
+):
+    return f"Auto: {user_service.name}, {db_service.name}, {manual_param}"
+
+# Strategy 3: ONLY - inject only specific parameters
+@injectable(strategy=InjectionStrategy.ONLY, params=["user_service"])
+def selective_injection(
+    user_service: UserService,    # Will be injected (in params list)
+    db_service: DatabaseService,  # Will NOT be injected
+    manual_param: str             # Will NOT be injected
+):
+    return f"Selective: {user_service.name}, {db_service.name}, {manual_param}"
+
+# Test different strategies
+result1 = container.call(explicit_injection, manual_param="test")
+print(result1)  # "Explicit: UserService, test"
+
+result2 = container.call(auto_injection, manual_param="test")  
+print(result2)  # "Auto: UserService, DatabaseService, test"
+
+result3 = container.call(selective_injection, 
+                        db_service=DatabaseService(), 
+                        manual_param="test")
+print(result3)  # "Selective: UserService, DatabaseService, test"
+```
+
+### 6. Container Branching & Isolation
+
+```python
+from bevy import Container, Registry
+from bevy.bundled.type_factory_hook import type_factory
 
 class Logger:
     def __init__(self, level: str = "INFO"):
@@ -194,9 +239,11 @@ class Database:
 
 # Create parent container
 registry = Registry()
-registry.add_factory(create_type_factory(Logger, "DEBUG"))
+type_factory.register_hook(registry)
 
-parent_container = registry.create_container()
+parent_container = Container(registry)
+parent_container.add(Logger("DEBUG"))
+
 parent_logger = parent_container.get(Logger)
 print(f"Parent logger level: {parent_logger.level}")  # "DEBUG"
 
@@ -208,97 +255,129 @@ child_logger = child_container.get(Logger)
 assert child_logger is parent_logger  # True
 
 # But child maintains separate instance cache for new types
-registry.add_factory(create_type_factory(Database, "postgres://localhost"))
 child_database = child_container.get(Database)
 parent_database = parent_container.get(Database)
 print(f"Same database instance: {parent_database is child_database}")  # False
 ```
 
-### 8. Context Managers for Scoped Dependencies
+### 7. Configuration and Debug Mode
 
 ```python
-from bevy.registries import Registry
-from bevy.factories import create_type_factory
+from bevy import injectable, auto_inject, Inject, TypeMatchingStrategy, get_container
+from bevy.bundled.type_factory_hook import type_factory
 
-class Database:
+class Service:
     def __init__(self):
-        self.connection = "Connected to DB"
+        self.name = "Service"
 
-# Use registry as context manager for scoped dependencies
-with Registry() as registry:
-    registry.add_factory(create_type_factory(Database))
-    
-    with registry.create_container() as container:
-        # Dependencies created within this scope
-        db = container.get(Database)
-        print(db.connection)  # "Connected to DB"
-        # Container automatically manages lifecycle
+# Set up global container
+container = get_container()
+type_factory.register_hook(container.registry)
+
+@auto_inject
+@injectable(
+    strategy=InjectionStrategy.REQUESTED_ONLY,
+    strict=True,        # Raise errors for missing dependencies (default)
+    debug=True,         # Enable debug logging
+    type_matching=TypeMatchingStrategy.SUBCLASS  # Allow subclass matching
+)
+def configured_function(service: Inject[Service], message: str):
+    return f"Configured: {service.name} - {message}"
+
+# Debug output will show injection details
+result = configured_function(message="Hello")
+# [BEVY DEBUG] Resolving <class '__main__.Service'> with options None
+# [BEVY DEBUG] Injected service: <class '__main__.Service'> = <__main__.Service object at 0x...>
+print(result)  # "Configured: Service - Hello"
 ```
 
 ## Advanced Features
 
 ### Hooks for Lifecycle Management
 
-Hooks can be decorated functions that are easily registered:
+Hooks provide powerful extension points for customizing dependency creation:
 
 ```python
-from bevy.registries import Registry
+from bevy import Registry, Container
 from bevy.hooks import hooks
-from bevy.factories import create_type_factory
+from bevy.bundled.type_factory_hook import type_factory
 from tramp.optionals import Optional
 
 class Service:
     def __init__(self, name: str = "default"):
         self.name = name
 
-@hooks.CREATED_INSTANCE
-def log_instance_creation(container, instance):
-    """This hook runs after any instance is created"""
-    print(f"Created instance: {type(instance).__name__}")
-    return instance
+@hooks.INJECTION_REQUEST
+def log_injection_request(container, context):
+    """Called before resolving a dependency"""
+    print(f"Requesting {context.requested_type.__name__} for {context.function_name}")
+
+@hooks.INJECTION_RESPONSE  
+def log_injection_response(container, context):
+    """Called after resolving a dependency"""
+    print(f"Injected {context.requested_type.__name__} = {context.result}")
+
+@hooks.POST_INJECTION_CALL
+def log_execution_time(container, context):
+    """Called after function execution"""
+    print(f"Function {context.function_name} took {context.execution_time_ms:.2f}ms")
 
 @hooks.GET_INSTANCE  
 def custom_service_provider(container, dependency_type):
-    """This hook runs before getting any instance"""
+    """Custom provider that runs before normal resolution"""
     if dependency_type is Service:
         return Optional.Some(Service("custom"))
     return Optional.Nothing()
 
 # Register hooks
 registry = Registry()
-log_instance_creation.register_hook(registry)
+type_factory.register_hook(registry)
+log_injection_request.register_hook(registry)
+log_injection_response.register_hook(registry)
+log_execution_time.register_hook(registry)
 custom_service_provider.register_hook(registry)
 
-# Use the hooks
-container = registry.create_container()
-service = container.get(Service)  # Uses custom provider, logs creation
-print(service.name)  # "custom"
+container = Container(registry)
+
+@injectable(debug=True)
+def use_service(service: Inject[Service]):
+    return f"Using {service.name}"
+
+result = container.call(use_service)
+# Output shows all hook executions and timing
+print(result)  # "Using custom"
 ```
 
 ### Hook Types Available
 
+- `hooks.INJECTION_REQUEST`: Before resolving a dependency for injection
+- `hooks.INJECTION_RESPONSE`: After resolving a dependency for injection
+- `hooks.POST_INJECTION_CALL`: After calling function with injected dependencies
 - `hooks.GET_INSTANCE`: Intercept before getting/creating an instance
 - `hooks.GOT_INSTANCE`: Filter/modify an instance after it's retrieved
 - `hooks.CREATE_INSTANCE`: Intercept before creating a new instance  
 - `hooks.CREATED_INSTANCE`: Filter/modify an instance after it's created
 - `hooks.HANDLE_UNSUPPORTED_DEPENDENCY`: Handle types with no registered factory
+- `hooks.FACTORY_MISSING_TYPE`: When no factory found for a type
+- `hooks.MISSING_INJECTABLE`: When dependency cannot be resolved
 
 ## Best Practices
 
-1. **Always use @inject or container.call()**: Functions with `dependency()` parameters require one of these
-2. **Register factories or use type_factory hook**: Containers need to know how to create instances
-3. **Use type hints**: Always specify type hints for dependency parameters
-4. **Keep factories simple**: Factories should focus on object creation, not business logic
-5. **Test with mocks**: Use dependency injection to easily substitute test doubles
-6. **Scope appropriately**: Use container branching to isolate dependencies when needed
+1. **Always use @injectable or container.call()**: Functions with `Inject[T]` parameters require one of these
+2. **Register type_factory hook for convenience**: Enables automatic type creation without explicit factories
+3. **Use type hints consistently**: Always specify type hints with `Inject[T]` for IDE support
+4. **Prefer @auto_inject for simple cases**: Combine with @injectable for automatic global injection
+5. **Test with isolated containers**: Use container branching to isolate dependencies in tests
+6. **Use optional dependencies appropriately**: `Inject[T | None]` for non-critical dependencies
+7. **Configure debug mode during development**: Helps understand injection behavior
 
 ## Common Patterns
 
 ### Repository Pattern with Interface
 ```python
 from abc import ABC, abstractmethod
-from bevy import inject, dependency, get_registry
-from bevy.factories import create_type_factory
+from bevy import injectable, auto_inject, Inject, get_container
+from bevy.bundled.type_factory_hook import type_factory
 
 class UserRepository(ABC):
     @abstractmethod
@@ -309,58 +388,136 @@ class Database:
         return f"Query result: {sql}"
 
 class DatabaseUserRepository(UserRepository):
-    @inject
-    def __init__(self, db: Database = dependency()):
+    def __init__(self, db: Database):
         self.db = db
     
     def get_user(self, user_id: int):
         return self.db.query(f"SELECT * FROM users WHERE id = {user_id}")
 
-# Register factories for both the interface and concrete implementation
-registry = get_registry()
-registry.add_factory(create_type_factory(Database))
-registry.add_factory(create_type_factory(DatabaseUserRepository), UserRepository)
+# Set up global container with type mapping
+container = get_container()
+type_factory.register_hook(container.registry)
 
-@inject
-def get_user_service(repo: UserRepository = dependency()):
-    return repo.get_user(123)
+# Register concrete implementation for abstract interface
+container.add(UserRepository, DatabaseUserRepository(Database()))
+
+@auto_inject
+@injectable
+def get_user_service(repo: Inject[UserRepository], user_id: int):
+    return repo.get_user(user_id)
+
+result = get_user_service(user_id=123)
+print(result)  # "Query result: SELECT * FROM users WHERE id = 123"
 ```
 
 ### Configuration Injection
 ```python
 import os
-from bevy import inject, dependency, get_registry
-from bevy.factories import create_type_factory
+from bevy import injectable, auto_inject, Inject, Options, get_container
 
 class AppConfig:
     def __init__(self):
         self.database_url = os.getenv("DATABASE_URL", "sqlite:///app.db")
-        self.api_key = os.getenv("API_KEY")
+        self.api_key = os.getenv("API_KEY", "default-key")
 
-registry = get_registry()
-registry.add_factory(create_type_factory(AppConfig))
+# Set up global container
+container = get_container()
 
-@inject
-def initialize_app(config: AppConfig = dependency()):
+@auto_inject
+@injectable
+def initialize_app(
+    config: Inject[AppConfig, Options(default_factory=AppConfig)]
+):
     print(f"Connecting to {config.database_url}")
     return f"App initialized with {config.database_url}"
+
+result = initialize_app()
+print(result)  # "App initialized with sqlite:///app.db"
 ```
 
-## Migration from Other DI Frameworks
+### Testing with Mock Dependencies
+```python
+from bevy import injectable, Inject, Container, Registry
+from unittest.mock import Mock
 
-Bevy's approach is designed to be intuitive and Pythonic. If you're coming from other frameworks:
+class EmailService:
+    def send_email(self, to: str, subject: str):
+        return f"Sent '{subject}' to {to}"
 
-- **From dependency-injector**: Replace `@inject` providers with `dependency()` defaults
-- **From Flask-Injector**: Use `@inject` decorator instead of automatic injection
-- **From Django**: Replace Django's implicit dependency resolution with explicit `dependency()` declarations
+class NotificationService:
+    def __init__(self, email: EmailService):
+        self.email = email
+    
+    def notify_user(self, user: str, message: str):
+        return self.email.send_email(user, f"Notification: {message}")
+
+@injectable
+def send_notification(
+    service: Inject[NotificationService],
+    user: str,
+    message: str
+):
+    return service.notify_user(user, message)
+
+# Production container
+prod_registry = Registry()
+prod_container = Container(prod_registry)
+prod_container.add(EmailService())
+prod_container.add(NotificationService(EmailService()))
+
+# Test container with mocks
+test_registry = Registry()
+test_container = Container(test_registry)
+
+mock_email = Mock()
+mock_email.send_email.return_value = "Mock email sent"
+test_container.add(EmailService, mock_email)
+test_container.add(NotificationService(mock_email))
+
+# Test with mock
+result = test_container.call(send_notification, user="test@example.com", message="Hello")
+mock_email.send_email.assert_called_once()
+print(result)  # "Mock email sent"
+```
+
+## Migration from Bevy 2.x
+
+### Old System (2.x)
+```python
+# OLD - Bevy 2.x
+from bevy import inject, dependency
+
+@inject
+def old_function(service: UserService = dependency()):
+    return service.process()
+```
+
+### New System (3.x)
+```python
+# NEW - Bevy 3.x
+from bevy import injectable, auto_inject, Inject
+
+@auto_inject
+@injectable
+def new_function(service: Inject[UserService]):
+    return service.process()
+```
+
+### Key Changes
+1. Replace `dependency()` defaults with `Inject[T]` type annotations
+2. Replace `@inject` with `@injectable` (or `@auto_inject` + `@injectable`)
+3. Remove default parameter values - types are inferred from annotations
+4. Add type_factory hook for automatic type creation
+5. Use `Options` for advanced dependency configuration
 
 ## Troubleshooting
 
-- **Missing dependencies**: Ensure type hints are specified and match registered types
-- **Circular dependencies**: Use factory functions to defer creation
+- **Missing dependencies**: Ensure `type_factory` hook is registered or add explicit factories
+- **Type errors**: Verify `Inject[T]` annotations are used correctly
 - **Global context issues**: Check `BEVY_ENABLE_GLOBAL_CONTEXT` environment variable
-- **Type errors**: Verify that dependency types are properly imported in the namespace
+- **Decorator order**: `@auto_inject` must come before `@injectable`
+- **Circular dependencies**: Use factory functions or lazy initialization
 
 ---
 
-**That's it!** You now have everything needed to start using Bevy for dependency injection in your Python applications. The framework handles the complexity while keeping your code clean and testable.
+**That's it!** You now have everything needed to start using Bevy 3.x for dependency injection in your Python applications. The framework handles the complexity while keeping your code clean, type-safe, and testable.
