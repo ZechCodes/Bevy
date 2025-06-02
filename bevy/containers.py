@@ -8,7 +8,7 @@ from tramp.optionals import Optional
 import bevy.injections as injections
 import bevy.registries as registries
 from bevy.context_vars import GlobalContextMixin, get_global_container, global_container
-from bevy.dependencies import DependencyMetadata
+# DependencyMetadata removed - using new injection system
 from bevy.hooks import Hook
 
 type Instance = t.Any
@@ -59,17 +59,15 @@ class Container(GlobalContextMixin, var=global_container):
         return Container(registry=self.registry, parent=self)
 
     def call[**P, R](
-        self, func: "t.Callable[P, R] | injections.InjectionFunctionWrapper[P, R]", /, *args: P.args, **kwargs: P.kwargs
+        self, func: t.Callable[P, R], /, *args: P.args, **kwargs: P.kwargs
     ) -> R:
         """Calls a function or class with the provided arguments and keyword arguments, injecting dependencies from the
         container. This will create instances of any dependencies that are not already stored in the container or its
-        parents."""
-        match func:
-            case injections.InjectionFunctionWrapper() as wrapper:
-                return wrapper.call_using(self, *args, **kwargs)
-
-            case _:
-                return self._call(func, args, kwargs)
+        parents. 
+        
+        Works with both @injectable decorated functions and regular functions (analyzed dynamically).
+        """
+        return self._call(func, args, kwargs)
 
     @t.overload
     def get[T: Instance](self, dependency: t.Type[T]) -> T:
@@ -123,18 +121,143 @@ class Container(GlobalContextMixin, var=global_container):
                 return self._call_function(func, args, kwargs)
 
     def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs) -> R:
-        f = _unwrap_function(func)
+        # Import here to avoid circular imports
+        from bevy.injection_types import (
+            InjectionStrategy, TypeMatchingStrategy,
+            extract_injection_info, is_optional_type, get_non_none_type
+        )
+        from bevy.injections import get_injection_info, analyze_function_signature
+        
+        # Get function signature 
         sig = signature(func)
-        ns = getattr(f, "__globals__", {})  # If there's no __init__ method use an empty namespace
-        annotations = get_annotations(f, globals=ns, eval_str=True)
+        
+        # Check if function has injection metadata from @injectable decorator
+        injection_info = get_injection_info(func)
+        
+        if injection_info:
+            # Use metadata from @injectable decorator
+            injection_params = injection_info['params']
+            type_matching = injection_info['type_matching']
+            strict_mode = injection_info['strict_mode']
+            debug_mode = injection_info['debug_mode']
+        else:
+            # Analyze function dynamically using ANY_NOT_PASSED strategy
+            injection_params = analyze_function_signature(func, InjectionStrategy.ANY_NOT_PASSED)
+            type_matching = TypeMatchingStrategy.SUBCLASS
+            strict_mode = True
+            debug_mode = False
+        
+        # Bind provided arguments
+        bound_args = sig.bind_partial(*args, **kwargs)
+        bound_args.apply_defaults()
+        
+        # Inject missing dependencies
+        for param_name, (param_type, options) in injection_params.items():
+            if param_name not in bound_args.arguments:
+                # This parameter needs injection
+                try:
+                    injected_value = self._resolve_dependency(
+                        param_type, options, type_matching, strict_mode, debug_mode
+                    )
+                    bound_args.arguments[param_name] = injected_value
+                    
+                    if debug_mode:
+                        print(f"[BEVY DEBUG] Injected {param_name}: {param_type} = {injected_value}")
+                        
+                except Exception as e:
+                    if strict_mode:
+                        # Check if this is an optional type
+                        if is_optional_type(param_type):
+                            bound_args.arguments[param_name] = None
+                            if debug_mode:
+                                print(f"[BEVY DEBUG] Optional dependency {param_name} not found, using None")
+                        else:
+                            raise
+                    else:
+                        # Non-strict mode: inject None for missing dependencies
+                        bound_args.arguments[param_name] = None
+                        if debug_mode:
+                            print(f"[BEVY DEBUG] Non-strict mode: {param_name} not found, using None")
+        
+        # Call function with resolved arguments
+        return func(*bound_args.args, **bound_args.kwargs)
 
-        params = sig.bind_partial(*args, **kwargs)
-        params.arguments |= {
-            name: self.get(annotations[name]) if parameter.default.factory is None else parameter.default.factory(self)
-            for name, parameter in sig.parameters.items()
-            if isinstance(parameter.default, DependencyMetadata) and name not in params.arguments
-        }
-        return func(*params.args, **params.kwargs)
+    def _resolve_dependency(self, param_type, options, type_matching, strict_mode, debug_mode):
+        """
+        Resolve a single dependency from the container.
+        
+        Args:
+            param_type: Type to resolve
+            options: Options object with qualifier, etc.
+            type_matching: Type matching strategy
+            strict_mode: Whether to raise errors or return None
+            debug_mode: Whether to log debug info
+            
+        Returns:
+            Resolved dependency instance
+            
+        Raises:
+            Exception if dependency cannot be resolved and strict_mode is True
+        """
+        from bevy.injection_types import is_optional_type, get_non_none_type
+        
+        # Handle optional types (Type | None)
+        if is_optional_type(param_type):
+            actual_type = get_non_none_type(param_type)
+            try:
+                return self._resolve_single_type(actual_type, options, type_matching, debug_mode)
+            except Exception:
+                # Optional dependency not found
+                return None
+        else:
+            return self._resolve_single_type(param_type, options, type_matching, debug_mode)
+
+    def _resolve_single_type(self, param_type, options, type_matching, debug_mode):
+        """
+        Resolve a single non-optional type from the container.
+        
+        Args:
+            param_type: Type to resolve
+            options: Options object
+            type_matching: Type matching strategy
+            debug_mode: Whether to log debug info
+            
+        Returns:
+            Resolved instance
+            
+        Raises:
+            Exception if type cannot be resolved
+        """
+        if debug_mode:
+            print(f"[BEVY DEBUG] Resolving {param_type} with options {options}")
+        
+        # Handle qualified dependencies
+        if options and options.qualifier:
+            raise NotImplementedError(
+                f"Qualified dependencies not yet implemented. "
+                f"Cannot resolve {param_type} with qualifier '{options.qualifier}'. "
+                f"This feature will be added in a future update."
+            )
+        
+        # Handle configuration binding
+        if options and options.from_config:
+            raise NotImplementedError(
+                f"Configuration binding not yet implemented. "
+                f"Cannot resolve {param_type} from config key '{options.from_config}'. "
+                f"This feature will be added in a future update."
+            )
+        
+        # Handle default factory
+        if options and options.default_factory:
+            try:
+                return self.get(param_type)
+            except Exception:
+                if debug_mode:
+                    print(f"[BEVY DEBUG] Using default factory for {param_type}")
+                return options.default_factory()
+        
+        # Standard resolution using container.get()
+        return self.get(param_type)
 
     def _call_type[T](self, type_: t.Type[T], args, kwargs) -> T:
         instance = type_.__new__(type_, *args, **kwargs)
