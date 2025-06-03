@@ -322,13 +322,26 @@ class Container(GlobalContextMixin, var=global_container):
         injected_params = {}
         
         for param_name, (param_type, options) in injection_config['params'].items():
-            if param_name not in bound_args.arguments:
-                injected_value = self._inject_single_dependency(
-                    param_name, param_type, options, injection_config, 
-                    function_name, current_injection_chain
-                )
-                bound_args.arguments[param_name] = injected_value
-                injected_params[param_name] = injected_value
+            # For REQUESTED_ONLY strategy, params only contains Inject[Type] parameters
+            # These should always attempt injection, even if they have defaults
+            should_inject = (
+                param_name not in bound_args.arguments or 
+                injection_config['strategy'] == InjectionStrategy.REQUESTED_ONLY
+            )
+            
+            if should_inject:
+                try:
+                    injected_value = self._inject_single_dependency(
+                        param_name, param_type, options, injection_config, 
+                        function_name, current_injection_chain
+                    )
+                    bound_args.arguments[param_name] = injected_value
+                    injected_params[param_name] = injected_value
+                except DependencyResolutionError:
+                    # If injection fails and parameter already has a value (from default),
+                    # keep the existing value as fallback
+                    if param_name not in bound_args.arguments:
+                        raise  # Re-raise if no fallback available
         
         return injected_params
 
