@@ -449,10 +449,12 @@ class Container(GlobalContextMixin, var=global_container):
             self.registry.hooks[Hook.FACTORY_MISSING_TYPE].handle(self, injection_context)
             # Re-raise with proper parameter name if it's not already set
             if e.parameter_name == "unknown":
+                # Handle types that don't have __name__ attribute (like UnionType)
+                type_name = getattr(param_type, '__name__', str(param_type))
                 raise DependencyResolutionError(
                     dependency_type=param_type,
                     parameter_name=injection_context.parameter_name,
-                    message=f"Cannot resolve dependency {param_type.__name__} for parameter '{injection_context.parameter_name}'"
+                    message=f"Cannot resolve dependency {type_name} for parameter '{injection_context.parameter_name}'"
                 ) from e
             else:
                 # Parameter name already set, just re-raise
