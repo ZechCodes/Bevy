@@ -10,9 +10,10 @@ This test suite covers container branching including:
 """
 
 import pytest
-from bevy import injectable, Inject, Container, Registry
-from bevy.injection_types import Options
+
+from bevy import Container, Inject, injectable, Registry
 from bevy.bundled.type_factory_hook import type_factory
+from bevy.injection_types import Options
 
 
 # Test services for container branching scenarios
@@ -350,6 +351,17 @@ class TestFactoryCacheInheritance:
         assert call_count == 2  # No additional calls
         assert result1_again == "factory-1"
         assert result2_again == "factory-2"
+
+    def test_branch_injects_into_function_from_parent(self):
+        def test(db: Inject[DatabaseConnection]):
+            return db.url
+
+        registry = Registry()
+        parent = Container(registry)
+        parent.add(DatabaseConnection("parent-db"))
+
+        child = parent.branch()
+        assert "parent-db" in child.call(test)
 
 
 if __name__ == "__main__":

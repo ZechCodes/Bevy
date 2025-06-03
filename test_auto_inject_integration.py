@@ -5,6 +5,7 @@ from bevy import injectable, auto_inject, Inject
 from bevy import Container
 from bevy.registries import Registry
 from bevy.context_vars import global_container
+from bevy.injection_types import InjectionStrategy
 
 
 class UserService:
