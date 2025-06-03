@@ -89,8 +89,8 @@ class Options:
     def __init__(
         self,
         qualifier: str | None = None,
-        from_config: str | None = None, 
-        default_factory: Callable[[], Any] | None = None
+        default_factory: Callable[[], Any] | None = None,
+        cache_factory_result: bool = True
     ):
         pass
 ```
@@ -98,6 +98,7 @@ class Options:
 **Parameters:**
 - `qualifier: str` - Named qualifier for multiple instances of same type  
 - `default_factory: Callable` - Factory function to use when dependency not found
+- `cache_factory_result: bool` - Whether to cache factory results (default: True)
 
 **Usage Examples:**
 
@@ -114,6 +115,19 @@ def func(
 @injectable
 def func(
     logger: Inject[Logger, Options(default_factory=lambda: Logger("default"))]
+):
+    pass
+
+# Factory caching control
+@injectable  
+def test_func(
+    # Cached factory result (default behavior)
+    db: Inject[Database, Options(default_factory=create_db)],
+    # Fresh instance each call (testing scenarios)
+    test_db: Inject[Database, Options(
+        default_factory=create_test_db, 
+        cache_factory_result=False
+    )]
 ):
     pass
 ```
@@ -185,6 +199,9 @@ class Container:
     def add(self, for_dependency: type, instance: Any) -> None:
         """Add instance for specific type."""
         
+    def add(self, for_dependency: type, instance: Any, *, qualifier: str) -> None:
+        """Add qualified instance for specific type."""
+        
     def get[T](self, dependency: type[T]) -> T:
         """Get instance of dependency type, creating if needed."""
         
@@ -208,6 +225,10 @@ container = Container(registry)
 # Add instances
 container.add(UserService())
 container.add(Database, ProductionDatabase())
+
+# Add qualified instances
+container.add(Database, primary_db, qualifier="primary")
+container.add(Database, backup_db, qualifier="backup")
 
 # Get instances
 service = container.get(UserService)
@@ -448,6 +469,73 @@ def handle_optional(
     if optional:
         # Use optional service
         pass
+```
+
+## Factory Caching
+
+### Default Factory Caching
+
+Default factories are cached by factory function to optimize performance while maintaining semantic correctness.
+
+```python
+def create_expensive_db():
+    print("Creating expensive database connection...")
+    return Database("expensive://connection")
+
+@injectable
+def service_a(db: Inject[Database, Options(default_factory=create_expensive_db)]):
+    return f"Service A: {db.url}"
+
+@injectable 
+def service_b(db: Inject[Database, Options(default_factory=create_expensive_db)]):
+    return f"Service B: {db.url}"
+
+# Factory is called only once - same instance shared
+container.call(service_a)  # "Creating expensive database connection..."
+container.call(service_b)  # No factory call - reuses cached instance
+```
+
+### Caching Control
+
+Control factory caching behavior with `cache_factory_result`:
+
+```python
+# Cached (default) - same factory = same instance
+@injectable
+def cached_service(
+    db: Inject[Database, Options(default_factory=create_db)]
+):
+    pass
+
+# Uncached - fresh instance each time
+@injectable
+def fresh_service(
+    db: Inject[Database, Options(
+        default_factory=create_test_db,
+        cache_factory_result=False
+    )]
+):
+    pass
+```
+
+### Factory Isolation
+
+Different factory functions create isolated instances:
+
+```python
+def create_prod_db():
+    return Database("postgresql://prod")
+
+def create_test_db():
+    return Database("sqlite://test")
+
+@injectable
+def prod_service(db: Inject[Database, Options(default_factory=create_prod_db)]):
+    pass  # Gets production database
+
+@injectable
+def test_service(db: Inject[Database, Options(default_factory=create_test_db)]):
+    pass  # Gets test database (different instance)
 ```
 
 ## Configuration
