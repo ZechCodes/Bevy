@@ -22,14 +22,14 @@ type_parameters = [InjectClass, Annotated[InjectClass, ...], InjectClass | None]
 
 
 @pytest.mark.parametrize("dep", type_parameters)
-@pytest.mark.parametrize("hook", [hooks.CREATE_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
-def test_create_instance(dep, hook):
-    @hooks.CREATE_INSTANCE
-    def hook(container, dependency):
+@pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
+def test_create_instance(dep, hook_type):
+    @hook_type
+    def hook_func(container, dependency):
         return Optional.Some(InjectWrapper(dependency))
 
     registry = Registry()
-    hook.register_hook(registry)
+    hook_func.register_hook(registry)
     container = registry.create_container()
     result = container.get(dep)
     assert isinstance(result, InjectWrapper)
