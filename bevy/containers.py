@@ -146,7 +146,7 @@ class Container(GlobalContextMixin, var=global_container):
                     parent_kwargs = {"qualifier": qualifier}
                     if default_factory:
                         parent_kwargs["default_factory"] = default_factory
-                    return self._parent.get(dependency, default=None, **parent_kwargs)
+                    return self._parent.get(dependency, **parent_kwargs)
                 except DependencyResolutionError:
                     pass
             
