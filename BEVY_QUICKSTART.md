@@ -338,6 +338,314 @@ print(result)  # "Configured: Service - Hello"
 
 ## Advanced Features
 
+### Qualifiers - Managing Multiple Instances of the Same Type
+
+Qualifiers allow you to distinguish between different instances of the same type using string identifiers. This is essential when you need multiple configurations of the same service (e.g., primary/backup databases, different loggers, etc.).
+
+#### Basic Qualifier Usage
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
+
+class Database:
+    def __init__(self, name: str, url: str):
+        self.name = name
+        self.url = url
+
+# Set up container with qualified dependencies
+registry = Registry()
+container = Container(registry)
+
+# Add multiple Database instances with different qualifiers
+primary_db = Database("Primary", "postgresql://primary:5432/app")
+backup_db = Database("Backup", "postgresql://backup:5432/app")
+analytics_db = Database("Analytics", "postgresql://analytics:5432/warehouse")
+
+container.add(Database, primary_db, qualifier="primary")
+container.add(Database, backup_db, qualifier="backup")
+container.add(Database, analytics_db, qualifier="analytics")
+
+@injectable
+def process_data(
+    primary: Inject[Database, Options(qualifier="primary")],
+    backup: Inject[Database, Options(qualifier="backup")],
+    analytics: Inject[Database, Options(qualifier="analytics")]
+):
+    return f"Using {primary.name}, {backup.name}, and {analytics.name} databases"
+
+result = container.call(process_data)
+print(result)  # "Using Primary, Backup, and Analytics databases"
+```
+
+#### Mixed Qualified and Unqualified Dependencies
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
+from bevy.bundled.type_factory_hook import type_factory
+
+class Logger:
+    def __init__(self, name: str = "default"):
+        self.name = name
+
+class Database:
+    def __init__(self, name: str):
+        self.name = name
+
+registry = Registry()
+type_factory.register_hook(registry)  # For unqualified dependencies
+container = Container(registry)
+
+# Add one qualified Database, let type_factory handle unqualified
+container.add(Database, Database("SpecialDB"), qualifier="special")
+
+@injectable
+def mixed_dependencies(
+    regular_db: Inject[Database],  # Created by type_factory
+    special_db: Inject[Database, Options(qualifier="special")],  # Qualified
+    logger: Inject[Logger]  # Created by type_factory
+):
+    return f"Regular: {regular_db.name}, Special: {special_db.name}, Logger: {logger.name}"
+
+result = container.call(mixed_dependencies)
+print(result)  # "Regular: Database, Special: SpecialDB, Logger: default"
+```
+
+#### Optional Qualified Dependencies
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
+
+class Cache:
+    def __init__(self, type_name: str):
+        self.type = type_name
+    
+    def get(self, key: str):
+        return f"{self.type} cached: {key}"
+
+class UserService:
+    def get_user(self, user_id: str):
+        return f"User {user_id}"
+
+registry = Registry()
+container = Container(registry)
+
+# Add services but not all cache types
+container.add(UserService())
+container.add(Cache, Cache("Redis"), qualifier="redis")
+# Note: No "memcached" qualifier added
+
+@injectable
+def get_user_with_caching(
+    user_service: Inject[UserService],
+    redis_cache: Inject[Cache, Options(qualifier="redis")] | None,
+    memcached_cache: Inject[Cache, Options(qualifier="memcached")] | None,
+    user_id: str
+):
+    user = user_service.get_user(user_id)
+    
+    if redis_cache:
+        cached = redis_cache.get(user_id)
+        user += f" ({cached})"
+    
+    if memcached_cache:
+        cached = memcached_cache.get(user_id)
+        user += f" ({cached})"
+    else:
+        user += " (no memcached)"
+    
+    return user
+
+result = container.call(get_user_with_caching, user_id="123")
+print(result)  # "User 123 (Redis cached: 123) (no memcached)"
+```
+
+#### Qualifiers with Default Factories
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
+
+class Logger:
+    def __init__(self, name: str, level: str = "INFO"):
+        self.name = name
+        self.level = level
+    
+    def log(self, msg: str):
+        return f"[{self.name}:{self.level}] {msg}"
+
+def create_app_logger():
+    return Logger("AppLogger", "DEBUG")
+
+def create_security_logger():
+    return Logger("SecurityLogger", "WARN")
+
+registry = Registry()
+container = Container(registry)
+
+@injectable
+def application_startup(
+    # Default factory creates qualified logger if not found
+    app_logger: Inject[Logger, Options(
+        qualifier="app",
+        default_factory=create_app_logger
+    )],
+    security_logger: Inject[Logger, Options(
+        qualifier="security", 
+        default_factory=create_security_logger
+    )]
+):
+    app_msg = app_logger.log("Application starting")
+    security_msg = security_logger.log("Security initialized")
+    return f"{app_msg} | {security_msg}"
+
+# First call creates both loggers via factories
+result1 = container.call(application_startup)
+print(result1)  # "[AppLogger:DEBUG] Application starting | [SecurityLogger:WARN] Security initialized"
+
+# Subsequent calls reuse cached instances
+result2 = container.call(application_startup)
+print(result2)  # Same output, but no factory calls
+```
+
+#### Container Branching with Qualifiers
+
+```python
+from bevy import Container, Registry
+
+class DatabaseConnection:
+    def __init__(self, url: str):
+        self.url = url
+
+# Parent container with production databases
+registry = Registry()
+parent_container = Container(registry)
+
+parent_container.add(DatabaseConnection, DatabaseConnection("prod-primary"), qualifier="primary")
+parent_container.add(DatabaseConnection, DatabaseConnection("prod-backup"), qualifier="backup")
+parent_container.add(DatabaseConnection, DatabaseConnection("prod-analytics"), qualifier="analytics")
+
+# Child container for testing - override some but inherit others
+test_container = parent_container.branch()
+test_container.add(DatabaseConnection, DatabaseConnection("test-primary"), qualifier="primary")
+# Inherits backup and analytics from parent
+
+@injectable
+def database_operations(
+    primary: Inject[DatabaseConnection, Options(qualifier="primary")],
+    backup: Inject[DatabaseConnection, Options(qualifier="backup")],
+    analytics: Inject[DatabaseConnection, Options(qualifier="analytics")]
+):
+    return f"Primary: {primary.url}, Backup: {backup.url}, Analytics: {analytics.url}"
+
+# Parent container uses all production databases
+prod_result = parent_container.call(database_operations)
+print(f"Production: {prod_result}")
+# "Production: Primary: prod-primary, Backup: prod-backup, Analytics: prod-analytics"
+
+# Test container overrides primary, inherits others
+test_result = test_container.call(database_operations)
+print(f"Testing: {test_result}")
+# "Testing: Primary: test-primary, Backup: prod-backup, Analytics: prod-analytics"
+```
+
+#### Advanced: Environment-Based Qualifiers
+
+```python
+import os
+from bevy import injectable, auto_inject, Inject, Options, get_container
+
+class ApiClient:
+    def __init__(self, base_url: str, api_key: str):
+        self.base_url = base_url
+        self.api_key = api_key
+    
+    def call_api(self, endpoint: str):
+        return f"Calling {self.base_url}/{endpoint} with key {self.api_key[:8]}..."
+
+def create_dev_api():
+    return ApiClient("https://dev-api.example.com", "dev-key-12345")
+
+def create_prod_api():
+    return ApiClient("https://api.example.com", os.getenv("PROD_API_KEY", "fallback"))
+
+# Environment-based setup
+environment = os.getenv("ENVIRONMENT", "development")
+container = get_container()
+
+if environment == "production":
+    container.add(ApiClient, create_prod_api(), qualifier="primary")
+else:
+    container.add(ApiClient, create_dev_api(), qualifier="primary")
+
+@auto_inject
+@injectable  
+def make_api_call(
+    api: Inject[ApiClient, Options(qualifier="primary")],
+    endpoint: str
+):
+    return api.call_api(endpoint)
+
+result = make_api_call(endpoint="users")
+print(result)  # Uses dev or prod API based on environment
+```
+
+#### Common Qualifier Patterns
+
+```python
+# Database patterns
+primary_db: Inject[Database, Options(qualifier="primary")]
+read_replica: Inject[Database, Options(qualifier="read_replica")]
+analytics_db: Inject[Database, Options(qualifier="analytics")]
+
+# Logger patterns  
+app_logger: Inject[Logger, Options(qualifier="app")]
+access_logger: Inject[Logger, Options(qualifier="access")]
+error_logger: Inject[Logger, Options(qualifier="error")]
+
+# Cache patterns
+user_cache: Inject[Cache, Options(qualifier="users")]
+session_cache: Inject[Cache, Options(qualifier="sessions")]
+content_cache: Inject[Cache, Options(qualifier="content")]
+
+# Environment patterns
+dev_config: Inject[Config, Options(qualifier="development")]
+prod_config: Inject[Config, Options(qualifier="production")]
+test_config: Inject[Config, Options(qualifier="testing")]
+```
+
+#### Troubleshooting Qualifiers
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
+
+# Common issues and solutions:
+
+# 1. Missing qualified dependency
+@injectable
+def missing_qualifier_example(db: Inject[Database, Options(qualifier="missing")]):
+    return db.name
+# Error: "Cannot resolve qualified dependency Database with qualifier 'missing'"
+
+# 2. Typo in qualifier name
+container.add(Database, Database("Test"), qualifier="primery")  # Typo!
+@injectable
+def typo_example(db: Inject[Database, Options(qualifier="primary")]):  # Won't match
+    return db.name
+# Error: "Cannot resolve qualified dependency Database with qualifier 'primary'"
+
+# 3. Mixed qualified/unqualified confusion
+container.add(Database, Database("Test"))  # Unqualified
+@injectable
+def confusion_example(db: Inject[Database, Options(qualifier="default")]):  # Won't match
+    return db.name
+# Error: Unqualified instances don't match qualified requests
+
+# Solutions:
+# - Use debug=True to see resolution process
+# - Check qualifier spelling carefully
+# - Remember unqualified != qualified with any qualifier
+# - Use optional types for missing qualifiers: Inject[T, Options(qualifier="...")] | None
+```
+
 ### Hooks for Lifecycle Management
 
 Hooks provide powerful extension points for customizing dependency creation:

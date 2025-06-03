@@ -98,11 +98,116 @@ class Container(GlobalContextMixin, var=global_container):
     def get[T: Instance, D](self, dependency: t.Type[T], *, default: D) -> T | D:
         ...
 
+    @t.overload
+    def get[T: Instance](self, dependency: t.Type[T], *, default_factory: t.Callable[[], T]) -> T:
+        ...
+
+    @t.overload
+    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D, default_factory: t.Callable[[], T]) -> T | D:
+        ...
+
+    @t.overload
+    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str) -> T:
+        ...
+
+    @t.overload
+    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D) -> T | D:
+        ...
+
+    @t.overload
+    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str, default_factory: t.Callable[[], T]) -> T:
+        ...
+
+    @t.overload
+    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D, default_factory: t.Callable[[], T]) -> T | D:
+        ...
+
     def get[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> T | D:
         """Gets an instance of the desired dependency from the container. If the dependency is not already stored in the
         container or its parents, a new instance will be created and stored for reuse. When a default is given it will
-        be returned instead of creating a new instance, the default is not stored."""
+        be returned instead of creating a new instance, the default is not stored. When a default_factory is given,
+        it will be used instead of normal resolution if no instance exists, and the result will be cached using the 
+        factory as the key. When a qualifier is given, it will look up the qualified instance."""
         using_default = False
+        default_factory = kwargs.get("default_factory")
+        qualifier = kwargs.get("qualifier")
+        
+        # Handle qualified dependencies first
+        if qualifier:
+            qualified_key = (dependency, qualifier)
+            
+            # Check current container for qualified instance
+            if qualified_key in self.instances:
+                return self.instances[qualified_key]
+            
+            # Check parent container for qualified instance
+            if self._parent:
+                try:
+                    parent_kwargs = {"qualifier": qualifier}
+                    if default_factory:
+                        parent_kwargs["default_factory"] = default_factory
+                    return self._parent.get(dependency, **parent_kwargs)
+                except DependencyResolutionError:
+                    pass
+            
+            # If we have a default_factory for qualified dependency, use it
+            if default_factory:
+                # Check factory cache first (qualified factories use same cache as unqualified)
+                if default_factory in self.instances:
+                    return self.instances[default_factory]
+                
+                from inspect import signature
+                factory_sig = signature(default_factory)
+                if len(factory_sig.parameters) > 0:
+                    # Factory accepts parameters, use container for dependency injection
+                    instance = self.call(default_factory)
+                else:
+                    # Factory takes no parameters, call directly
+                    instance = default_factory()
+                
+                # Cache using both the factory key and qualified key
+                self.instances[default_factory] = instance
+                self.instances[qualified_key] = instance
+                return instance
+            elif "default" in kwargs:
+                return kwargs["default"]
+            else:
+                from bevy.injection_types import DependencyResolutionError
+                raise DependencyResolutionError(
+                    dependency_type=dependency,
+                    parameter_name="unknown", 
+                    message=f"Cannot resolve qualified dependency {dependency.__name__} with qualifier '{qualifier}'"
+                )
+        
+        # Handle unqualified dependencies - prioritize default_factory when specified
+        if default_factory:
+            # Default factory takes precedence over existing instances
+            # Check if we already have a cached result from that factory
+            if default_factory in self.instances:
+                return self.instances[default_factory]
+            
+            # Check parent container's factory cache
+            if self._parent:
+                if parent_result := self._parent._get_factory_cache_result(default_factory):
+                    # Cache in this container too for faster future access
+                    self.instances[default_factory] = parent_result
+                    return parent_result
+            
+            # Create new instance using factory
+            from inspect import signature
+            factory_sig = signature(default_factory)
+            if len(factory_sig.parameters) > 0:
+                # Factory accepts parameters, use container for dependency injection
+                instance = self.call(default_factory)
+            else:
+                # Factory takes no parameters, call directly
+                instance = default_factory()
+            
+            # Cache using the factory as the key (always in the current container)
+            self.instances[default_factory] = instance
+            return instance
+        
+        # No default factory, use normal resolution
         match self.registry.hooks[Hook.GET_INSTANCE].handle(self, dependency):
             case Optional.Some(v):
                 instance = v
@@ -113,6 +218,8 @@ class Container(GlobalContextMixin, var=global_container):
                 else:
                     dep = None
                     if self._parent:
+                        # Only check parent for the dependency type, not for factory creation
+                        # This ensures sibling container isolation for factory results
                         dep = self._parent.get(dependency, default=None)
 
                     if dep is None:
@@ -215,13 +322,26 @@ class Container(GlobalContextMixin, var=global_container):
         injected_params = {}
         
         for param_name, (param_type, options) in injection_config['params'].items():
-            if param_name not in bound_args.arguments:
-                injected_value = self._inject_single_dependency(
-                    param_name, param_type, options, injection_config, 
-                    function_name, current_injection_chain
-                )
-                bound_args.arguments[param_name] = injected_value
-                injected_params[param_name] = injected_value
+            # For REQUESTED_ONLY strategy, params only contains Inject[Type] parameters
+            # These should always attempt injection, even if they have defaults
+            should_inject = (
+                param_name not in bound_args.arguments or 
+                injection_config['strategy'] == InjectionStrategy.REQUESTED_ONLY
+            )
+            
+            if should_inject:
+                try:
+                    injected_value = self._inject_single_dependency(
+                        param_name, param_type, options, injection_config, 
+                        function_name, current_injection_chain
+                    )
+                    bound_args.arguments[param_name] = injected_value
+                    injected_params[param_name] = injected_value
+                except DependencyResolutionError:
+                    # If injection fails and parameter already has a value (from default),
+                    # keep the existing value as fallback
+                    if param_name not in bound_args.arguments:
+                        raise  # Re-raise if no fallback available
         
         return injected_params
 
@@ -406,44 +526,52 @@ class Container(GlobalContextMixin, var=global_container):
         if options and options.qualifier:
             return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
         
-        # Handle default factory - use it instead of normal resolution
-        if options and options.default_factory:
-            # Check factory cache first (if caching is enabled)
-            if options.cache_factory_result and options.default_factory in self.instances:
-                return self.instances[options.default_factory]
-            
-            # Check parent container's factory cache
-            if options.cache_factory_result and self._parent:
-                if parent_result := self._parent._get_factory_cache_result(options.default_factory):
-                    # Cache in this container too for faster future access
-                    self.instances[options.default_factory] = parent_result
-                    return parent_result
-            
-            debug.using_default_factory(param_type)
-            # Check if factory accepts parameters for dependency injection
-            factory_sig = signature(options.default_factory)
-            if len(factory_sig.parameters) > 0:
-                # Factory accepts parameters, use container for dependency injection
-                instance = self.call(options.default_factory)
-            else:
-                # Factory takes no parameters, call directly
-                instance = options.default_factory()
-            
-            # Cache the result if caching is enabled
-            if options.cache_factory_result:
-                self.instances[options.default_factory] = instance
-            
-            return instance
-        
-        # Try to resolve from container - check for existing instance first
+        # Use the enhanced container.get method which handles default factories
         try:
-            # Check if instance already exists
-            if existing := self._get_existing_instance(param_type):
-                return existing.value
-            
-            # Try to create new instance
-            return self._create_instance_with_hooks(param_type, injection_context)
-            
+            if options and options.default_factory:
+                # Default factories take precedence over existing instances when explicitly specified
+                debug.using_default_factory(param_type)
+                
+                # Check if factory result caching is disabled
+                if not options.cache_factory_result:
+                    # Don't cache - call factory directly each time
+                    from inspect import signature
+                    factory_sig = signature(options.default_factory)
+                    if len(factory_sig.parameters) > 0:
+                        # Factory accepts parameters, use container for dependency injection
+                        return self.call(options.default_factory)
+                    else:
+                        # Factory takes no parameters, call directly
+                        return options.default_factory()
+                else:
+                    # Check if we already have a cached result from this factory
+                    if options.default_factory in self.instances:
+                        return self.instances[options.default_factory]
+                    
+                    # Check parent container's factory cache
+                    if self._parent:
+                        if parent_result := self._parent._get_factory_cache_result(options.default_factory):
+                            # Cache in this container too for faster future access
+                            self.instances[options.default_factory] = parent_result
+                            return parent_result
+                    
+                    # Create new instance using factory
+                    from inspect import signature
+                    factory_sig = signature(options.default_factory)
+                    if len(factory_sig.parameters) > 0:
+                        # Factory accepts parameters, use container for dependency injection
+                        instance = self.call(options.default_factory)
+                    else:
+                        # Factory takes no parameters, call directly
+                        instance = options.default_factory()
+                    
+                    # Cache the result using factory as key
+                    self.instances[options.default_factory] = instance
+                    return instance
+            else:
+                # Normal resolution without default factory
+                return self.get(param_type)
+              
         except DependencyResolutionError as e:
             # Call FACTORY_MISSING_TYPE hook if no factory found
             self.registry.hooks[Hook.FACTORY_MISSING_TYPE].handle(self, injection_context)
