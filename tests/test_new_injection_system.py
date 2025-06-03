@@ -384,6 +384,154 @@ class TestQualifiersAndOptions:
 class TestEdgeCases:
     """Test edge cases and error conditions."""
     
+    def test_inject_with_default_value(self):
+        """Test that Inject[Type] = Type() prioritizes injection over default."""
+        registry = Registry()
+        container = Container(registry)
+        
+        # Register a service in the container
+        registered_service = UserService("RegisteredService")
+        container.add(UserService, registered_service)
+        
+        @injectable
+        def func_with_default(service: Inject[UserService] = UserService("DefaultService")):
+            return f"Service: {service.name}"
+        
+        # When UserService is registered, injection should happen (not default)
+        result = container.call(func_with_default)
+        assert "Service: RegisteredService" in result
+        
+        # Test with empty container - should fall back to default
+        empty_registry = Registry()
+        empty_container = Container(empty_registry)
+        
+        result = empty_container.call(func_with_default)
+        assert "Service: DefaultService" in result
+    
+    def test_inject_without_default_missing_dependency(self):
+        """Test that Inject[Type] without default raises error when dependency missing."""
+        registry = Registry()
+        container = Container(registry)
+        
+        @injectable
+        def func_no_default(service: Inject[UserService]):
+            return f"Service: {service.name}"
+        
+        # Should raise DependencyResolutionError when no service registered
+        with pytest.raises(Exception, match="Cannot resolve dependency"):
+            container.call(func_no_default)
+    
+    def test_inject_with_default_arbitrary_error(self):
+        """Test that arbitrary errors during injection are raised, not falling back to default."""
+        
+        class ProblematicService:
+            def __init__(self, name="ProblematicService"):
+                self.name = name
+                if name == "FactoryError":
+                    raise ValueError("Factory creation failed!")
+        
+        def problematic_factory(container):
+            return ProblematicService("FactoryError")
+        
+        registry = Registry()
+        
+        # Register a factory that will raise an arbitrary error
+        registry.add_factory(problematic_factory, ProblematicService)
+        
+        container = Container(registry)
+        
+        @injectable
+        def func_with_default(service: Inject[ProblematicService] = ProblematicService("DefaultService")):
+            return f"Service: {service.name}"
+        
+        # Should raise the ValueError from the factory, not fall back to default
+        with pytest.raises(ValueError, match="Factory creation failed!"):
+            container.call(func_with_default)
+    
+    def test_default_factory_vs_default_value_precedence(self):
+        """Test precedence between default_factory and default parameter values."""
+        
+        class TestService:
+            def __init__(self, name="TestService"):
+                self.name = name
+        
+        # Test 1: default_factory should take precedence over default value
+        registry = Registry()
+        container = Container(registry)
+        
+        @injectable
+        def func_with_both(
+            service: Inject[TestService, Options(default_factory=lambda: TestService("FromFactory"))] = TestService("FromDefault")
+        ):
+            return f"Service: {service.name}"
+        
+        result = container.call(func_with_both)
+        assert "Service: FromFactory" in result, "default_factory should take precedence over default value"
+        
+        # Test 2: If default_factory raises DependencyResolutionError, should fall back to default value
+        def failing_factory():
+            from bevy.injection_types import DependencyResolutionError
+            raise DependencyResolutionError(TestService, "service", "Factory failed to resolve")
+        
+        @injectable  
+        def func_with_failing_factory(
+            service: Inject[TestService, Options(default_factory=failing_factory)] = TestService("FromDefault")
+        ):
+            return f"Service: {service.name}"
+        
+        result = container.call(func_with_failing_factory)
+        assert "Service: FromDefault" in result, "Should fall back to default value when factory raises DependencyResolutionError"
+        
+        # Test 3: If default_factory raises arbitrary error, should not fall back (should raise)
+        def broken_factory():
+            raise ValueError("Factory is broken!")
+        
+        @injectable
+        def func_with_broken_factory(
+            service: Inject[TestService, Options(default_factory=broken_factory)] = TestService("FromDefault")
+        ):
+            return f"Service: {service.name}"
+        
+        with pytest.raises(ValueError, match="Factory is broken!"):
+            container.call(func_with_broken_factory)
+    
+    def test_qualified_dependencies_in_child_containers(self):
+        """Test that qualified dependency errors work correctly in child containers."""
+        
+        class TestService:
+            def __init__(self, name="TestService"):
+                self.name = name
+        
+        # Create parent container with one qualified instance
+        parent_registry = Registry()
+        parent_container = Container(parent_registry)
+        parent_container.add(TestService, TestService("ParentService"), qualifier="existing")
+        
+        # Create child container
+        child_registry = Registry()
+        child_container = Container(child_registry, parent=parent_container)
+        
+        # Test 1: Child should inherit qualified instance from parent
+        @injectable
+        def func_with_existing_qualifier(
+            service: Inject[TestService, Options(qualifier="existing")]
+        ):
+            return f"Service: {service.name}"
+        
+        result = child_container.call(func_with_existing_qualifier)
+        assert "Service: ParentService" in result
+        
+        # Test 2: Child should raise error for nonexistent qualified dependency
+        @injectable
+        def func_with_missing_qualifier(
+            service: Inject[TestService, Options(qualifier="nonexistent")]
+        ):
+            return f"Service: {service.name}"
+        
+        # This should raise DependencyResolutionError when qualifier doesn't exist anywhere in hierarchy
+        with pytest.raises(Exception, match="Cannot resolve qualified dependency"):
+            child_container.call(func_with_missing_qualifier)
+    
     def test_mixed_injection_and_manual_params(self):
         """Test mixing injected and manual parameters."""
         registry = Registry()
