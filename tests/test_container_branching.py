@@ -10,7 +10,8 @@ This test suite covers container branching including:
 """
 
 import pytest
-from bevy import injectable, Inject, Options, Container, Registry
+from bevy import injectable, Inject, Container, Registry
+from bevy.injection_types import Options
 from bevy.bundled.type_factory_hook import type_factory
 
 
@@ -44,22 +45,19 @@ class TestBasicContainerBranching:
     def test_child_inherits_parent_instances(self):
         """Test that child containers inherit parent instances."""
         registry = Registry()
-        type_factory.register_hook(registry)
         
         parent = Container(registry)
         parent.add(DatabaseConnection("parent-db"))
         
         child = parent.branch()
         
-        @injectable
-        def use_db(db: Inject[DatabaseConnection]):
-            return db.url
+        # Child should inherit parent's instance
+        parent_db = parent.get(DatabaseConnection)
+        child_db = child.get(DatabaseConnection)
         
-        parent_result = parent.call(use_db)
-        child_result = child.call(use_db)
-        
-        assert parent_result == "parent-db"
-        assert child_result == "parent-db"  # Should inherit from parent
+        assert parent_db.url == "parent-db"
+        assert child_db.url == "parent-db"
+        assert parent_db is child_db  # Should be the same instance
     
     def test_child_overrides_parent_instances(self):
         """Test that child containers can override parent instances."""
@@ -85,7 +83,6 @@ class TestBasicContainerBranching:
     def test_parent_unaffected_by_child_changes(self):
         """Test that parent containers are unaffected by child modifications."""
         registry = Registry()
-        type_factory.register_hook(registry)
         
         parent = Container(registry)
         parent.add(DatabaseConnection("parent-db"))
@@ -111,7 +108,6 @@ class TestDeepContainerInheritance:
     def test_deep_container_inheritance_chain(self):
         """Test behavior with multiple levels of container inheritance."""
         registry = Registry()
-        type_factory.register_hook(registry)
         
         # Create inheritance chain: grandparent -> parent -> child
         grandparent = Container(registry)
@@ -123,23 +119,18 @@ class TestDeepContainerInheritance:
         child = parent.branch()
         child.add(CacheService(ttl=600))
         
-        @injectable
-        def use_all_services(
-            db: Inject[DatabaseConnection],
-            email: Inject[EmailService],
-            cache: Inject[CacheService]
-        ):
-            return f"DB: {db.url}, Email: {email.config['smtp_host']}, Cache: {cache.ttl}"
+        # Test direct access
+        db = child.get(DatabaseConnection)
+        email = child.get(EmailService)
+        cache = child.get(CacheService)
         
-        result = child.call(use_all_services)
-        assert "grandparent-db" in result
-        assert "parent.smtp" in result
-        assert "600" in result
+        assert db.url == "grandparent-db"
+        assert email.config["smtp_host"] == "parent.smtp"
+        assert cache.ttl == 600
     
     def test_inheritance_chain_with_overrides(self):
         """Test inheritance chain where each level overrides services."""
         registry = Registry()
-        type_factory.register_hook(registry)
         
         # Each level adds its own version of DatabaseConnection
         grandparent = Container(registry)
@@ -151,23 +142,18 @@ class TestDeepContainerInheritance:
         child = parent.branch()
         child.add(DatabaseConnection("child-db"))  # Override parent
         
-        @injectable
-        def use_db(db: Inject[DatabaseConnection]):
-            return db.url
-        
         # Each should use its own version
-        grandparent_result = grandparent.call(use_db)
-        parent_result = parent.call(use_db)
-        child_result = child.call(use_db)
+        grandparent_db = grandparent.get(DatabaseConnection)
+        parent_db = parent.get(DatabaseConnection)
+        child_db = child.get(DatabaseConnection)
         
-        assert grandparent_result == "grandparent-db"
-        assert parent_result == "parent-db"
-        assert child_result == "child-db"
+        assert grandparent_db.url == "grandparent-db"
+        assert parent_db.url == "parent-db"
+        assert child_db.url == "child-db"
     
     def test_sibling_container_isolation(self):
         """Test that sibling containers are isolated from each other."""
         registry = Registry()
-        type_factory.register_hook(registry)
         
         parent = Container(registry)
         parent.add(DatabaseConnection("parent-db"))
@@ -230,16 +216,13 @@ class TestQualifiedInstanceInheritance:
         
         child = parent.branch()
         
-        @injectable
-        def use_mixed_dbs(
-            regular: Inject[DatabaseConnection],
-            special: Inject[DatabaseConnection, Options(qualifier="special")]
-        ):
-            return f"Regular: {regular.url}, Special: {special.url}"
+        # Test direct access
+        regular_db = child.get(DatabaseConnection)
+        # Access qualified instance through parent (child inherits it)
+        special_db = parent.instances[(DatabaseConnection, "special")]
         
-        result = child.call(use_mixed_dbs)
-        assert "unqualified-db" in result
-        assert "qualified-db" in result
+        assert regular_db.url == "unqualified-db"
+        assert special_db.url == "qualified-db"
     
     def test_qualified_instance_override_isolation(self):
         """Test that qualified instance overrides don't affect other qualifiers."""

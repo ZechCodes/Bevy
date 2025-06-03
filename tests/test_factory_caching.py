@@ -10,7 +10,8 @@ This test suite covers factory caching behavior including:
 """
 
 import pytest
-from bevy import injectable, Inject, Options, Container, Registry
+from bevy import injectable, Inject, Container, Registry
+from bevy.injection_types import Options
 from bevy.bundled.type_factory_hook import type_factory
 
 
