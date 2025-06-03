@@ -87,16 +87,15 @@ def test_options():
     
     opts1 = Options()
     opts2 = Options(qualifier="primary")
-    opts3 = Options(qualifier="cache", from_config="redis.url")
+    opts3 = Options(qualifier="cache")
     
     print(f"  Empty options: {opts1}")
     print(f"  With qualifier: {opts2}")
-    print(f"  With qualifier and config: {opts3}")
+    print(f"  With qualifier: {opts3}")
     
     assert opts1.qualifier is None
     assert opts2.qualifier == "primary"
     assert opts3.qualifier == "cache"
-    assert opts3.from_config == "redis.url"
     print("  ✓ Options class works correctly")
 
 

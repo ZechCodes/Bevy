@@ -1,26 +1,168 @@
-name: Release Bevy to PyPI
+name: Release
+
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v3.1.0, v3.1.0-beta.1, etc.
+
+permissions:
+  contents: write  # Required to create releases
+  id-token: write  # Required for PyPI trusted publisher
 
 jobs:
-  deploy:
+  create-release:
     runs-on: ubuntu-latest
-
+    
     steps:
-    - uses: actions/checkout@master
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v1
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
-        python-version: "3.12"
-    - name: Install injectors.py
+        fetch-depth: 0  # Fetch all history for proper release notes
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+    
+    - name: Install project
+      run: poetry install --no-interaction
+    
+    - name: Run tests
       run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-        poetry config virtualenvs.in-project true
-    - name: Build and publish
-      env:
-        PYPI_USERNAME: __token__
-        PYPI_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        poetry run python -m pytest tests/ --tb=short -x
+      continue-on-error: false
+    
+    - name: Extract version from tag
+      id: get_version
       run: |
-        poetry publish --build --username $PYPI_USERNAME --password $PYPI_PASSWORD
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Find release notes file
+      id: find_notes
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        
+        # Look for release notes file with various naming patterns
+        NOTES_FILE=""
+        
+        # Try different patterns
+        for pattern in \
+          "RELEASE_NOTES_${VERSION}.md" \
+          "RELEASE_NOTES_v${VERSION}.md" \
+          "RELEASE_NOTES_${VERSION%%-*}.md" \
+          "RELEASE_NOTES.md" \
+          "CHANGELOG_${VERSION}.md" \
+          "CHANGELOG.md"; do
+          
+          if [[ -f "$pattern" ]]; then
+            NOTES_FILE="$pattern"
+            echo "Found release notes file: $NOTES_FILE"
+            break
+          fi
+        done
+        
+        if [[ -z "$NOTES_FILE" ]]; then
+          echo "No release notes file found, will use auto-generated notes"
+          echo "notes_file=" >> $GITHUB_OUTPUT
+          echo "has_notes=false" >> $GITHUB_OUTPUT
+        else
+          echo "notes_file=$NOTES_FILE" >> $GITHUB_OUTPUT
+          echo "has_notes=true" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Build package
+      run: |
+        poetry build
+    
+    - name: Create Release with Notes File
+      if: steps.find_notes.outputs.has_notes == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.tag }}
+        name: "Bevy ${{ steps.get_version.outputs.version }}"
+        body_path: ${{ steps.find_notes.outputs.notes_file }}
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.version, 'beta') || contains(steps.get_version.outputs.version, 'alpha') || contains(steps.get_version.outputs.version, 'rc') }}
+    
+    - name: Create Release with Auto-generated Notes
+      if: steps.find_notes.outputs.has_notes == 'false'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.tag }}
+        name: "Bevy ${{ steps.get_version.outputs.version }}"
+        body: |
+          ## Bevy ${{ steps.get_version.outputs.version }}
+          
+          This release includes improvements to the Bevy dependency injection framework.
+          
+          ### Installation
+          
+          ```bash
+          pip install bevy==${{ steps.get_version.outputs.version }}
+          ```
+          
+          ### What's Changed
+          
+          See the commit history for detailed changes in this release.
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.version, 'beta') || contains(steps.get_version.outputs.version, 'alpha') || contains(steps.get_version.outputs.version, 'rc') }}
+        generate_release_notes: true
+
+  publish-to-pypi:
+    runs-on: ubuntu-latest
+    needs: create-release
+    environment: release  # Use environment for additional protection
+    
+    permissions:
+      id-token: write  # Required for PyPI trusted publisher
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Build package
+      run: |
+        poetry build
+    
+    - name: Publish to PyPI using trusted publisher
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
