@@ -32,7 +32,42 @@ def issubclass_or_raises[T](cls: T, class_or_tuple: t.Type[T] | tuple[t.Type[T],
 class Container(GlobalContextMixin, var=global_container):
     """Stores instances for dependencies and provides utilities for injecting dependencies into callables at runtime.
 
-    Containers can be branched to isolate dependencies while still sharing the same registry and preexisting instances."""
+    Containers support hierarchical inheritance through branching, allowing you to create child containers
+    that inherit parent instances while maintaining isolation for overrides. This enables powerful patterns
+    for testing, request scoping, and environment-specific configurations.
+    
+    Key Features:
+        - **Instance Management**: Store and retrieve dependency instances by type
+        - **Dependency Injection**: Automatically inject dependencies into function calls
+        - **Container Branching**: Create child containers that inherit from parents
+        - **Qualified Dependencies**: Support multiple instances of the same type with qualifiers
+        - **Factory Integration**: Work with factory functions for lazy instance creation
+        - **Hook System**: Extensible lifecycle hooks for customization
+    
+    Container Hierarchy:
+        When using .branch(), child containers inherit all parent instances but can override them
+        without affecting the parent. Resolution always checks the child first, then walks up
+        the parent chain until an instance is found.
+        
+        Example:
+            >>> registry = Registry()
+            >>> parent = Container(registry)
+            >>> parent.add(Logger(level="INFO"))
+            >>> 
+            >>> child = parent.branch()
+            >>> child.add(Logger(level="DEBUG"))  # Override parent's logger
+            >>> 
+            >>> parent.get(Logger).level   # "INFO" - parent unchanged
+            >>> child.get(Logger).level    # "DEBUG" - child override
+    
+    Common Patterns:
+        - **Testing**: Branch production container, override with mocks
+        - **Request Scoping**: Branch app container, add request-specific data  
+        - **Environment Config**: Branch base config, add environment-specific services
+        - **Multi-tenant**: Branch shared infrastructure, add tenant-specific instances
+        
+    See docs/container-branching.md for comprehensive usage examples.
+    """
     def __init__(self, registry: "registries.Registry", *, parent: "Container | None" = None):
         super().__init__()
         self.registry = registry
@@ -75,8 +110,67 @@ class Container(GlobalContextMixin, var=global_container):
                 raise ValueError(f"Unexpected arguments to add: {args}")
 
     def branch(self) -> "Container":
-        """Creates a branch off of the current container, isolating dependencies from the parent container. Dependencies
-        existing on the parent container will be shared with the branched container."""
+        """Creates a child container that inherits from this parent container.
+        
+        Child containers inherit all instances from their parent but can override them without
+        affecting the parent. This enables powerful patterns for testing, request scoping,
+        and environment-specific configurations.
+        
+        Inheritance Rules:
+            - Child inherits all parent instances and can access them via get() or injection
+            - Child can override parent instances by adding instances of the same type
+            - Child overrides are isolated - they don't affect the parent or sibling containers
+            - Resolution checks child first, then walks up the parent chain
+            - Factory caches are inherited - if parent created an instance via factory, child reuses it
+            - Qualified instances (instances with qualifiers) inherit independently
+        
+        Common Use Cases:
+        
+        Testing - Override production services with mocks:
+            >>> # Production setup
+            >>> app = Container(registry)
+            >>> app.add(DatabaseConnection("postgresql://prod"))
+            >>> app.add(EmailService(smtp_config))
+            >>> 
+            >>> # Test setup - inherit production, override specific services
+            >>> test = app.branch()
+            >>> test.add(DatabaseConnection("sqlite://memory"))  # Override for testing
+            >>> test.add(MockEmailService())  # Override with mock
+            >>> # test container now uses test DB and mock email, but inherits everything else
+        
+        Request Scoping - Add request-specific data while sharing application services:
+            >>> # Application container with shared services
+            >>> app = Container(registry)
+            >>> app.add(DatabasePool())
+            >>> app.add(CacheService())
+            >>> 
+            >>> # Per-request container
+            >>> def handle_request(user_id):
+            ...     request_container = app.branch()
+            ...     request_container.add(CurrentUser(user_id))  # Add request-specific data
+            ...     return request_container.call(process_request)
+            
+        Environment Configuration - Share common setup, override environment specifics:
+            >>> # Base configuration
+            >>> base = Container(registry)
+            >>> base.add(Logger())
+            >>> base.add(MetricsCollector())
+            >>> 
+            >>> # Environment-specific containers
+            >>> dev = base.branch()
+            >>> dev.add(DatabaseConnection("localhost:5432"))
+            >>> 
+            >>> prod = base.branch() 
+            >>> prod.add(DatabaseConnection("prod-cluster:5432"))
+            >>> # Both inherit logger and metrics, but use different databases
+        
+        Returns:
+            Container: A new child container that inherits from this container
+            
+        Note:
+            Child containers share the same registry as their parent, ensuring
+            consistent factory and hook behavior across the container hierarchy.
+        """
         return Container(registry=self.registry, parent=self)
 
     def call[**P, R](
