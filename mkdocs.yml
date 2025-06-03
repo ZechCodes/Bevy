@@ -8,13 +8,6 @@ plugins:
 
 nav:
   - Getting Started: index.md
+  - Quick Start: ../BEVY_QUICKSTART.md
   - API Reference: api.md
-  - Reference:
-    - Registries: reference/registries.md
-    - Containers: reference/containers.md
-    - Factories: reference/factories.md
-    - Hooks: reference/hooks.md
-    - Injections: reference/injections.md
-    - Dependencies: reference/dependencies.md
-    - Context Vars: reference/context_vars.md
-  - Options: options.md
+  - Migration Guide: migration.md

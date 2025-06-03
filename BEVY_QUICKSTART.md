@@ -149,6 +149,10 @@ class Database:
     def __init__(self, url: str = "sqlite://"):
         self.url = url
 
+def create_expensive_db():
+    print("Creating expensive database connection...")
+    return Database("postgres://localhost")
+
 registry = Registry()
 container = Container(registry)
 
@@ -156,14 +160,55 @@ container = Container(registry)
 def app_startup(
     # Use default factory when dependency not found
     logger: Inject[Logger, Options(default_factory=lambda: Logger("startup"))],
-    # Regular injection
-    db: Inject[Database, Options(default_factory=lambda: Database("postgres://localhost"))],
+    # Cached factory result (default behavior)
+    db: Inject[Database, Options(default_factory=create_expensive_db)],
 ):
     logger.log(f"Starting app with database: {db.url}")
     return f"App started with {logger.name} logger and {db.url}"
 
-result = container.call(app_startup)
-print(result)  # "App started with startup logger and postgres://localhost"
+@injectable
+def database_backup(
+    # Same factory - reuses cached instance (no factory call)
+    db: Inject[Database, Options(default_factory=create_expensive_db)],
+):
+    return f"Backing up {db.url}"
+
+# First call creates instance
+result1 = container.call(app_startup)
+print(result1)  # "Creating expensive database connection..."
+                # "App started with startup logger and postgres://localhost"
+
+# Second call reuses cached instance
+result2 = container.call(database_backup)
+print(result2)  # "Backing up postgres://localhost" (no factory call)
+```
+
+### 4a. Factory Caching Control
+
+```python
+from bevy import injectable, Inject, Options, Container, Registry
+
+def create_test_db():
+    print("Creating test database...")
+    return Database("sqlite://test.db")
+
+registry = Registry()
+container = Container(registry)
+
+@injectable
+def test_setup(
+    # Fresh instance each call (testing scenarios)
+    db: Inject[Database, Options(
+        default_factory=create_test_db,
+        cache_factory_result=False
+    )],
+):
+    return f"Test with {db.url}"
+
+# Each call creates fresh instance
+result1 = container.call(test_setup)  # "Creating test database..."
+result2 = container.call(test_setup)  # "Creating test database..." (called again)
+print(f"Fresh instances: {result1}, {result2}")
 ```
 
 ### 5. Injection Strategies
