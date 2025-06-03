@@ -571,6 +571,7 @@ class Container(GlobalContextMixin, var=global_container):
             else:
                 # Normal resolution without default factory
                 return self.get(param_type)
+              
         except DependencyResolutionError as e:
             # Call FACTORY_MISSING_TYPE hook if no factory found
             self.registry.hooks[Hook.FACTORY_MISSING_TYPE].handle(self, injection_context)
