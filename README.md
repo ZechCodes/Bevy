@@ -245,6 +245,43 @@ def lenient_function(service: Inject[MissingService]):
 4. **Leverage optional dependencies**: Use `T | None` for optional services
 5. **Configure appropriately**: Use strict mode in production, debug mode during development
 
+## CLI Documentation Tool
+
+Bevy includes a built-in CLI tool for exploring documentation:
+
+```bash
+# Show docstring and file location
+python -m bevy bevy.containers.Container
+
+# Show function/class signature
+python -m bevy bevy.containers.Container.get signature
+
+# List module or class members
+python -m bevy bevy.containers members
+```
+
+**Features:**
+- Shows docstrings and source file locations
+- Displays function signatures with proper formatting
+- Shows class inheritance and `__init__` signatures
+- Supports overloaded functions (Python 3.11+)
+- Lists all members of modules and classes
+
+**Examples:**
+```bash
+# View Container class documentation
+python -m bevy bevy.containers.Container
+
+# See the signature of the get method
+python -m bevy bevy.containers.Container.get signature
+
+# List all members of the bevy module
+python -m bevy bevy members
+
+# Works with built-in modules too
+python -m bevy os.path.join signature
+```
+
 ## Migration from Earlier Versions
 
 If you're upgrading from Bevy 3.0 beta, see our [Migration Guide](docs/migration.md) for step-by-step instructions on updating your code.

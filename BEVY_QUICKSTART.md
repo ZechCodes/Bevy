@@ -863,6 +863,77 @@ def process_user(service: Inject[UserService]):
 4. Add type_factory hook for automatic type creation
 5. Use `Options` for advanced dependency configuration
 
+## CLI Documentation Browser
+
+Bevy includes a built-in command-line tool for exploring API documentation directly from your terminal:
+
+### Basic Usage
+
+```bash
+# Show docstring and source file location
+python -m bevy bevy.containers.Container
+
+# View function/method signature  
+python -m bevy bevy.containers.Container.get signature
+
+# List all members of a module or class
+python -m bevy bevy.containers members
+```
+
+### Features
+
+- **Docstring Display**: Shows complete documentation with source file location
+- **Signature Inspection**: Displays function signatures with:
+  - Full parameter annotations and defaults
+  - Return type annotations
+  - Class inheritance hierarchy
+  - Support for overloaded functions (Python 3.11+)
+  - Automatic line breaking for long signatures
+- **Member Listing**: Shows all public members of modules/classes with their signatures
+
+### Examples
+
+```bash
+# Explore the Container class
+python -m bevy bevy.containers.Container
+# Output: Shows Container's docstring and file location
+
+# Check how to call Container.get
+python -m bevy bevy.containers.Container.get signature
+# Output: get(self, dependency_type: type[T], ...) -> T
+
+# See all available functions in bevy.injections
+python -m bevy bevy.injections members
+# Output: Lists all functions with their signatures
+
+# Works with any Python module
+python -m bevy os.path.join signature
+# Output: join(a, *p)
+```
+
+### Advanced Usage
+
+```bash
+# View Registry class with inheritance
+python -m bevy bevy.registries.Registry signature
+# Output: class Registry:
+#             def __init__(self)
+
+# Check overloaded functions (requires Python 3.11+)
+python -m bevy typing.overload signature
+# Shows all @overload signatures if available
+
+# Explore nested attributes
+python -m bevy bevy.hooks.Hook.register_hook signature
+# Output: register_hook(self, registry: Registry)
+```
+
+This tool is particularly useful for:
+- Quick API reference without leaving the terminal
+- Understanding function signatures and parameters
+- Exploring available methods in classes
+- Checking source file locations for debugging
+
 ## Troubleshooting
 
 - **Missing dependencies**: Ensure `type_factory` hook is registered or add explicit factories
