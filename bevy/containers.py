@@ -2,7 +2,7 @@ import time
 import typing as t
 from contextvars import ContextVar
 from inspect import signature
-from typing import Any
+from typing import Any, Awaitable, Union
 
 from tramp.optionals import Optional
 
@@ -81,7 +81,8 @@ class Container(GlobalContextMixin, var=global_container):
             registries.Registry: registry,
         }
         self._parent = parent
-        self._dependency_analyzer = DependencyAnalyzer(registry)
+        # Create dependency analyzer that considers parent registries
+        self._dependency_analyzer = DependencyAnalyzer(registry, parent_container=parent)
 
     @t.overload
     def add(self, instance: Instance):
@@ -187,38 +188,38 @@ class Container(GlobalContextMixin, var=global_container):
         return self._call(func, args, kwargs)
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T]) -> T:
+    def get[T: Instance](self, dependency: t.Type[T]) -> T | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D) -> T | D | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T], *, default_factory: t.Callable[[], T]) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, default_factory: t.Callable[[], T]) -> T | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D, default_factory: t.Callable[[], T]) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D, default_factory: t.Callable[[], T]) -> T | D | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str) -> T | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D) -> T | D | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str, default_factory: t.Callable[[], T]) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str, default_factory: t.Callable[[], T]) -> T | Awaitable[T]:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D, default_factory: t.Callable[[], T]) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D, default_factory: t.Callable[[], T]) -> T | D | Awaitable[T]:
         ...
 
-    def get[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> T | D | Awaitable[T]:
         """Gets an instance of the desired dependency from the container. If the dependency is not already stored in the
         container or its parents, a new instance will be created and stored for reuse. When a default is given it will
         be returned instead of creating a new instance, the default is not stored. When a default_factory is given,
@@ -228,13 +229,43 @@ class Container(GlobalContextMixin, var=global_container):
         default_factory = kwargs.get("default_factory")
         qualifier = kwargs.get("qualifier")
         
+        # Quick check for existing instances first (performance optimization)
+        # If we already have the instance, return it immediately without async analysis
+        if qualifier:
+            qualified_key = (dependency, qualifier)
+            if qualified_key in self.instances:
+                return self.instances[qualified_key]
+            # Check parent for qualified instance
+            if self._parent and qualified_key in self._parent.instances:
+                return self._parent.instances[qualified_key]
+        else:
+            # Check for existing unqualified instance
+            if existing_instance := self._get_existing_instance(dependency):
+                return existing_instance.value
+        
+        # No existing instance found - check if we can use async detection
+        # Only apply async detection for simple cases to avoid interfering with existing behavior:
+        # - No default_factory parameter (preserves default factory behavior)
+        # - No qualifier parameter (preserves qualified dependency behavior)  
+        # - No default parameter (preserves default value behavior)
+        if not default_factory and not qualifier and not kwargs.get("default"):
+            # Simple case - analyze if async resolution is needed
+            try:
+                resolver = self.create_resolver(dependency)
+                if isinstance(resolver, DependenciesPending):
+                    # Async resolution needed - return awaitable
+                    return resolver.get_result()
+                elif isinstance(resolver, DependenciesReady):
+                    # Sync resolution - return instance directly
+                    return resolver.get_result()
+            except (ValueError, DependencyResolutionError):
+                # Analysis failed (e.g., missing factory) - fall back to existing logic
+                pass
+        
+        # Fall back to existing logic for complex cases (default factories, qualifiers, errors)
         # Handle qualified dependencies first
         if qualifier:
             qualified_key = (dependency, qualifier)
-            
-            # Check current container for qualified instance
-            if qualified_key in self.instances:
-                return self.instances[qualified_key]
             
             # Check parent container for qualified instance
             if self._parent:
@@ -268,7 +299,6 @@ class Container(GlobalContextMixin, var=global_container):
             elif "default" in kwargs:
                 return kwargs["default"]
             else:
-                from bevy.injection_types import DependencyResolutionError
                 raise DependencyResolutionError(
                     dependency_type=dependency,
                     parameter_name="unknown", 
