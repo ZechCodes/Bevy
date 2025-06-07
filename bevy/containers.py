@@ -15,6 +15,7 @@ from bevy.injection_types import (
     DependencyResolutionError, get_non_none_type, InjectionStrategy, is_optional_type, TypeMatchingStrategy,
 )
 from bevy.injections import analyze_function_signature, get_injection_info
+from bevy.async_resolution import DependencyAnalyzer, DependenciesReady, DependenciesPending
 
 type Instance = t.Any
 
@@ -80,6 +81,7 @@ class Container(GlobalContextMixin, var=global_container):
             registries.Registry: registry,
         }
         self._parent = parent
+        self._dependency_analyzer = DependencyAnalyzer(registry)
 
     @t.overload
     def add(self, instance: Instance):
@@ -333,6 +335,19 @@ class Container(GlobalContextMixin, var=global_container):
             self.instances[dependency] = instance
 
         return instance
+
+    def create_resolver[T: Instance](self, dependency_type: t.Type[T]) -> DependenciesReady | DependenciesPending:
+        """
+        Create resolver for dependency chain analysis.
+        Returns DependenciesReady for sync chains, DependenciesPending for async chains.
+        """
+        # Analyze the dependency chain
+        chain_info = self._dependency_analyzer.analyze_dependency_chain(dependency_type)
+        
+        if chain_info.has_async_factories:
+            return DependenciesPending(self, dependency_type, chain_info)
+        else:
+            return DependenciesReady(self, dependency_type, chain_info)
 
     def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], args: P.args, kwargs: P.kwargs) -> R:
         match func:
@@ -844,6 +859,10 @@ class Container(GlobalContextMixin, var=global_container):
                 )
 
         return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
+
+    def _create_instance_sync(self, dependency: t.Type[Instance]) -> Instance:
+        """Sync version of _create_instance for use by DependenciesReady resolver."""
+        return self._create_instance(dependency)
 
     def _handle_unsupported_dependency(self, dependency):
         match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency):
