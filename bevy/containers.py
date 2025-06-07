@@ -12,7 +12,7 @@ from bevy.debug import create_debug_logger
 # DependencyMetadata removed - using injection system
 from bevy.hooks import Hook, InjectionContext, PostInjectionContext
 from bevy.injection_types import (
-    DependencyResolutionError, get_non_none_type, InjectionStrategy, is_optional_type, TypeMatchingStrategy,
+    DependencyResolutionError, CircularDependencyError, get_non_none_type, InjectionStrategy, is_optional_type, TypeMatchingStrategy,
 )
 from bevy.injections import analyze_function_signature, get_injection_info
 from bevy.async_resolution import DependencyAnalyzer, DependenciesReady, DependenciesPending
@@ -259,7 +259,7 @@ class Container(GlobalContextMixin, var=global_container):
                     # Sync resolution - return instance directly
                     return resolver.get_result()
             except (ValueError, DependencyResolutionError):
-                # Analysis failed (e.g., missing factory) - fall back to existing logic
+                # Analysis failed (e.g., missing factory, circular dependency) - fall back to existing logic
                 pass
         
         # Fall back to existing logic for complex cases (default factories, qualifiers, errors)

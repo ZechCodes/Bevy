@@ -43,6 +43,32 @@ class DependencyResolutionError(Exception):
         super().__init__(message)
 
 
+class CircularDependencyError(DependencyResolutionError):
+    """
+    Raised when a circular dependency is detected during dependency analysis.
+    
+    This error is raised before any instances are created, preventing infinite loops
+    and helping developers identify architectural issues early.
+    
+    Attributes:
+        dependency_cycle: List of types in the circular dependency chain
+        cycle_description: Human-readable description of the dependency cycle
+    """
+    def __init__(self, dependency_cycle: list[type], message: str = None):
+        self.dependency_cycle = dependency_cycle
+        self.cycle_description = " -> ".join(dep_type.__name__ for dep_type in dependency_cycle)
+        
+        if message is None:
+            message = f"Circular dependency detected: {self.cycle_description}"
+        
+        # Use the first dependency in the cycle for the base class
+        super().__init__(
+            dependency_type=dependency_cycle[0] if dependency_cycle else type(None),
+            parameter_name="circular_chain",
+            message=message
+        )
+
+
 # Type alias for dependency injection using Python 3.12+ syntax
 type Inject[T, Opts: object] = Annotated[T, Opts]
 

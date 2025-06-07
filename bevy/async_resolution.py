@@ -58,8 +58,8 @@ class DependencyAnalyzer:
             # Check for circular dependencies
             if dep_type in visiting_stack:
                 cycle_chain = list(visiting_stack) + [dep_type]
-                cycle_names = [t.__name__ for t in cycle_chain]
-                raise ValueError(f"Circular dependency detected: {' -> '.join(cycle_names)}")
+                from bevy.injection_types import CircularDependencyError
+                raise CircularDependencyError(cycle_chain)
             
             if dep_type in visited:
                 return dep_type in async_factories

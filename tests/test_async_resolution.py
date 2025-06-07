@@ -18,9 +18,8 @@ from typing import Awaitable, Union
 from unittest.mock import Mock, patch
 import time
 
-from bevy import Container, injectable, Inject
+from bevy import Container, injectable, Inject, DependencyResolutionError, CircularDependencyError
 from bevy.registries import Registry
-from bevy.injection_types import DependencyResolutionError
 from bevy.bundled.type_factory_hook import type_factory
 
 
@@ -318,8 +317,15 @@ class TestCircularDependencyDetection:
         registry.add_factory(create_circular_b, CircularB)
         container = registry.create_container()
         
-        with pytest.raises(ValueError, match="Circular dependency detected"):
+        with pytest.raises(CircularDependencyError) as exc_info:
             container.create_resolver(CircularA)
+        
+        # Verify error contains useful information
+        error = exc_info.value
+        assert "CircularA" in str(error)
+        assert "CircularB" in str(error)
+        assert error.dependency_cycle == [CircularA, CircularB, CircularA]
+        assert error.cycle_description == "CircularA -> CircularB -> CircularA"
     
     def test_async_circular_dependency_detection(self):
         """Should detect circular dependencies involving async factories."""
@@ -328,7 +334,7 @@ class TestCircularDependencyDetection:
         registry.add_factory(create_async_circular_b, AsyncCircularB)
         container = registry.create_container()
         
-        with pytest.raises(ValueError, match="Circular dependency detected"):
+        with pytest.raises(CircularDependencyError, match="Circular dependency detected"):
             container.create_resolver(AsyncCircularA)
     
     def test_mixed_circular_dependency_detection(self):
@@ -339,8 +345,42 @@ class TestCircularDependencyDetection:
         registry.add_factory(create_mixed_circular_c, MixedCircularC)
         container = registry.create_container()
         
-        with pytest.raises(ValueError, match="Circular dependency detected"):
+        with pytest.raises(CircularDependencyError) as exc_info:
             container.create_resolver(MixedCircularA)
+        
+        # Verify error shows complete cycle path
+        error = exc_info.value
+        assert "MixedCircularA" in str(error)
+        assert "MixedCircularB" in str(error) 
+        assert "MixedCircularC" in str(error)
+        assert error.dependency_cycle == [MixedCircularA, MixedCircularB, MixedCircularC, MixedCircularA]
+        assert error.cycle_description == "MixedCircularA -> MixedCircularB -> MixedCircularC -> MixedCircularA"
+    
+    def test_circular_dependency_error_inheritance(self):
+        """CircularDependencyError should inherit from DependencyResolutionError."""
+        registry = Registry()
+        registry.add_factory(create_circular_a, CircularA)
+        registry.add_factory(create_circular_b, CircularB)
+        container = registry.create_container()
+        
+        # Should be catchable as both CircularDependencyError and DependencyResolutionError
+        with pytest.raises(DependencyResolutionError):
+            container.create_resolver(CircularA)
+            
+        with pytest.raises(CircularDependencyError):
+            container.create_resolver(CircularA)
+    
+    def test_circular_dependency_in_container_get(self):
+        """Circular dependency should be detected when calling container.get() directly."""
+        registry = Registry()
+        registry.add_factory(create_circular_a, CircularA)
+        registry.add_factory(create_circular_b, CircularB)
+        container = registry.create_container()
+        
+        # The circular dependency error should bubble up from the async analysis
+        # but might be caught and re-raised by the fallback logic
+        with pytest.raises((CircularDependencyError, DependencyResolutionError)):
+            container.get(CircularA)
 
 
 class TestErrorHandling:
