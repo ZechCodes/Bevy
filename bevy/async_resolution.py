@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Type, Dict, Set, List, Union, TypeVar
 from dataclasses import dataclass
 from collections import defaultdict
 from tramp.optionals import Optional
+from bevy.hooks import Hook
 
 T = TypeVar('T')
 
@@ -225,16 +226,27 @@ class DependenciesReady:
         
     def get_result(self) -> T:
         """Synchronously resolve and return the dependency instance."""
-        # Check if already exists (including parent containers)
-        existing_instance = self.container._get_existing_instance(self.target_type)
-        match existing_instance:
-            case Optional.Some(instance):
-                return instance
-            case Optional.Nothing():
-                pass
-        
-        # Use existing container resolution for sync chains
-        return self.container._create_instance_sync(self.target_type)
+        # Check if already cached locally first
+        if self.target_type in self.container.instances:
+            return self.container.instances[self.target_type]
+            
+        # Check parent containers
+        if self.container._parent:
+            parent_instance = self.container._parent._get_existing_instance(self.target_type)
+            match parent_instance:
+                case Optional.Some(instance):
+                    # Cache in current container and return
+                    self.container.instances[self.target_type] = instance
+                    return instance
+                case Optional.Nothing():
+                    pass
+                    
+        # Create new instance and cache it (same as container.get() logic)
+        instance = self.container._create_instance(self.target_type)
+        # Apply hooks and cache the instance
+        instance = self.container.registry.hooks[Hook.GOT_INSTANCE].filter(self.container, instance)
+        self.container.instances[self.target_type] = instance
+        return instance
 
 
 class DependenciesPending:
@@ -251,6 +263,9 @@ class DependenciesPending:
         
     async def _resolve_async_chain(self) -> T:
         """Asynchronously resolve the complete dependency chain."""
+        # Import the context variable at the top of the async function
+        from bevy.containers import _in_async_resolution
+        
         # Check if the target instance already exists (including parent containers)
         existing_instance = self.container._get_existing_instance(self.target_type)
         match existing_instance:
@@ -258,44 +273,61 @@ class DependenciesPending:
                 return instance
             case Optional.Nothing():
                 pass
+                
+        # Check parent container for existing instance
+        if self.container._parent:
+            parent_instance = self.container._parent._get_existing_instance(self.target_type)
+            match parent_instance:
+                case Optional.Some(instance):
+                    # Cache in current container and return
+                    self.container.instances[self.target_type] = instance
+                    return instance
+                case Optional.Nothing():
+                    pass
         
         # Strategy: Resolve all async dependencies first in dependency order,
         # then resolve sync dependencies. This ensures sync factories get
         # actual instances, not coroutines.
         
-        # Phase 1: Resolve all async dependencies
-        for dep_type in self.chain_info.resolution_order:
-            # Check if already exists (including parent containers)
-            existing = self.container._get_existing_instance(dep_type)
-            match existing:
-                case Optional.Some(_):
-                    continue  # Already resolved
-                case Optional.Nothing():
-                    pass
-                
-            if dep_type in self.chain_info.async_factories:
+        # Set context flag to prevent async detection during resolution
+        token = _in_async_resolution.set(True)
+        try:
+            # Phase 1: Resolve all async dependencies
+            for dep_type in self.chain_info.resolution_order:
+                # Check if already exists (including parent containers)
+                existing = self.container._get_existing_instance(dep_type)
+                match existing:
+                    case Optional.Some(_):
+                        continue  # Already resolved
+                    case Optional.Nothing():
+                        pass
+                    
+                if dep_type in self.chain_info.async_factories:
+                    factory = self.chain_info.factories[dep_type]
+                    if inspect.iscoroutinefunction(factory):
+                        # Async factory - resolve it and cache normally
+                        instance = await factory(self.container)
+                        self.container.instances[dep_type] = instance
+            
+            # Phase 2: Resolve remaining dependencies (sync factories, even if they depend on async)
+            for dep_type in self.chain_info.resolution_order:
+                # Check if already exists (including parent containers)
+                existing = self.container._get_existing_instance(dep_type)
+                match existing:
+                    case Optional.Some(_):
+                        continue  # Already resolved
+                    case Optional.Nothing():
+                        pass
+                    
+                # Check if this is a sync factory (even if it's marked as async due to dependencies)
                 factory = self.chain_info.factories[dep_type]
-                if inspect.iscoroutinefunction(factory):
-                    # Async factory - resolve it and cache normally
-                    instance = await factory(self.container)
+                if not inspect.iscoroutinefunction(factory):
+                    # Sync factory - call normally (async deps should already be resolved)
+                    instance = factory(self.container)
                     self.container.instances[dep_type] = instance
-        
-        # Phase 2: Resolve remaining dependencies (sync factories, even if they depend on async)
-        for dep_type in self.chain_info.resolution_order:
-            # Check if already exists (including parent containers)
-            existing = self.container._get_existing_instance(dep_type)
-            match existing:
-                case Optional.Some(_):
-                    continue  # Already resolved
-                case Optional.Nothing():
-                    pass
-                
-            # Check if this is a sync factory (even if it's marked as async due to dependencies)
-            factory = self.chain_info.factories[dep_type]
-            if not inspect.iscoroutinefunction(factory):
-                # Sync factory - call normally (async deps should already be resolved)
-                instance = factory(self.container)
-                self.container.instances[dep_type] = instance
+        finally:
+            # Reset context flag
+            _in_async_resolution.reset(token)
         
         # Return the target instance (should now be resolved)
         final_instance = self.container._get_existing_instance(self.target_type)

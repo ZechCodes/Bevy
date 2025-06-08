@@ -22,6 +22,9 @@ type Instance = t.Any
 # Context variable to track current injection chain across factory calls
 _current_injection_chain: ContextVar[list[str]] = ContextVar('current_injection_chain', default=[])
 
+# Context variable to disable async detection during async resolution
+_in_async_resolution: ContextVar[bool] = ContextVar('in_async_resolution', default=False)
+
 
 def issubclass_or_raises[T](cls: T, class_or_tuple: t.Type[T] | tuple[t.Type[T], ...], exception: Exception) -> bool:
     try:
@@ -229,8 +232,7 @@ class Container(GlobalContextMixin, var=global_container):
         default_factory = kwargs.get("default_factory")
         qualifier = kwargs.get("qualifier")
         
-        # Quick check for existing instances first (performance optimization)
-        # If we already have the instance, return it immediately without async analysis
+        # Handle qualified dependencies quickly
         if qualifier:
             qualified_key = (dependency, qualifier)
             if qualified_key in self.instances:
@@ -238,26 +240,23 @@ class Container(GlobalContextMixin, var=global_container):
             # Check parent for qualified instance
             if self._parent and qualified_key in self._parent.instances:
                 return self._parent.instances[qualified_key]
-        else:
-            # Check for existing unqualified instance
-            if existing_instance := self._get_existing_instance(dependency):
-                return existing_instance.value
         
-        # No existing instance found - check if we can use async detection
+        # Check if async detection is needed for simple cases
         # Only apply async detection for simple cases to avoid interfering with existing behavior:
         # - No default_factory parameter (preserves default factory behavior)
         # - No qualifier parameter (preserves qualified dependency behavior)  
         # - No default parameter (preserves default value behavior)
-        if not default_factory and not qualifier and not kwargs.get("default"):
+        # - Not already in async resolution (prevents infinite recursion)
+        if (not default_factory and not qualifier and not kwargs.get("default") and 
+            not _in_async_resolution.get(False)):
             # Simple case - analyze if async resolution is needed
             try:
                 resolver = self.create_resolver(dependency)
                 if isinstance(resolver, DependenciesPending):
                     # Async resolution needed - return awaitable
                     return resolver.get_result()
-                elif isinstance(resolver, DependenciesReady):
-                    # Sync resolution - return instance directly
-                    return resolver.get_result()
+                # For DependenciesReady (sync), fall through to normal logic
+                # This preserves existing hook behavior for sync chains
             except (ValueError, DependencyResolutionError):
                 # Analysis failed (e.g., missing factory, circular dependency) - fall back to existing logic
                 pass
