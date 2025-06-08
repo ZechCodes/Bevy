@@ -106,10 +106,12 @@ class DependencyAnalyzer:
         # Check if we found any factories at all
         if not factories:
             from bevy.injection_types import DependencyResolutionError
+            # Handle types that don't have __name__ attribute (like UnionType)
+            type_name = getattr(target_type, '__name__', str(target_type))
             raise DependencyResolutionError(
                 dependency_type=target_type,
                 parameter_name="unknown",
-                message=f"No factory found for dependency: {target_type.__name__}"
+                message=f"No factory found for dependency: {type_name}"
             )
         
         # Build chain info
