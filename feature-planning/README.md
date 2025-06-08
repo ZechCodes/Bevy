@@ -4,6 +4,11 @@ This directory contains comprehensive analysis and planning for improving the Be
 
 ## Directory Structure
 
+### `/completed-features/` - Successfully Implemented Features
+Features that have been fully implemented and deployed:
+
+- **[Async Dependency Resolution](completed-features/async-dependency-resolution.md)** ✅ - Full async/await support with unified API
+
 ### `/enhancements/` - Features That Need Enhancement
 Features that exist but could be significantly improved:
 
@@ -11,6 +16,7 @@ Features that exist but could be significantly improved:
 - **[Error Handling](enhancements/error-handling.md)** - Better error messages with dependency chain context  
 - **[Type Annotation Support](enhancements/type-annotation-support.md)** - Full typing support including generics and protocols
 - **[Hook System](enhancements/hook-system.md)** - Priority system, lifecycle hooks, and management tools
+- **[Async Hook Support](enhancements/async-hook-support.md)** 🆕 - Extend hooks to work with async dependency resolution
 - **[Testing Utilities](enhancements/testing-utilities.md)** - Mocking, test containers, and framework integration
 
 ### `/missing-features/` - Features That Are Missing
@@ -18,7 +24,7 @@ Critical features expected in a mature DI framework:
 
 - **[Lifecycle Management](missing-features/lifecycle-management.md)** - Instance disposal and resource cleanup
 - **[Scoping and Lifetime](missing-features/scoping-and-lifetime.md)** - Request/session scopes, transient instances
-- **[Async Support](missing-features/async-support.md)** - Full async/await support for modern Python
+- **[Async Support](missing-features/async-support.md)** - Additional async patterns beyond dependency resolution
 - **[Configuration System](missing-features/configuration-system.md)** - Config binding, modules, auto-discovery
 - **[Introspection and Debugging](missing-features/introspection-debugging.md)** - Container visualization and debugging tools
 
@@ -36,9 +42,9 @@ Existing features that cause confusion and need simplification:
 ### High Priority (Critical for Production Use)
 1. **Documentation** - Foundation for user adoption
 2. **Error Handling** - Essential for debugging experience
-3. **Lifecycle Management** - Critical for resource management
-4. **Scoping and Lifetime** - Essential for web applications
-5. **Async Support** - Required for modern Python apps
+3. **Async Hook Support** 🆕 - Complete async functionality (extends completed async dependency resolution)
+4. **Lifecycle Management** - Critical for resource management
+5. **Scoping and Lifetime** - Essential for web applications
 
 ### Medium-High Priority (Important for Maturity)
 1. **Type Annotation Support** - Modern Python development standard
@@ -58,14 +64,15 @@ Existing features that cause confusion and need simplification:
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation (Months 1-2)
+### Phase 1: Foundation (Weeks 1-4) 
+- ✅ **Async dependency resolution** - COMPLETED
+- **Async hook support** - Complete async functionality 
 - Complete documentation system
 - Enhanced error handling with dependency chains
-- Basic lifecycle management (disposal support)
 
-### Phase 2: Core Features (Months 3-4)  
+### Phase 2: Core Features (Months 2-3)  
+- Basic lifecycle management (disposal support)
 - Scoping and lifetime management
-- Async support foundation
 - Container branching simplification
 
 ### Phase 3: Developer Experience (Months 5-6)
