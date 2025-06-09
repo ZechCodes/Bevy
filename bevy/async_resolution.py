@@ -8,7 +8,7 @@ allowing for seamless integration of async factories with the existing sync API.
 import dis
 import inspect
 import types
-from typing import Any, Awaitable, Type, Dict, Set, List, Union, TypeVar
+from typing import Any, Awaitable, Type, Union, TypeVar
 from dataclasses import dataclass
 from collections import defaultdict
 from tramp.optionals import Optional
@@ -22,11 +22,11 @@ T = TypeVar('T')
 class ChainInfo:
     """Information about a dependency resolution chain."""
     target_type: Type[Any]
-    factories: Dict[Type[Any], Any]  # Type -> Factory function
-    dependencies: Dict[Type[Any], Set[Type[Any]]]  # Type -> Set of dependency types
+    factories: dict[Type[Any], Any]  # Type -> Factory function
+    dependencies: dict[Type[Any], set[Type[Any]]]  # Type -> Set of dependency types
     has_async_factories: bool
-    async_factories: Set[Type[Any]]  # Types that have async factories
-    resolution_order: List[Type[Any]]  # Order to resolve dependencies
+    async_factories: set[Type[Any]]  # Types that have async factories
+    resolution_order: list[Type[Any]]  # Order to resolve dependencies
     
     
 class DependencyGraphTraversal:
@@ -47,7 +47,7 @@ class DependencyGraphTraversal:
         """
         return self._visit_dependency(target_type)
         
-    def _visit_dependency(self, dep_type: Type[Any], visiting_stack: Set[Type[Any]] = None) -> bool:
+    def _visit_dependency(self, dep_type: Type[Any], visiting_stack: set[Type[Any]] = None) -> bool:
         """Visit a dependency type and return True if it's async."""
         if visiting_stack is None:
             visiting_stack = set()
@@ -102,7 +102,7 @@ class DependencyAnalyzer:
     def __init__(self, registry, parent_container=None):
         self.registry = registry
         self.parent_container = parent_container
-        self._chain_cache: Dict[Type[Any], ChainInfo] = {}
+        self._chain_cache: dict[Type[Any], ChainInfo] = {}
         
     def analyze_dependency_chain(self, target_type: Type[T]) -> ChainInfo:
         """
@@ -162,7 +162,7 @@ class DependencyAnalyzer:
                 
         return None
         
-    def _get_factory_dependencies(self, factory) -> Set[Type[Any]]:
+    def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
         """Get the dependency types that a factory function requires."""
         dependencies = set()
         
