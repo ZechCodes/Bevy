@@ -8,7 +8,7 @@ allowing for seamless integration of async factories with the existing sync API.
 import dis
 import inspect
 import types
-from typing import Any, Awaitable, Type, Union, TypeVar
+from typing import Any, Awaitable, Type, TypeVar
 from dataclasses import dataclass
 from collections import defaultdict
 from tramp.optionals import Optional
