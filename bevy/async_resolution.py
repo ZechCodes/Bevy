@@ -94,7 +94,6 @@ class DependencyGraphTraversal:
             is_async = True
             
         self.resolution_order.append(dep_type)
-        visiting_stack.discard(dep_type)  # Remove from visiting stack when done
         return is_async
 
 
