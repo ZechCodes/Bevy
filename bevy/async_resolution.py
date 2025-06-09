@@ -51,6 +51,8 @@ class DependencyGraphTraversal:
         """Visit a dependency type and return True if it's async."""
         if visiting_stack is None:
             visiting_stack = set()
+        else:
+            visiting_stack = visiting_stack.copy()
             
         # Check for circular dependencies
         if dep_type in visiting_stack:
@@ -83,7 +85,7 @@ class DependencyGraphTraversal:
         # Recursively check dependencies
         dep_has_async = False
         for dep in factory_deps:
-            if self._visit_dependency(dep, visiting_stack.copy()):
+            if self._visit_dependency(dep, visiting_stack):
                 dep_has_async = True
                 
         # If any dependency is async, this chain is async
