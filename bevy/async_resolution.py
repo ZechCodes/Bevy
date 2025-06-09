@@ -5,7 +5,6 @@ This module provides automatic detection and resolution of async dependency chai
 allowing for seamless integration of async factories with the existing sync API.
 """
 
-import dis
 import inspect
 import types
 from typing import Any, Awaitable, Type, TypeVar
@@ -150,15 +149,17 @@ class DependencyAnalyzer:
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
         """Get the dependency types that a factory function requires.
         
-        We need to analyze dependencies for both sync and async factories to detect
-        circular dependencies, but the analysis approach differs.
+        Only analyzes explicit parameter type annotations. No bytecode analysis.
+        
+        If a factory needs dependencies, they must be declared as typed parameters.
+        This is explicit, safe, and doesn't rely on fragile bytecode analysis.
         """
         dependencies = set()
         
         try:
             sig = inspect.signature(factory)
             
-            # Analyze explicit parameter types (for both sync and async factories)
+            # Only analyze explicit parameter types
             for param_name, param in sig.parameters.items():
                 if param_name == 'container':
                     continue
@@ -166,53 +167,9 @@ class DependencyAnalyzer:
                 if param.annotation and param.annotation != inspect.Parameter.empty:
                     if isinstance(param.annotation, type):
                         dependencies.add(param.annotation)
-            
-            # For factories that take container parameter, analyze container.get() calls
-            if 'container' in sig.parameters:
-                container_dependencies = self._analyze_container_get_calls(factory)
-                dependencies.update(container_dependencies)
                         
         except Exception:
             # If analysis fails, return empty set - safer than guessing
-            pass
-            
-        return dependencies
-    
-    def _analyze_container_get_calls(self, factory) -> set[Type[Any]]:
-        """Analyze factory bytecode to find container.get() calls.
-        
-        This detects what types a factory depends on via container.get() calls.
-        
-        Note: For async factories, they can await any dependency, so the factory being async
-        is what makes the chain async, not what it depends on. However, we still need to 
-        analyze dependencies for circular dependency detection.
-        """
-        dependencies = set()
-        
-        try:
-            # Get the bytecode instructions
-            instructions = list(dis.get_instructions(factory))
-            
-            # Look for patterns like: container.get(SomeType)
-            for i, instr in enumerate(instructions):
-                # Look for LOAD_ATTR 'get' (container.get)
-                if (instr.opname == 'LOAD_ATTR' and instr.argval == 'get'):
-                    # Look ahead for LOAD_GLOBAL that might be a type being passed to get()
-                    for j in range(i + 1, min(i + 10, len(instructions))):  # Look ahead a few instructions
-                        next_instr = instructions[j]
-                        if next_instr.opname == 'LOAD_GLOBAL':
-                            # Check if this global name corresponds to a registered type
-                            global_name = next_instr.argval
-                            for registered_type in self.registry.factories.keys():
-                                if hasattr(registered_type, '__name__') and registered_type.__name__ == global_name:
-                                    dependencies.add(registered_type)
-                                    break
-                        elif next_instr.opname in ('CALL_FUNCTION', 'CALL'):
-                            # Found the function call, stop looking
-                            break
-                            
-        except Exception:
-            # If bytecode analysis fails, return empty set
             pass
             
         return dependencies
@@ -314,8 +271,11 @@ class DependenciesPending:
                 if dep_type in self.chain_info.async_factories:
                     factory = self.chain_info.factories[dep_type]
                     if inspect.iscoroutinefunction(factory):
-                        # Async factory - resolve it and cache normally
-                        instance = await factory(self.container)
+                        # Async factory
+                        if hasattr(factory, 'factory'):  # Factory object
+                            instance = await factory(self.container)
+                        else:  # Function factory - use dependency injection
+                            instance = await self.container.call(factory, self.container)
                         self.container.instances[dep_type] = instance
             
             # Phase 2: Resolve remaining dependencies (sync factories, even if they depend on async)
@@ -331,8 +291,11 @@ class DependenciesPending:
                 # Check if this is a sync factory (even if it's marked as async due to dependencies)
                 factory = self.chain_info.factories[dep_type]
                 if not inspect.iscoroutinefunction(factory):
-                    # Sync factory - call normally (async deps should already be resolved)
-                    instance = factory(self.container)
+                    # Sync factory
+                    if hasattr(factory, 'factory'):  # Factory object
+                        instance = factory(self.container)
+                    else:  # Function factory - use dependency injection
+                        instance = self.container.call(factory, self.container)
                     self.container.instances[dep_type] = instance
         finally:
             # Reset context flag

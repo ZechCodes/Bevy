@@ -745,7 +745,11 @@ class Container(GlobalContextMixin, var=global_container):
             case Optional.Nothing():
                 match self.registry.find_factory_for_type(dependency):
                     case Optional.Some(factory):
-                        instance = factory(self)
+                        # Check if it's a Factory object or a function
+                        if hasattr(factory, 'factory'):  # Factory object
+                            instance = factory(self)
+                        else:  # Function factory - use dependency injection
+                            instance = self.call(factory, self)
 
                     case Optional.Nothing():
                         instance = self._handle_unsupported_dependency(dependency)
@@ -874,7 +878,11 @@ class Container(GlobalContextMixin, var=global_container):
             case Optional.Nothing():
                 match self.registry.find_factory_for_type(dependency):
                     case Optional.Some(factory):
-                        instance = factory(self)
+                        # Check if it's a Factory object or a function
+                        if hasattr(factory, 'factory'):  # Factory object
+                            instance = factory(self)
+                        else:  # Function factory - use dependency injection
+                            instance = self.call(factory, self)
 
                     case Optional.Nothing():
                         instance = self._handle_unsupported_dependency(dependency)

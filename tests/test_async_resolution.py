@@ -79,32 +79,25 @@ class MixedCircularC:
     def __init__(self, a): self.a = a
 
 # Circular dependency test factories
-def create_circular_a(container) -> CircularA:
-    b = container.get(CircularB)
+def create_circular_a(container, b: CircularB) -> CircularA:
     return CircularA(b)
 
-def create_circular_b(container) -> CircularB:
-    a = container.get(CircularA)
+def create_circular_b(container, a: CircularA) -> CircularB:
     return CircularB(a)
 
-async def create_async_circular_a(container) -> AsyncCircularA:
-    b = container.get(AsyncCircularB)
+async def create_async_circular_a(container, b: AsyncCircularB) -> AsyncCircularA:
     return AsyncCircularA(b)
 
-def create_async_circular_b(container) -> AsyncCircularB:
-    a = container.get(AsyncCircularA)
+def create_async_circular_b(container, a: AsyncCircularA) -> AsyncCircularB:
     return AsyncCircularB(a)
 
-async def create_mixed_circular_a(container) -> MixedCircularA:
-    b = container.get(MixedCircularB)
+async def create_mixed_circular_a(container, b: MixedCircularB) -> MixedCircularA:
     return MixedCircularA(b)
 
-def create_mixed_circular_b(container) -> MixedCircularB:
-    c = container.get(MixedCircularC)
+def create_mixed_circular_b(container, c: MixedCircularC) -> MixedCircularB:
     return MixedCircularB(c)
     
-def create_mixed_circular_c(container) -> MixedCircularC:
-    a = container.get(MixedCircularA)
+def create_mixed_circular_c(container, a: MixedCircularA) -> MixedCircularC:
     return MixedCircularC(a)
 
 
@@ -114,30 +107,25 @@ def create_config(container) -> Config:
     return Config()
 
 
-async def create_database(container) -> Database:
-    """Async factory for Database"""
-    config = container.get(Config)
+async def create_database(container, config: Config) -> Database:
+    """Async factory for Database with explicit dependency"""
     db = Database(config)
     await db.connect()
     return db
 
 
-def create_user_service(container) -> UserService:
-    """Sync factory with async dependency"""
-    db = container.get(Database)
-    return UserService(db)
+def create_user_service(container, database: Database) -> UserService:
+    """Sync factory with explicit async dependency"""
+    return UserService(database)
 
 
-def create_notification_service(container) -> NotificationService:
-    """Sync factory with sync dependency"""
-    config = container.get(Config)
+def create_notification_service(container, config: Config) -> NotificationService:
+    """Sync factory with explicit sync dependency"""
     return NotificationService(config)
 
 
-def create_web_controller(container) -> WebController:
-    """Sync factory with mixed dependencies (one async chain, one sync)"""
-    user_service = container.get(UserService)
-    notification_service = container.get(NotificationService)
+def create_web_controller(container, user_service: UserService, notification_service: NotificationService) -> WebController:
+    """Sync factory with explicit mixed dependencies"""
     return WebController(user_service, notification_service)
 
 
