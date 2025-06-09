@@ -5,12 +5,15 @@ This module provides automatic detection and resolution of async dependency chai
 allowing for seamless integration of async factories with the existing sync API.
 """
 
+import dis
 import inspect
+import types
 from typing import Any, Awaitable, Type, Dict, Set, List, Union, TypeVar
 from dataclasses import dataclass
 from collections import defaultdict
 from tramp.optionals import Optional
 from bevy.hooks import Hook
+from bevy.injection_types import CircularDependencyError, DependencyResolutionError
 
 T = TypeVar('T')
 
@@ -52,7 +55,6 @@ class DependencyGraphTraversal:
         # Check for circular dependencies
         if dep_type in visiting_stack:
             cycle_chain = list(visiting_stack) + [dep_type]
-            from bevy.injection_types import CircularDependencyError
             raise CircularDependencyError(cycle_chain)
         
         if dep_type in self.visited:
@@ -118,7 +120,6 @@ class DependencyAnalyzer:
         
         # Check if we found any factories at all
         if not traversal.factories:
-            from bevy.injection_types import DependencyResolutionError
             # Handle types that don't have __name__ attribute (like UnionType)
             type_name = getattr(target_type, '__name__', str(target_type))
             raise DependencyResolutionError(
@@ -179,8 +180,6 @@ class DependencyAnalyzer:
                 # For now, we'll use a heuristic approach
                 
                 # Look at the function's code to find container.get() calls
-                import dis
-                import types
                 
                 # Get the factory's bytecode
                 if hasattr(factory, '__code__'):
@@ -278,7 +277,7 @@ class DependenciesPending:
         
     async def _resolve_async_chain(self) -> T:
         """Asynchronously resolve the complete dependency chain."""
-        # Import the context variable at the top of the async function
+        # Import here to avoid circular import
         from bevy.containers import _in_async_resolution
         
         # Check if the target instance already exists (including parent containers)
