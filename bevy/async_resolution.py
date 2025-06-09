@@ -148,61 +148,74 @@ class DependencyAnalyzer:
         return chain_info
         
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
-        """Get the dependency types that a factory function requires."""
-        dependencies = set()
+        """Get the dependency types that a factory function requires.
         
-        # For factory functions that take a container parameter, we need to analyze
-        # what types they might call container.get() on. For now, we'll use a 
-        # simplified approach but this could be enhanced with AST analysis.
+        Uses a hybrid approach:
+        1. Always analyze explicit parameter type annotations
+        2. For factories with container parameter: use simple static analysis to find container.get() calls
+        3. Avoid overly broad assumptions that cause false circular dependencies
+        """
+        dependencies = set()
         
         try:
             sig = inspect.signature(factory)
             
-            # Check if this is a standard factory function with container parameter
-            if len(sig.parameters) == 1 and 'container' in sig.parameters:
-                # This is a standard Bevy factory function
-                # We need to analyze what it calls container.get() on
-                # For now, we'll use a heuristic approach
-                
-                # Look at the function's code to find container.get() calls
-                
-                # Get the factory's bytecode
-                if hasattr(factory, '__code__'):
-                    code = factory.__code__
+            # Analyze explicit parameter types (regardless of container usage)
+            for param_name, param in sig.parameters.items():
+                # Skip 'container' parameter - it's not a dependency type
+                if param_name == 'container':
+                    continue
                     
-                    # Look for LOAD_ATTR instructions that might be .get() calls
-                    instructions = list(dis.get_instructions(code))
-                    for i, instr in enumerate(instructions):
-                        if (instr.opname == 'LOAD_ATTR' and 
-                            instr.argval == 'get' and 
-                            i > 0 and 
-                            instructions[i-1].opname == 'LOAD_FAST' and
-                            instructions[i-1].argval == 'container'):
-                            
-                            # This looks like container.get() - try to find what type is being requested
-                            # Look ahead for the type being loaded
-                            for j in range(i+1, min(i+5, len(instructions))):
-                                if instructions[j].opname in ['LOAD_GLOBAL', 'LOAD_FAST']:
-                                    # Try to resolve the type from the factory's globals
-                                    type_name = instructions[j].argval
-                                    if hasattr(factory, '__globals__') and type_name in factory.__globals__:
-                                        dep_type = factory.__globals__[type_name]
-                                        if isinstance(dep_type, type):
-                                            dependencies.add(dep_type)
-                                    break
-                
-            else:
-                # Non-standard factory - analyze parameters
-                for param_name, param in sig.parameters.items():
-                    if param_name == 'container':
-                        continue
+                if param.annotation and param.annotation != inspect.Parameter.empty:
+                    if isinstance(param.annotation, type):
+                        dependencies.add(param.annotation)
+            
+            # If factory takes container parameter, try to detect container.get() calls
+            if 'container' in sig.parameters:
+                # Use simple bytecode analysis to find container.get() calls
+                # This is more targeted than "depends on everything"
+                container_dependencies = self._analyze_container_get_calls(factory)
+                dependencies.update(container_dependencies)
                         
-                    if param.annotation and param.annotation != inspect.Parameter.empty:
-                        if isinstance(param.annotation, type):
-                            dependencies.add(param.annotation)
+        except Exception:
+            # If analysis fails, return only explicit parameters - safer than guessing
+            pass
+            
+        return dependencies
+    
+    def _analyze_container_get_calls(self, factory) -> set[Type[Any]]:
+        """Analyze factory bytecode to find container.get() calls.
+        
+        This is a simplified analysis that looks for LOAD_ATTR 'get' followed by function calls.
+        While not perfect, it's more targeted than assuming all types are dependencies.
+        """
+        dependencies = set()
+        
+        try:
+            # Get the bytecode instructions
+            instructions = list(dis.get_instructions(factory))
+            
+            # Look for patterns like: container.get(SomeType)
+            for i, instr in enumerate(instructions):
+                # Look for LOAD_ATTR 'get' (container.get)
+                if (instr.opname == 'LOAD_ATTR' and instr.argval == 'get'):
+                    # Look ahead for LOAD_GLOBAL that might be a type being passed to get()
+                    for j in range(i + 1, min(i + 10, len(instructions))):  # Look ahead a few instructions
+                        next_instr = instructions[j]
+                        if next_instr.opname == 'LOAD_GLOBAL':
+                            # Check if this global name corresponds to a registered type
+                            global_name = next_instr.argval
+                            for registered_type in self.registry.factories.keys():
+                                if hasattr(registered_type, '__name__') and registered_type.__name__ == global_name:
+                                    dependencies.add(registered_type)
+                                    break
+                        elif next_instr.opname in ('CALL_FUNCTION', 'CALL'):
+                            # Found the function call, stop looking
+                            break
                             
         except Exception:
-            # If analysis fails, return empty set - safer than guessing
+            # If bytecode analysis fails, return empty set
+            # This is safer than guessing and causing false dependencies
             pass
             
         return dependencies
