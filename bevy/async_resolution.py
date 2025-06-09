@@ -47,7 +47,7 @@ class DependencyGraphTraversal:
         """
         return self._visit_dependency(target_type)
         
-    def _visit_dependency(self, dep_type: Type[Any], visiting_stack: set[Type[Any]] = None) -> bool:
+    def _visit_dependency(self, dep_type: Type[Any], visiting_stack: set[Type[Any]] | None = None) -> bool:
         """Visit a dependency type and return True if it's async."""
         if visiting_stack is None:
             visiting_stack = set()
@@ -222,7 +222,7 @@ class DependencyAnalyzer:
             
         return dependencies
         
-    def invalidate_cache(self, dependency_type: Type[Any] = None):
+    def invalidate_cache(self, dependency_type: Type[Any] | None = None):
         """Invalidate dependency chain cache."""
         if dependency_type:
             self._chain_cache.pop(dependency_type, None)
