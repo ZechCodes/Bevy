@@ -150,19 +150,16 @@ class DependencyAnalyzer:
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
         """Get the dependency types that a factory function requires.
         
-        Uses a hybrid approach:
-        1. Always analyze explicit parameter type annotations
-        2. For factories with container parameter: use simple static analysis to find container.get() calls
-        3. Avoid overly broad assumptions that cause false circular dependencies
+        We need to analyze dependencies for both sync and async factories to detect
+        circular dependencies, but the analysis approach differs.
         """
         dependencies = set()
         
         try:
             sig = inspect.signature(factory)
             
-            # Analyze explicit parameter types (regardless of container usage)
+            # Analyze explicit parameter types (for both sync and async factories)
             for param_name, param in sig.parameters.items():
-                # Skip 'container' parameter - it's not a dependency type
                 if param_name == 'container':
                     continue
                     
@@ -170,15 +167,13 @@ class DependencyAnalyzer:
                     if isinstance(param.annotation, type):
                         dependencies.add(param.annotation)
             
-            # If factory takes container parameter, try to detect container.get() calls
+            # For factories that take container parameter, analyze container.get() calls
             if 'container' in sig.parameters:
-                # Use simple bytecode analysis to find container.get() calls
-                # This is more targeted than "depends on everything"
                 container_dependencies = self._analyze_container_get_calls(factory)
                 dependencies.update(container_dependencies)
                         
         except Exception:
-            # If analysis fails, return only explicit parameters - safer than guessing
+            # If analysis fails, return empty set - safer than guessing
             pass
             
         return dependencies
@@ -186,8 +181,11 @@ class DependencyAnalyzer:
     def _analyze_container_get_calls(self, factory) -> set[Type[Any]]:
         """Analyze factory bytecode to find container.get() calls.
         
-        This is a simplified analysis that looks for LOAD_ATTR 'get' followed by function calls.
-        While not perfect, it's more targeted than assuming all types are dependencies.
+        This detects what types a factory depends on via container.get() calls.
+        
+        Note: For async factories, they can await any dependency, so the factory being async
+        is what makes the chain async, not what it depends on. However, we still need to 
+        analyze dependencies for circular dependency detection.
         """
         dependencies = set()
         
@@ -215,7 +213,6 @@ class DependencyAnalyzer:
                             
         except Exception:
             # If bytecode analysis fails, return empty set
-            # This is safer than guessing and causing false dependencies
             pass
             
         return dependencies
