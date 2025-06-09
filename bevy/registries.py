@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import overload, Type
+from tramp.optionals import Optional
 
 import bevy.containers as containers
 import bevy.hooks as hooks
@@ -60,6 +61,23 @@ class Registry(GlobalContextMixin, var=global_registry):
             case _:
                 raise ValueError(f"Unexpected arguments to add_hook: {args}")
 
+    def find_factory_for_type(self, dependency_type: Type["containers.Instance"]) -> Optional["DependencyFactory[containers.Instance]"]:
+        """Find a factory for the given dependency type.
+        
+        Returns Optional.Some(factory) if found, Optional.Nothing() if not found.
+        """
+        if not isinstance(dependency_type, type):
+            return Optional.Nothing()
+
+        for factory_type, factory in self.factories.items():
+            try:
+                if issubclass(dependency_type, factory_type):
+                    return Optional.Some(factory)
+            except TypeError:
+                # Handle cases where issubclass fails (e.g., with generics)
+                continue
+
+        return Optional.Nothing()
 
     def create_container(self) -> "containers.Container":
         """Creates a new container bound to the registry."""

@@ -144,18 +144,13 @@ class DependencyAnalyzer:
         return chain_info
         
     def _find_factory_for_type(self, dependency_type: Type[Any]) -> Any:
-        """Find factory for a given type - mirrors Container._find_factory_for_type logic."""
-        if not isinstance(dependency_type, type):
-            return None
-            
+        """Find factory for a given type, checking parent containers if needed."""
         # Check current registry first
-        for factory_type, factory in self.registry.factories.items():
-            try:
-                if issubclass(dependency_type, factory_type):
-                    return factory
-            except TypeError:
-                # Handle cases where issubclass fails
-                continue
+        match self.registry.find_factory_for_type(dependency_type):
+            case Optional.Some(factory):
+                return factory
+            case Optional.Nothing():
+                pass
         
         # Check parent container registries if not found
         if self.parent_container:

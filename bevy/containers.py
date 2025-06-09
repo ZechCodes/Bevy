@@ -930,18 +930,7 @@ class Container(GlobalContextMixin, var=global_container):
         return None
 
     def _find_factory_for_type(self, dependency):
-        if not isinstance(dependency, type):
-            return Optional.Nothing()
-
-        for factory_type, factory in self.registry.factories.items():
-            if issubclass_or_raises(
-                dependency,
-                factory_type,
-                TypeError(f"Cannot check if {dependency!r} is a subclass of {factory_type!r}")
-            ):
-                return Optional.Some(factory)
-
-        return Optional.Nothing()
+        return self.registry.find_factory_for_type(dependency)
 
     def _get_existing_instance(self, dependency: t.Type[Instance]) -> Optional[Instance]:
         if dependency in self.instances:
