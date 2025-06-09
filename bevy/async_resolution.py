@@ -66,7 +66,11 @@ class DependencyGraphTraversal:
         visiting_stack.add(dep_type)
         
         # Find factory for this type
-        factory = self.analyzer._find_factory_for_type(dep_type)
+        match self.analyzer.registry.find_factory_for_type(dep_type):
+            case Optional.Some(factory):
+                pass
+            case Optional.Nothing():
+                factory = None
         if factory is None:
             # No factory found - this will be handled by existing error handling
             return False
@@ -142,21 +146,6 @@ class DependencyAnalyzer:
         # Cache result
         self._chain_cache[target_type] = chain_info
         return chain_info
-        
-    def _find_factory_for_type(self, dependency_type: Type[Any]) -> Any:
-        """Find factory for a given type, checking parent containers if needed."""
-        # Check current registry first
-        match self.registry.find_factory_for_type(dependency_type):
-            case Optional.Some(factory):
-                return factory
-            case Optional.Nothing():
-                pass
-        
-        # Check parent container registries if not found
-        if self.parent_container:
-            return self.parent_container._dependency_analyzer._find_factory_for_type(dependency_type)
-                
-        return None
         
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
         """Get the dependency types that a factory function requires."""

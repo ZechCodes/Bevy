@@ -743,7 +743,7 @@ class Container(GlobalContextMixin, var=global_container):
                 instance = v
 
             case Optional.Nothing():
-                match self._find_factory_for_type(dependency):
+                match self.registry.find_factory_for_type(dependency):
                     case Optional.Some(factory):
                         instance = factory(self)
 
@@ -872,7 +872,7 @@ class Container(GlobalContextMixin, var=global_container):
                 instance = v
 
             case Optional.Nothing():
-                match self._find_factory_for_type(dependency):
+                match self.registry.find_factory_for_type(dependency):
                     case Optional.Some(factory):
                         instance = factory(self)
 
@@ -929,8 +929,6 @@ class Container(GlobalContextMixin, var=global_container):
         
         return None
 
-    def _find_factory_for_type(self, dependency):
-        return self.registry.find_factory_for_type(dependency)
 
     def _get_existing_instance(self, dependency: t.Type[Instance]) -> Optional[Instance]:
         if dependency in self.instances:
