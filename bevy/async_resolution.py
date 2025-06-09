@@ -26,6 +26,74 @@ class ChainInfo:
     resolution_order: List[Type[Any]]  # Order to resolve dependencies
     
     
+class DependencyGraphTraversal:
+    """Handles the traversal and analysis of dependency graphs."""
+    
+    def __init__(self, analyzer):
+        self.analyzer = analyzer
+        self.visited = set()
+        self.factories = {}
+        self.dependencies = defaultdict(set)
+        self.async_factories = set()
+        self.resolution_order = []
+        
+    def traverse(self, target_type: Type[Any]) -> bool:
+        """
+        Traverse the dependency graph starting from target_type.
+        Returns True if any dependencies in the chain are async.
+        """
+        return self._visit_dependency(target_type)
+        
+    def _visit_dependency(self, dep_type: Type[Any], visiting_stack: Set[Type[Any]] = None) -> bool:
+        """Visit a dependency type and return True if it's async."""
+        if visiting_stack is None:
+            visiting_stack = set()
+            
+        # Check for circular dependencies
+        if dep_type in visiting_stack:
+            cycle_chain = list(visiting_stack) + [dep_type]
+            from bevy.injection_types import CircularDependencyError
+            raise CircularDependencyError(cycle_chain)
+        
+        if dep_type in self.visited:
+            return dep_type in self.async_factories
+            
+        self.visited.add(dep_type)
+        visiting_stack.add(dep_type)
+        
+        # Find factory for this type
+        factory = self.analyzer._find_factory_for_type(dep_type)
+        if factory is None:
+            # No factory found - this will be handled by existing error handling
+            return False
+            
+        self.factories[dep_type] = factory
+        
+        # Check if factory is async
+        is_async = inspect.iscoroutinefunction(factory)
+        if is_async:
+            self.async_factories.add(dep_type)
+            
+        # Analyze factory dependencies
+        factory_deps = self.analyzer._get_factory_dependencies(factory)
+        self.dependencies[dep_type] = factory_deps
+        
+        # Recursively check dependencies
+        dep_has_async = False
+        for dep in factory_deps:
+            if self._visit_dependency(dep, visiting_stack.copy()):
+                dep_has_async = True
+                
+        # If any dependency is async, this chain is async
+        if dep_has_async:
+            self.async_factories.add(dep_type)
+            is_async = True
+            
+        self.resolution_order.append(dep_type)
+        visiting_stack.discard(dep_type)  # Remove from visiting stack when done
+        return is_async
+
+
 class DependencyAnalyzer:
     """Analyzes dependency chains to determine if async resolution is needed."""
     
@@ -44,67 +112,12 @@ class DependencyAnalyzer:
         if target_type in self._chain_cache:
             return self._chain_cache[target_type]
             
-        # Build dependency graph
-        visited = set()
-        factories = {}
-        dependencies = defaultdict(set)
-        async_factories = set()
-        resolution_order = []
-        
-        def visit_dependency(dep_type: Type[Any], visiting_stack: Set[Type[Any]] = None) -> bool:
-            """Visit a dependency type and return True if it's async."""
-            if visiting_stack is None:
-                visiting_stack = set()
-                
-            # Check for circular dependencies
-            if dep_type in visiting_stack:
-                cycle_chain = list(visiting_stack) + [dep_type]
-                from bevy.injection_types import CircularDependencyError
-                raise CircularDependencyError(cycle_chain)
-            
-            if dep_type in visited:
-                return dep_type in async_factories
-                
-            visited.add(dep_type)
-            visiting_stack.add(dep_type)
-            
-            # Find factory for this type
-            factory = self._find_factory_for_type(dep_type)
-            if factory is None:
-                # No factory found - this will be handled by existing error handling
-                return False
-                
-            factories[dep_type] = factory
-            
-            # Check if factory is async
-            is_async = inspect.iscoroutinefunction(factory)
-            if is_async:
-                async_factories.add(dep_type)
-                
-            # Analyze factory dependencies
-            factory_deps = self._get_factory_dependencies(factory)
-            dependencies[dep_type] = factory_deps
-            
-            # Recursively check dependencies
-            dep_has_async = False
-            for dep in factory_deps:
-                if visit_dependency(dep, visiting_stack.copy()):
-                    dep_has_async = True
-                    
-            # If any dependency is async, this chain is async
-            if dep_has_async:
-                async_factories.add(dep_type)
-                is_async = True
-                
-            resolution_order.append(dep_type)
-            visiting_stack.discard(dep_type)  # Remove from visiting stack when done
-            return is_async
-            
-        # Start analysis from target type
-        has_async = visit_dependency(target_type)
+        # Use traversal class to build dependency graph
+        traversal = DependencyGraphTraversal(self)
+        has_async = traversal.traverse(target_type)
         
         # Check if we found any factories at all
-        if not factories:
+        if not traversal.factories:
             from bevy.injection_types import DependencyResolutionError
             # Handle types that don't have __name__ attribute (like UnionType)
             type_name = getattr(target_type, '__name__', str(target_type))
@@ -117,11 +130,11 @@ class DependencyAnalyzer:
         # Build chain info
         chain_info = ChainInfo(
             target_type=target_type,
-            factories=factories,
-            dependencies=dict(dependencies),
+            factories=traversal.factories,
+            dependencies=dict(traversal.dependencies),
             has_async_factories=has_async,
-            async_factories=async_factories,
-            resolution_order=resolution_order
+            async_factories=traversal.async_factories,
+            resolution_order=traversal.resolution_order
         )
         
         # Cache result
