@@ -18,8 +18,9 @@ from typing import Awaitable, Union
 from unittest.mock import Mock, patch
 import time
 
-from bevy import Container, injectable, Inject, DependencyResolutionError, CircularDependencyError
+from bevy import Container, injectable, DependencyResolutionError, CircularDependencyError
 from bevy.registries import Registry
+from bevy.injection_types import Inject
 from bevy.bundled.type_factory_hook import type_factory
 
 
@@ -79,25 +80,25 @@ class MixedCircularC:
     def __init__(self, a): self.a = a
 
 # Circular dependency test factories
-def create_circular_a(container, b: CircularB) -> CircularA:
+def create_circular_a(container, b: Inject[CircularB]) -> CircularA:
     return CircularA(b)
 
-def create_circular_b(container, a: CircularA) -> CircularB:
+def create_circular_b(container, a: Inject[CircularA]) -> CircularB:
     return CircularB(a)
 
-async def create_async_circular_a(container, b: AsyncCircularB) -> AsyncCircularA:
+async def create_async_circular_a(container, b: Inject[AsyncCircularB]) -> AsyncCircularA:
     return AsyncCircularA(b)
 
-def create_async_circular_b(container, a: AsyncCircularA) -> AsyncCircularB:
+def create_async_circular_b(container, a: Inject[AsyncCircularA]) -> AsyncCircularB:
     return AsyncCircularB(a)
 
-async def create_mixed_circular_a(container, b: MixedCircularB) -> MixedCircularA:
+async def create_mixed_circular_a(container, b: Inject[MixedCircularB]) -> MixedCircularA:
     return MixedCircularA(b)
 
-def create_mixed_circular_b(container, c: MixedCircularC) -> MixedCircularB:
+def create_mixed_circular_b(container, c: Inject[MixedCircularC]) -> MixedCircularB:
     return MixedCircularB(c)
     
-def create_mixed_circular_c(container, a: MixedCircularA) -> MixedCircularC:
+def create_mixed_circular_c(container, a: Inject[MixedCircularA]) -> MixedCircularC:
     return MixedCircularC(a)
 
 
@@ -114,17 +115,17 @@ async def create_database(container, config: Config) -> Database:
     return db
 
 
-def create_user_service(container, database: Database) -> UserService:
+def create_user_service(container, database: Inject[Database]) -> UserService:
     """Sync factory with explicit async dependency"""
     return UserService(database)
 
 
-def create_notification_service(container, config: Config) -> NotificationService:
+def create_notification_service(container, config: Inject[Config]) -> NotificationService:
     """Sync factory with explicit sync dependency"""
     return NotificationService(config)
 
 
-def create_web_controller(container, user_service: UserService, notification_service: NotificationService) -> WebController:
+def create_web_controller(container, user_service: Inject[UserService], notification_service: Inject[NotificationService]) -> WebController:
     """Sync factory with explicit mixed dependencies"""
     return WebController(user_service, notification_service)
 

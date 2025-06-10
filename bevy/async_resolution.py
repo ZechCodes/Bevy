@@ -158,16 +158,15 @@ class DependencyAnalyzer:
             if injection_info:
                 # Use the factory's configured injection strategy
                 injectable_params = injection_info['params']
-                for param_name, (param_type, options) in injectable_params.items():
-                    if param_name != 'container' and isinstance(param_type, type):
-                        dependencies.add(param_type)
             else:
-                # No @injectable decorator - analyze with ANY_NOT_PASSED strategy
+                # No @injectable decorator - analyze with DEFAULT strategy
                 # This matches the default behavior for non-decorated factories
-                injectable_params = analyze_function_signature(factory, InjectionStrategy.ANY_NOT_PASSED)
-                for param_name, (param_type, options) in injectable_params.items():
-                    if param_name != 'container' and isinstance(param_type, type):
-                        dependencies.add(param_type)
+                injectable_params = analyze_function_signature(factory, InjectionStrategy.DEFAULT)
+            
+            # Extract dependency types from injectable parameters
+            for param_name, (param_type, options) in injectable_params.items():
+                if param_name != 'container' and isinstance(param_type, type):
+                    dependencies.add(param_type)
                         
         except (ValueError, TypeError) as e:
             # Signature inspection failures
