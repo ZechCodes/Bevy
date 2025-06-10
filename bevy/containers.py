@@ -746,7 +746,8 @@ class Container(GlobalContextMixin, var=global_container):
                 match self.registry.find_factory_for_type(dependency):
                     case Optional.Some(factory):
                         # Check if it's a Factory object or a function
-                        if hasattr(factory, 'factory'):  # Factory object
+                        from bevy.factories import Factory
+                        if isinstance(factory, Factory):  # Factory object
                             instance = factory(self)
                         else:  # Function factory - use dependency injection
                             instance = self.call(factory, self)
@@ -879,7 +880,8 @@ class Container(GlobalContextMixin, var=global_container):
                 match self.registry.find_factory_for_type(dependency):
                     case Optional.Some(factory):
                         # Check if it's a Factory object or a function
-                        if hasattr(factory, 'factory'):  # Factory object
+                        from bevy.factories import Factory
+                        if isinstance(factory, Factory):  # Factory object
                             instance = factory(self)
                         else:  # Function factory - use dependency injection
                             instance = self.call(factory, self)

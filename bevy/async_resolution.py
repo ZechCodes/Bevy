@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from tramp.optionals import Optional
 from bevy.hooks import Hook
 from bevy.injection_types import CircularDependencyError, DependencyResolutionError
+from bevy.factories import Factory
 
 T = TypeVar('T')
 
@@ -286,7 +287,7 @@ class DependenciesPending:
                     factory = self.chain_info.factories[dep_type]
                     if inspect.iscoroutinefunction(factory):
                         # Async factory
-                        if hasattr(factory, 'factory'):  # Factory object
+                        if isinstance(factory, Factory):  # Factory object
                             instance = await factory(self.container)
                         else:  # Function factory - use dependency injection
                             instance = await self.container.call(factory, self.container)
@@ -306,7 +307,7 @@ class DependenciesPending:
                 factory = self.chain_info.factories[dep_type]
                 if not inspect.iscoroutinefunction(factory):
                     # Sync factory
-                    if hasattr(factory, 'factory'):  # Factory object
+                    if isinstance(factory, Factory):  # Factory object
                         instance = factory(self.container)
                     else:  # Function factory - use dependency injection
                         instance = self.container.call(factory, self.container)
