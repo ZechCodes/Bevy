@@ -149,33 +149,56 @@ class DependencyAnalyzer:
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
         """Get the dependency types that a factory function requires.
         
-        Only analyzes explicit parameter type annotations. No bytecode analysis.
-        
-        If a factory needs dependencies, they must be declared as typed parameters.
-        This is explicit, safe, and doesn't rely on fragile bytecode analysis.
+        Analyzes explicit parameter type annotations, including string annotations.
+        Uses get_type_hints() to resolve string annotations properly.
         """
         dependencies = set()
         
         try:
-            sig = inspect.signature(factory)
+            # First try to get resolved type hints (handles string annotations)
+            from typing import get_type_hints
+            type_hints = get_type_hints(factory)
             
-            # Only analyze explicit parameter types
+            sig = inspect.signature(factory)
             for param_name, param in sig.parameters.items():
                 if param_name == 'container':
                     continue
                     
-                if param.annotation and param.annotation != inspect.Parameter.empty:
-                    if isinstance(param.annotation, type):
-                        dependencies.add(param.annotation)
+                # Use resolved type hint if available, otherwise fall back to raw annotation
+                if param_name in type_hints:
+                    annotation = type_hints[param_name]
+                else:
+                    annotation = param.annotation
+                    
+                if annotation and annotation != inspect.Parameter.empty:
+                    if isinstance(annotation, type):
+                        dependencies.add(annotation)
                         
         except (ValueError, TypeError) as e:
-            # Only catch specific signature inspection failures
-            # Re-raise with context about what we were analyzing
+            # Signature inspection failures
             raise DependencyResolutionError(
-                dependency_type=type(None),  # No specific type being resolved
+                dependency_type=type(None),
                 parameter_name="unknown",
                 message=f"Failed to analyze factory signature for dependency analysis: {factory}. "
                        f"Error: {e}. Ensure factory is a valid callable."
+            ) from e
+        except NameError as e:
+            # String annotation references undefined name
+            raise DependencyResolutionError(
+                dependency_type=type(None),
+                parameter_name="unknown", 
+                message=f"Failed to resolve string type annotations in factory {factory}. "
+                       f"Error: {e}. Ensure all referenced types are imported and available "
+                       f"in the factory's module scope."
+            ) from e
+        except Exception as e:
+            # Other type hint resolution failures (imports, etc.)
+            raise DependencyResolutionError(
+                dependency_type=type(None),
+                parameter_name="unknown",
+                message=f"Failed to resolve type annotations in factory {factory}. "
+                       f"Error: {e}. Check that all type annotations are valid and "
+                       f"imported properly."
             ) from e
             
         return dependencies
