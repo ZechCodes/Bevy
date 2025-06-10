@@ -9,7 +9,6 @@ import inspect
 import types
 from typing import Any, Awaitable, Type, TypeVar
 from dataclasses import dataclass
-from collections import defaultdict
 from tramp.optionals import Optional
 from bevy.hooks import Hook
 from bevy.injection_types import CircularDependencyError, DependencyResolutionError
@@ -22,7 +21,6 @@ class ChainInfo:
     """Information about a dependency resolution chain."""
     target_type: Type[Any]
     factories: dict[Type[Any], Any]  # Type -> Factory function
-    dependencies: dict[Type[Any], set[Type[Any]]]  # Type -> Set of dependency types
     has_async_factories: bool
     async_factories: set[Type[Any]]  # Types that have async factories
     resolution_order: list[Type[Any]]  # Order to resolve dependencies
@@ -35,7 +33,6 @@ class DependencyGraphTraversal:
         self.analyzer = analyzer
         self.visited = set()
         self.factories = {}
-        self.dependencies = defaultdict(set)
         self.async_factories = set()
         self.resolution_order = []
         
@@ -83,7 +80,6 @@ class DependencyGraphTraversal:
             
         # Analyze factory dependencies
         factory_deps = self.analyzer._get_factory_dependencies(factory)
-        self.dependencies[dep_type] = factory_deps
         
         # Recursively check dependencies
         dep_has_async = False
@@ -136,7 +132,6 @@ class DependencyAnalyzer:
         chain_info = ChainInfo(
             target_type=target_type,
             factories=traversal.factories,
-            dependencies=dict(traversal.dependencies),
             has_async_factories=has_async,
             async_factories=traversal.async_factories,
             resolution_order=traversal.resolution_order
