@@ -149,30 +149,30 @@ class DependencyAnalyzer:
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
         """Get the dependency types that a factory function requires.
         
-        Analyzes explicit parameter type annotations, including string annotations.
-        Uses get_type_hints() to resolve string annotations properly.
+        Uses the existing injection analysis system to properly detect dependencies
+        based on @injectable configuration and Inject[T] annotations.
         """
         dependencies = set()
         
         try:
-            # First try to get resolved type hints (handles string annotations)
-            from typing import get_type_hints
-            type_hints = get_type_hints(factory)
+            from bevy.injections import analyze_function_signature, get_injection_info
+            from bevy.injection_types import InjectionStrategy
             
-            sig = inspect.signature(factory)
-            for param_name, param in sig.parameters.items():
-                if param_name == 'container':
-                    continue
-                    
-                # Use resolved type hint if available, otherwise fall back to raw annotation
-                if param_name in type_hints:
-                    annotation = type_hints[param_name]
-                else:
-                    annotation = param.annotation
-                    
-                if annotation and annotation != inspect.Parameter.empty:
-                    if isinstance(annotation, type):
-                        dependencies.add(annotation)
+            # First check if factory has @injectable metadata
+            injection_info = get_injection_info(factory)
+            if injection_info:
+                # Use the factory's configured injection strategy
+                injectable_params = injection_info['params']
+                for param_name, (param_type, options) in injectable_params.items():
+                    if param_name != 'container' and isinstance(param_type, type):
+                        dependencies.add(param_type)
+            else:
+                # No @injectable decorator - analyze with ANY_NOT_PASSED strategy
+                # This matches the default behavior for non-decorated factories
+                injectable_params = analyze_function_signature(factory, InjectionStrategy.ANY_NOT_PASSED)
+                for param_name, (param_type, options) in injectable_params.items():
+                    if param_name != 'container' and isinstance(param_type, type):
+                        dependencies.add(param_type)
                         
         except (ValueError, TypeError) as e:
             # Signature inspection failures
@@ -182,23 +182,14 @@ class DependencyAnalyzer:
                 message=f"Failed to analyze factory signature for dependency analysis: {factory}. "
                        f"Error: {e}. Ensure factory is a valid callable."
             ) from e
-        except NameError as e:
-            # String annotation references undefined name
-            raise DependencyResolutionError(
-                dependency_type=type(None),
-                parameter_name="unknown", 
-                message=f"Failed to resolve string type annotations in factory {factory}. "
-                       f"Error: {e}. Ensure all referenced types are imported and available "
-                       f"in the factory's module scope."
-            ) from e
         except Exception as e:
-            # Other type hint resolution failures (imports, etc.)
+            # Injection analysis failures (annotation resolution, etc.)
             raise DependencyResolutionError(
                 dependency_type=type(None),
                 parameter_name="unknown",
-                message=f"Failed to resolve type annotations in factory {factory}. "
+                message=f"Failed to analyze injectable dependencies in factory {factory}. "
                        f"Error: {e}. Check that all type annotations are valid and "
-                       f"imported properly."
+                       f"injection configuration is correct."
             ) from e
             
         return dependencies
