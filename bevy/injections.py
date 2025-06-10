@@ -106,7 +106,7 @@ def _should_inject_parameter(
     Returns:
         True if parameter should be injected
     """
-    if strategy == InjectionStrategy.REQUESTED_ONLY:
+    if strategy == InjectionStrategy.DEFAULT or strategy == InjectionStrategy.REQUESTED_ONLY:
         # Only inject if parameter uses Inject[] syntax
         return is_inject_annotation
     
