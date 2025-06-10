@@ -228,11 +228,26 @@ class Container(GlobalContextMixin, var=global_container):
         be returned instead of creating a new instance, the default is not stored. When a default_factory is given,
         it will be used instead of normal resolution if no instance exists, and the result will be cached using the 
         factory as the key. When a qualifier is given, it will look up the qualified instance."""
+        
+        # Prevent infinite recursion during async resolution
+        if _in_async_resolution.get(False):
+            # Already in async resolution - use sync logic to avoid re-analysis
+            return self._get_sync(dependency, **kwargs)
+        
+        # Always use resolver to determine sync vs async behavior
+        try:
+            resolver = self.create_resolver(dependency, **kwargs)
+            return resolver.get_result()
+        except (ValueError, DependencyResolutionError):
+            # Analysis failed - fall back to sync logic for error handling
+            return self._get_sync(dependency, **kwargs)
+    def _get_sync[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> T | D:
+        """Synchronous dependency resolution - the original Container.get logic."""
         using_default = False
         default_factory = kwargs.get("default_factory")
         qualifier = kwargs.get("qualifier")
         
-        # Handle qualified dependencies quickly
+        # Handle qualified dependencies first
         if qualifier:
             qualified_key = (dependency, qualifier)
             if qualified_key in self.instances:
@@ -240,31 +255,6 @@ class Container(GlobalContextMixin, var=global_container):
             # Check parent for qualified instance
             if self._parent and qualified_key in self._parent.instances:
                 return self._parent.instances[qualified_key]
-        
-        # Check if async detection is needed for simple cases
-        # Only apply async detection for simple cases to avoid interfering with existing behavior:
-        # - No default_factory parameter (preserves default factory behavior)
-        # - No qualifier parameter (preserves qualified dependency behavior)  
-        # - No default parameter (preserves default value behavior)
-        # - Not already in async resolution (prevents infinite recursion)
-        if (not default_factory and not qualifier and not kwargs.get("default") and 
-            not _in_async_resolution.get(False)):
-            # Simple case - analyze if async resolution is needed
-            try:
-                resolver = self.create_resolver(dependency)
-                if isinstance(resolver, DependenciesPending):
-                    # Async resolution needed - return awaitable
-                    return resolver.get_result()
-                # For DependenciesReady (sync), fall through to normal logic
-                # This preserves existing hook behavior for sync chains
-            except (ValueError, DependencyResolutionError):
-                # Analysis failed (e.g., missing factory, circular dependency) - fall back to existing logic
-                pass
-        
-        # Fall back to existing logic for complex cases (default factories, qualifiers, errors)
-        # Handle qualified dependencies first
-        if qualifier:
-            qualified_key = (dependency, qualifier)
             
             # Check parent container for qualified instance
             if self._parent:
@@ -272,7 +262,7 @@ class Container(GlobalContextMixin, var=global_container):
                     parent_kwargs = {"qualifier": qualifier}
                     if default_factory:
                         parent_kwargs["default_factory"] = default_factory
-                    return self._parent.get(dependency, **parent_kwargs)
+                    return self._parent._get_sync(dependency, **parent_kwargs)
                 except DependencyResolutionError:
                     pass
             
@@ -341,18 +331,13 @@ class Container(GlobalContextMixin, var=global_container):
                 if dep := self._get_existing_instance(dependency):
                     instance = dep.value
                 else:
-                    dep = None
-                    if self._parent:
-                        # Only check parent for the dependency type, not for factory creation
-                        # This ensures sibling container isolation for factory results
-                        dep = self._parent.get(dependency, default=None)
-
-                    if dep is None:
-                        if "default" in kwargs:
-                            dep = kwargs["default"]
-                            using_default = True
-                        else:
-                            dep = self._create_instance(dependency)
+                    # _get_existing_instance already checked parents recursively, so if we reach here
+                    # there's no existing instance in the entire parent hierarchy
+                    if "default" in kwargs:
+                        dep = kwargs["default"]
+                        using_default = True
+                    else:
+                        dep = self._create_instance(dependency)
 
                     instance = dep
 
@@ -365,18 +350,20 @@ class Container(GlobalContextMixin, var=global_container):
 
         return instance
 
-    def create_resolver[T: Instance](self, dependency_type: t.Type[T]) -> DependenciesReady | DependenciesPending:
+    def create_resolver[T: Instance](self, dependency_type: t.Type[T], **kwargs) -> DependenciesReady | DependenciesPending:
         """
         Create resolver for dependency chain analysis.
         Returns DependenciesReady for sync chains, DependenciesPending for async chains.
+        
+        Takes the same kwargs as get() to handle default_factory, qualifier, default, etc.
         """
-        # Analyze the dependency chain
-        chain_info = self._dependency_analyzer.analyze_dependency_chain(dependency_type)
+        # Analyze the dependency chain with resolution context
+        chain_info = self._dependency_analyzer.analyze_dependency_chain(dependency_type, **kwargs)
         
         if chain_info.has_async_factories:
-            return DependenciesPending(self, dependency_type, chain_info)
+            return DependenciesPending(self, dependency_type, chain_info, **kwargs)
         else:
-            return DependenciesReady(self, dependency_type, chain_info)
+            return DependenciesReady(self, dependency_type, chain_info, **kwargs)
 
     def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], args: P.args, kwargs: P.kwargs) -> R:
         match func:
@@ -941,12 +928,17 @@ class Container(GlobalContextMixin, var=global_container):
 
 
     def _get_existing_instance(self, dependency: t.Type[Instance]) -> Optional[Instance]:
+        # Check current container first
         if dependency in self.instances:
             return Optional.Some(self.instances[dependency])
 
         if not isinstance(dependency, type):
+            # Check parent for non-types (qualified keys, etc.)
+            if self._parent:
+                return self._parent._get_existing_instance(dependency)
             return Optional.Nothing()
 
+        # Check current container for subclass matches
         for instance_type, instance in self.instances.items():
             # Skip qualified instances (tuple keys) and factory-cached instances (callable keys)
             if isinstance(instance_type, tuple) or callable(instance_type):
@@ -959,6 +951,10 @@ class Container(GlobalContextMixin, var=global_container):
             ):
                 return Optional.Some(instance)
 
+        # Check parent containers recursively
+        if self._parent:
+            return self._parent._get_existing_instance(dependency)
+            
         return Optional.Nothing()
 
 

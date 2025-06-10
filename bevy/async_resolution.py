@@ -105,15 +105,23 @@ class DependencyAnalyzer:
         self.parent_container = parent_container
         self._chain_cache: dict[Type[Any], ChainInfo] = {}
         
-    def analyze_dependency_chain(self, target_type: Type[T]) -> ChainInfo:
+    def analyze_dependency_chain(self, target_type: Type[T], **kwargs) -> ChainInfo:
         """
         Analyze the complete dependency chain for a target type.
         
         Returns ChainInfo with details about all dependencies and whether
         any require async resolution.
+        
+        **kwargs can include default_factory, qualifier, default - these affect
+        the analysis of whether the final resolution will be async.
         """
-        if target_type in self._chain_cache:
-            return self._chain_cache[target_type]
+        # For now, we'll cache based on just the target_type
+        # TODO: Consider caching with resolution context if needed for performance
+        cache_key = target_type
+        if cache_key in self._chain_cache:
+            cached_info = self._chain_cache[cache_key]
+            # Analyze if resolution context affects async behavior
+            return self._adjust_for_resolution_context(cached_info, **kwargs)
             
         # Use traversal class to build dependency graph
         traversal = DependencyGraphTraversal(self)
@@ -121,13 +129,15 @@ class DependencyAnalyzer:
         
         # Check if we found any factories at all
         if not traversal.factories:
-            # Handle types that don't have __name__ attribute (like UnionType)
-            type_name = getattr(target_type, '__name__', str(target_type))
-            raise DependencyResolutionError(
-                dependency_type=target_type,
-                parameter_name="unknown",
-                message=f"No factory found for dependency: {type_name}"
-            )
+            # Check if we have resolution overrides that make this resolvable
+            if not self._has_resolution_override(**kwargs):
+                # Handle types that don't have __name__ attribute (like UnionType)
+                type_name = getattr(target_type, '__name__', str(target_type))
+                raise DependencyResolutionError(
+                    dependency_type=target_type,
+                    parameter_name="unknown",
+                    message=f"No factory found for dependency: {type_name}"
+                )
         
         # Build chain info
         chain_info = ChainInfo(
@@ -138,8 +148,51 @@ class DependencyAnalyzer:
             resolution_order=traversal.resolution_order
         )
         
-        # Cache result
+        # Cache result and adjust for resolution context
         self._chain_cache[target_type] = chain_info
+        return self._adjust_for_resolution_context(chain_info, **kwargs)
+    
+    def _has_resolution_override(self, **kwargs) -> bool:
+        """Check if kwargs provide ways to resolve without registered factories."""
+        return (
+            kwargs.get("default_factory") is not None or
+            kwargs.get("default") is not None
+        )
+    
+    def _adjust_for_resolution_context(self, chain_info: ChainInfo, **kwargs) -> ChainInfo:
+        """
+        Adjust chain info based on resolution context (default_factory, qualifier, etc.).
+        
+        This determines if resolution context overrides async behavior.
+        For example, a sync default_factory should make resolution sync even if
+        the registered factory would be async.
+        """
+        default_factory = kwargs.get("default_factory")
+        if default_factory:
+            # default_factory overrides registered factories
+            # Check if the default_factory itself is async
+            import inspect
+            if inspect.iscoroutinefunction(default_factory):
+                # Async default_factory makes resolution async
+                return ChainInfo(
+                    target_type=chain_info.target_type,
+                    factories={chain_info.target_type: default_factory},
+                    has_async_factories=True,
+                    async_factories={chain_info.target_type},
+                    resolution_order=[chain_info.target_type]
+                )
+            else:
+                # Sync default_factory makes resolution sync
+                return ChainInfo(
+                    target_type=chain_info.target_type,
+                    factories={chain_info.target_type: default_factory},
+                    has_async_factories=False,
+                    async_factories=set(),
+                    resolution_order=[chain_info.target_type]
+                )
+        
+        # Other resolution context (qualifier, default) doesn't change async behavior
+        # of the underlying registered factories
         return chain_info
         
     def _get_factory_dependencies(self, factory) -> set[Type[Any]]:
@@ -200,43 +253,27 @@ class DependencyAnalyzer:
 class DependenciesReady:
     """Resolver for synchronous dependency chains."""
     
-    def __init__(self, container, target_type: Type[T], chain_info: ChainInfo):
+    def __init__(self, container, target_type: Type[T], chain_info: ChainInfo, **kwargs):
         self.container = container
         self.target_type = target_type
         self.chain_info = chain_info
+        self.resolution_kwargs = kwargs
         
     def get_result(self) -> T:
         """Synchronously resolve and return the dependency instance."""
-        # Check if already cached locally first
-        if self.target_type in self.container.instances:
-            return self.container.instances[self.target_type]
-            
-        # Check parent containers
-        if self.container._parent:
-            parent_instance = self.container._parent._get_existing_instance(self.target_type)
-            match parent_instance:
-                case Optional.Some(instance):
-                    # Cache in current container and return
-                    self.container.instances[self.target_type] = instance
-                    return instance
-                case Optional.Nothing():
-                    pass
-                    
-        # Create new instance and cache it (same as container.get() logic)
-        instance = self.container._create_instance(self.target_type)
-        # Apply hooks and cache the instance
-        instance = self.container.registry.hooks[Hook.GOT_INSTANCE].filter(self.container, instance)
-        self.container.instances[self.target_type] = instance
-        return instance
+        # Use container's sync resolution logic which handles all the edge cases
+        # (default_factory, qualifier, default, caching, hooks, etc.)
+        return self.container._get_sync(self.target_type, **self.resolution_kwargs)
 
 
 class DependenciesPending:
     """Resolver for asynchronous dependency chains."""
     
-    def __init__(self, container, target_type: Type[T], chain_info: ChainInfo):
+    def __init__(self, container, target_type: Type[T], chain_info: ChainInfo, **kwargs):
         self.container = container
         self.target_type = target_type
         self.chain_info = chain_info
+        self.resolution_kwargs = kwargs
         
     def get_result(self) -> Awaitable[T]:
         """Return coroutine that resolves the dependency instance."""
@@ -247,29 +284,40 @@ class DependenciesPending:
         # Import here to avoid circular import
         from bevy.containers import _in_async_resolution
         
-        # Check if the target instance already exists (including parent containers)
-        existing_instance = self.container._get_existing_instance(self.target_type)
-        match existing_instance:
-            case Optional.Some(instance):
-                return instance
-            case Optional.Nothing():
-                pass
-                
-        # Check parent container for existing instance
-        if self.container._parent:
-            parent_instance = self.container._parent._get_existing_instance(self.target_type)
-            match parent_instance:
+        # Handle resolution context overrides first
+        default_factory = self.resolution_kwargs.get("default_factory")
+        if default_factory:
+            # default_factory overrides everything - handle it directly
+            if inspect.iscoroutinefunction(default_factory):
+                # Async default factory - await it
+                return await self._resolve_async_default_factory(default_factory)
+            else:
+                # Sync default factory - delegate to sync logic
+                token = _in_async_resolution.set(True)
+                try:
+                    return self.container._get_sync(self.target_type, **self.resolution_kwargs)
+                finally:
+                    _in_async_resolution.reset(token)
+        
+        # Check for simple value defaults
+        if "default" in self.resolution_kwargs:
+            # Check if instance exists, otherwise return default
+            existing = self.container._get_existing_instance(self.target_type)
+            match existing:
                 case Optional.Some(instance):
-                    # Cache in current container and return
-                    self.container.instances[self.target_type] = instance
                     return instance
                 case Optional.Nothing():
-                    pass
+                    return self.resolution_kwargs["default"]
         
-        # Strategy: Resolve all async dependencies first in dependency order,
-        # then resolve sync dependencies. This ensures sync factories get
-        # actual instances, not coroutines.
+        # For qualified dependencies, use sync logic during async resolution
+        if self.resolution_kwargs.get("qualifier"):
+            token = _in_async_resolution.set(True)
+            try:
+                return self.container._get_sync(self.target_type, **self.resolution_kwargs)
+            finally:
+                _in_async_resolution.reset(token)
         
+        # Standard async dependency chain resolution
         # Set context flag to prevent async detection during resolution
         token = _in_async_resolution.set(True)
         try:
@@ -323,6 +371,33 @@ class DependenciesPending:
                 return instance
             case Optional.Nothing():
                 raise ValueError(f"Failed to resolve {self.target_type}")
+    
+    async def _resolve_async_default_factory(self, async_factory) -> T:
+        """Resolve an async default_factory with proper caching and dependency injection."""
+        # Check if we already have a cached result from this factory
+        if async_factory in self.container.instances:
+            return self.container.instances[async_factory]
+        
+        # Check parent container's factory cache
+        if self.container._parent:
+            if parent_result := self.container._parent._get_factory_cache_result(async_factory):
+                # Cache in this container too for faster future access
+                self.container.instances[async_factory] = parent_result
+                return parent_result
+        
+        # Create new instance using async factory
+        from inspect import signature
+        factory_sig = signature(async_factory)
+        if len(factory_sig.parameters) > 0:
+            # Factory accepts parameters, use container for dependency injection
+            instance = await self.container.call(async_factory, self.container)
+        else:
+            # Factory takes no parameters, call directly
+            instance = await async_factory()
+        
+        # Cache the result using factory as key
+        self.container.instances[async_factory] = instance
+        return instance
 
 
 # Removed unused AsyncContainerWrapper and AsyncDependencyMarker classes
