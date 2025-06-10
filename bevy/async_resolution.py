@@ -168,9 +168,15 @@ class DependencyAnalyzer:
                     if isinstance(param.annotation, type):
                         dependencies.add(param.annotation)
                         
-        except Exception:
-            # If analysis fails, return empty set - safer than guessing
-            pass
+        except (ValueError, TypeError) as e:
+            # Only catch specific signature inspection failures
+            # Re-raise with context about what we were analyzing
+            raise DependencyResolutionError(
+                dependency_type=type(None),  # No specific type being resolved
+                parameter_name="unknown",
+                message=f"Failed to analyze factory signature for dependency analysis: {factory}. "
+                       f"Error: {e}. Ensure factory is a valid callable."
+            ) from e
             
         return dependencies
         
