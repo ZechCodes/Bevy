@@ -16,7 +16,7 @@ from bevy.injection_types import Options, DependencyResolutionError
 from bevy.bundled.type_factory_hook import type_factory
 
 
-class TestService:
+class ServiceExample:
     def __init__(self, value="default"):
         self.value = value
 
@@ -35,10 +35,10 @@ class TestContainerGetWithDefaultFactory:
         container = Container(registry)
         
         def factory():
-            return TestService("factory-created")
+            return ServiceExample("factory-created")
         
         # Should use factory when type doesn't exist
-        result = container.get(TestService, default_factory=factory)
+        result = container.get(ServiceExample, default_factory=factory)
         assert result.value == "factory-created"
     
     def test_get_with_default_factory_caching(self):
@@ -50,15 +50,15 @@ class TestContainerGetWithDefaultFactory:
         def counting_factory():
             nonlocal call_count
             call_count += 1
-            return TestService(f"factory-{call_count}")
+            return ServiceExample(f"factory-{call_count}")
         
         # First call should create instance
-        result1 = container.get(TestService, default_factory=counting_factory)
+        result1 = container.get(ServiceExample, default_factory=counting_factory)
         assert result1.value == "factory-1"
         assert call_count == 1
         
         # Second call should return cached instance
-        result2 = container.get(TestService, default_factory=counting_factory)
+        result2 = container.get(ServiceExample, default_factory=counting_factory)
         assert result2.value == "factory-1"
         assert result1 is result2
         assert call_count == 1  # No additional factory call
@@ -69,14 +69,14 @@ class TestContainerGetWithDefaultFactory:
         parent = Container(registry)
         
         def factory():
-            return TestService("parent-factory")
+            return ServiceExample("parent-factory")
         
         # Create in parent
-        parent_result = parent.get(TestService, default_factory=factory)
+        parent_result = parent.get(ServiceExample, default_factory=factory)
         
         # Child should inherit
         child = parent.branch()
-        child_result = child.get(TestService, default_factory=factory)
+        child_result = child.get(ServiceExample, default_factory=factory)
         
         assert parent_result.value == "parent-factory"
         assert child_result.value == "parent-factory"
@@ -91,13 +91,13 @@ class TestContainerGetWithDefaultFactory:
         def counting_factory():
             nonlocal call_count
             call_count += 1
-            return TestService(f"sibling-{call_count}")
+            return ServiceExample(f"sibling-{call_count}")
         
         child1 = parent.branch()
         child2 = parent.branch()
         
-        result1 = child1.get(TestService, default_factory=counting_factory)
-        result2 = child2.get(TestService, default_factory=counting_factory)
+        result1 = child1.get(ServiceExample, default_factory=counting_factory)
+        result2 = child2.get(ServiceExample, default_factory=counting_factory)
         
         assert call_count == 2
         assert result1.value == "sibling-1"
@@ -113,7 +113,7 @@ class TestContainerGetWithDefaultFactory:
             raise ValueError("Factory failed")
         
         with pytest.raises(ValueError, match="Factory failed"):
-            container.get(TestService, default_factory=failing_factory)
+            container.get(ServiceExample, default_factory=failing_factory)
 
 
 class TestContainerGetVsInjectBehavior:
@@ -126,10 +126,10 @@ class TestContainerGetVsInjectBehavior:
         container = Container(registry)
         
         # Both should create the same instance via type factory
-        result1 = container.get(TestService)
+        result1 = container.get(ServiceExample)
         
         @injectable
-        def get_service(svc: Inject[TestService]):
+        def get_service(svc: Inject[ServiceExample]):
             return svc
         
         result2 = container.call(get_service)
@@ -143,12 +143,12 @@ class TestContainerGetVsInjectBehavior:
         container = Container(registry)
         
         # Add instance manually
-        container.add(TestService("manual"))
+        container.add(ServiceExample("manual"))
         
-        result1 = container.get(TestService)
+        result1 = container.get(ServiceExample)
         
         @injectable
-        def get_service(svc: Inject[TestService]):
+        def get_service(svc: Inject[ServiceExample]):
             return svc
         
         result2 = container.call(get_service)
@@ -163,12 +163,12 @@ class TestContainerGetVsInjectBehavior:
         container = Container(registry)
         
         def factory():
-            return TestService("factory")
+            return ServiceExample("factory")
         
-        result1 = container.get(TestService, default_factory=factory)
+        result1 = container.get(ServiceExample, default_factory=factory)
         
         @injectable
-        def get_service(svc: Inject[TestService, Options(default_factory=factory)]):
+        def get_service(svc: Inject[ServiceExample, Options(default_factory=factory)]):
             return svc
         
         result2 = container.call(get_service)
@@ -181,14 +181,14 @@ class TestContainerGetVsInjectBehavior:
         """Test parent-child inheritance behavior is identical."""
         registry = Registry()
         parent = Container(registry)
-        parent.add(TestService("parent"))
+        parent.add(ServiceExample("parent"))
         
         child = parent.branch()
         
-        result1 = child.get(TestService)
+        result1 = child.get(ServiceExample)
         
         @injectable
-        def get_service(svc: Inject[TestService]):
+        def get_service(svc: Inject[ServiceExample]):
             return svc
         
         result2 = child.call(get_service)
@@ -223,12 +223,12 @@ class TestContainerGetEdgeCases:
         container = Container(registry)
         
         def factory():
-            return TestService("factory")
+            return ServiceExample("factory")
         
-        default_value = TestService("default")
+        default_value = ServiceExample("default")
         
         # Should prioritize default_factory over default when type doesn't exist
-        result = container.get(TestService, default=default_value, default_factory=factory)
+        result = container.get(ServiceExample, default=default_value, default_factory=factory)
         assert result.value == "factory"
     
     def test_get_with_factory_that_needs_injection(self):
@@ -239,9 +239,9 @@ class TestContainerGetEdgeCases:
         
         @injectable
         def factory_with_deps(db: Inject[DatabaseConnection]):
-            return TestService(f"factory-with-{db.url}")
+            return ServiceExample(f"factory-with-{db.url}")
         
-        result = container.get(TestService, default_factory=factory_with_deps)
+        result = container.get(ServiceExample, default_factory=factory_with_deps)
         assert "factory-with-default" in result.value
 
 
