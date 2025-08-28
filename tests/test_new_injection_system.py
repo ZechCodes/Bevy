@@ -6,13 +6,10 @@ Tests all aspects of the @injectable, @auto_inject, Inject[T], and Options syste
 """
 
 import pytest
-from bevy import (
-    injectable, auto_inject, Inject, Options, 
-    InjectionStrategy, TypeMatchingStrategy,
-    Container, get_container
-)
-from bevy.registries import Registry
+
+from bevy import (auto_inject, Container, Inject, injectable, InjectionStrategy, Options, TypeMatchingStrategy)
 from bevy.context_vars import global_container
+from bevy.registries import Registry
 
 
 class UserService:
@@ -418,7 +415,7 @@ class TestEdgeCases:
             return f"Service: {service.name}"
         
         # Should raise DependencyResolutionError when no service registered
-        with pytest.raises(Exception, match="Cannot resolve dependency"):
+        with pytest.raises(Exception, match="No handler found that can handle dependency"):
             container.call(func_no_default)
     
     def test_inject_with_default_arbitrary_error(self):

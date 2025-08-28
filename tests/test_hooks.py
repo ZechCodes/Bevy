@@ -3,6 +3,7 @@ from typing import Annotated
 import pytest
 from tramp.optionals import Optional
 
+from bevy import Inject, injectable
 from bevy.hooks import hooks
 from bevy.registries import Registry
 
@@ -24,7 +25,7 @@ type_parameters = [InjectClass, Annotated[InjectClass, ...], InjectClass | None]
 @pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
 def test_create_instance(dep, hook_type):
     @hook_type
-    def hook_func(container, dependency):
+    def hook_func(container, dependency, context):
         return Optional.Some(InjectWrapper(dependency))
 
     registry = Registry()
@@ -38,7 +39,7 @@ def test_create_instance(dep, hook_type):
 @pytest.mark.parametrize("dep", type_parameters)
 def test_get_instance(dep):
     @hooks.GET_INSTANCE
-    def hook(container, dependency):
+    def hook(container, dependency, context):
         return Optional.Some(InjectWrapper(dependency))
 
     registry = Registry()
@@ -51,7 +52,7 @@ def test_get_instance(dep):
 @pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.GET_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
 def test_hooks_are_not_cached(hook_type):
     @hook_type
-    def hook(container, dependency):
+    def hook(container, dependency, context):
         return Optional.Some(InjectWrapper(dependency))
 
     registry = Registry()
@@ -65,7 +66,7 @@ def test_hooks_are_not_cached(hook_type):
 @pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.GET_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
 def test_hooks_explicitly_cache(hook_type):
     @hook_type
-    def hook(container, dependency):
+    def hook(container, dependency, context):
         if dependency in container.instances:
             return Optional.Some(container.instances[dependency])
 
@@ -79,3 +80,21 @@ def test_hooks_explicitly_cache(hook_type):
     result1 = container.get(InjectClass)
     result2 = container.get(InjectClass)
     assert result1 is result2
+
+
+@pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.GET_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
+def test_hooks_can_modify(hook_type):
+    @hook_type
+    def hook(container, dependency, context):
+        assert "injection_context" in context
+        assert context["injection_context"].parameter_name == "dep"
+        return Optional.Some(InjectWrapper(dependency))
+
+    @injectable
+    def test_func(dep: Inject[InjectClass]):
+        pass
+
+    registry = Registry()
+    hook.register_hook(registry)
+    container = registry.create_container()
+    container.call(test_func)

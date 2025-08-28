@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from bevy.containers import Container
     from bevy.injection_types import Options, InjectionStrategy, TypeMatchingStrategy
 
-type HookFunction[T] = "Callable[[Container, Type[T]], T]"
+type HookFunction[T] = "Callable[[Container, Type[T], dict[str, Any], T]"
 
 
 @dataclass
@@ -69,19 +69,19 @@ class HookManager:
         """Adds a function that will be called when the hook is triggered."""
         self.callbacks.add(hook)
 
-    def handle[T](self, container: "Container", value: T) -> Optional[Any]:
+    def handle[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> Optional[Any]:
         """Iterates each callback and returns the first result."""
         for callback in self.callbacks:
-            match callback(container, value):
+            match callback(container, value, context or {}):
                 case Optional.Some() as v:
                     return v
 
         return Optional.Nothing()
 
-    def filter[T](self, container: "Container", value: T) -> T:
+    def filter[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> T:
         """Iterates all callbacks and updates the value when a callback returns a Some result."""
         for callback in self.callbacks:
-            match callback(container, value):
+            match callback(container, value, context or {}):
                 case Optional.Some(v):
                     value = v
                 case Optional.Nothing():
@@ -100,8 +100,8 @@ class HookWrapper[**P, R]:
 
         functools.update_wrapper(self, func)
 
-    def __call__(self, container: "Container", value: P) -> Optional[R]:
-        return self.func(container, value)
+    def __call__(self, container: "Container", value: P, context) -> Optional[R]:
+        return self.func(container, value, context)
 
     def register_hook(self, registry: "r.Registry | None" = None):
         """Adds the callback to a registry for the hook type."""

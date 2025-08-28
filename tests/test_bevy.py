@@ -6,7 +6,7 @@ import pytest
 from pytest import raises
 from tramp.optionals import Optional
 
-from bevy import get_registry, get_container, injectable, auto_inject, Inject, Registry
+from bevy import auto_inject, get_container, get_registry, Inject, injectable, Registry
 from bevy.bundled.type_factory_hook import type_factory
 from bevy.context_vars import GlobalContextDisabledError
 from bevy.factories import create_type_factory
@@ -91,7 +91,7 @@ def test_injection_factories():
 def test_get_instance_hook():
     values = ["a", "b"]
     index = 0
-    def hook(_, dependency_type):
+    def hook(_, dependency_type, __):
         nonlocal index
         if dependency_type is DummyObject:
             old_index, index = index, index + 1
@@ -110,11 +110,13 @@ def test_get_instance_hook():
 def test_create_instance_hook():
     values = ["a", "b"]
     index = 0
-    def hook(_, dependency_type):
+    def hook(_, dependency_type, __):
         nonlocal index
         if dependency_type is DummyObject:
             old_index, index = index, index + 1
-            return Optional.Some(DummyObject(values[old_index]))
+            value = DummyObject(values[old_index])
+            container.add(dependency_type, value)
+            return Optional.Some(value)
 
         return Optional.Nothing()
 
@@ -128,7 +130,7 @@ def test_create_instance_hook():
 
 def test_created_instance_hook():
     runs = 0
-    def hook(_, value):
+    def hook(_, value, __):
         nonlocal runs
         if isinstance(value, DummyObject):
             runs += 1
@@ -146,7 +148,7 @@ def test_created_instance_hook():
 
 def test_got_instance_hook():
     runs = 0
-    def hook(_, value):
+    def hook(_, value, __):
         nonlocal runs
         if isinstance(value, DummyObject):
             runs += 1
@@ -164,7 +166,7 @@ def test_got_instance_hook():
 
 def test_unsupported_dependency_hook():
     @hooks.HANDLE_UNSUPPORTED_DEPENDENCY
-    def hook(_, dependency_type):
+    def hook(_, dependency_type, __):
         if dependency_type is DummyObject:
             return Optional.Some(DummyObject("a"))
 
@@ -261,7 +263,7 @@ def test_decorators():
         @wraps(func)
         def wrapper(a: Inject[DummyObject]):
             injections.add(f"wrapper({id(a)} {type(a).__name__})")
-            return func()
+            return func(a)
 
         return wrapper
 

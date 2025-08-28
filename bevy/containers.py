@@ -185,35 +185,35 @@ class Container(GlobalContextMixin, var=global_container):
         return self._call(func, args, kwargs)
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T]) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, context: dict[str, Any] | None = None) -> T:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D, context: dict[str, Any] | None = None) -> T | D:
         ...
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T], *, default_factory: t.Callable[[], T]) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, default_factory: t.Callable[[], T], context: dict[str, Any] | None = None) -> T:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D, default_factory: t.Callable[[], T]) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, default: D, default_factory: t.Callable[[], T], context: dict[str, Any] | None = None) -> T | D:
         ...
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str, context: dict[str, Any] | None = None) -> T:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D, context: dict[str, Any] | None = None) -> T | D:
         ...
 
     @t.overload
-    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str, default_factory: t.Callable[[], T]) -> T:
+    def get[T: Instance](self, dependency: t.Type[T], *, qualifier: str, default_factory: t.Callable[[], T], context: dict[str, Any] | None = None) -> T:
         ...
 
     @t.overload
-    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D, default_factory: t.Callable[[], T]) -> T | D:
+    def get[T: Instance, D](self, dependency: t.Type[T], *, qualifier: str, default: D, default_factory: t.Callable[[], T], context: dict[str, Any] | None = None) -> T | D:
         ...
 
     def get[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> T | D:
@@ -223,8 +223,9 @@ class Container(GlobalContextMixin, var=global_container):
         it will be used instead of normal resolution if no instance exists, and the result will be cached using the 
         factory as the key. When a qualifier is given, it will look up the qualified instance."""
         disable_implicit_caching = False
-        default_factory = kwargs.get("default_factory")
-        qualifier = kwargs.get("qualifier")
+        default_factory = kwargs.pop("default_factory", None)
+        qualifier = kwargs.pop("qualifier", None)
+        context: dict[str, Any] = kwargs.pop("context", {})
         
         # Handle qualified dependencies first
         if qualifier:
@@ -302,7 +303,7 @@ class Container(GlobalContextMixin, var=global_container):
             return instance
         
         # No default factory, use normal resolution
-        match self.registry.hooks[Hook.GET_INSTANCE].handle(self, dependency):
+        match self.registry.hooks[Hook.GET_INSTANCE].handle(self, dependency, context):
             case Optional.Some(v):
                 instance = v
                 disable_implicit_caching = True  # Hook should handle caching
@@ -322,14 +323,14 @@ class Container(GlobalContextMixin, var=global_container):
                             dep = kwargs["default"]
                             disable_implicit_caching = True
                         else:
-                            dep, disable_implicit_caching = self._create_instance(dependency)
+                            dep, disable_implicit_caching = self._create_instance(dependency, context)
 
                     instance = dep
 
             case _:
                 raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
 
-        instance = self.registry.hooks[Hook.GOT_INSTANCE].filter(self, instance)
+        instance = self.registry.hooks[Hook.GOT_INSTANCE].filter(self, instance, context)
         if not disable_implicit_caching:
             self.instances[dependency] = instance
 
@@ -665,7 +666,7 @@ class Container(GlobalContextMixin, var=global_container):
                     return instance
             else:
                 # Normal resolution without default factory
-                return self.get(param_type)
+                return self.get(param_type, context={"injection_context": injection_context})
 
         except DependencyResolutionError as e:
             # Call FACTORY_MISSING_TYPE hook if no factory found
@@ -697,7 +698,7 @@ class Container(GlobalContextMixin, var=global_container):
         disable_implicit_caching = False
 
         # Use existing create_instance logic but with hook integration
-        match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
+        match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency, {"injection_context": injection_context}):
             case Optional.Some(v):
                 instance = v
                 disable_implicit_caching = True  # Hook should handle caching
@@ -708,7 +709,7 @@ class Container(GlobalContextMixin, var=global_container):
                         instance = factory(self)
 
                     case Optional.Nothing():
-                        instance = self._handle_unsupported_dependency(dependency)
+                        instance = self._handle_unsupported_dependency(dependency, {"injection_context": injection_context})
                         disable_implicit_caching = True  # If no error raised, hook should handle caching
 
                     case _:
@@ -828,9 +829,9 @@ class Container(GlobalContextMixin, var=global_container):
         self.call(instance.__init__, *args, **kwargs)
         return instance
 
-    def _create_instance(self, dependency: t.Type[Instance]) -> tuple[Instance, bool]:
+    def _create_instance(self, dependency: t.Type[Instance], context: dict[str, Any]) -> tuple[Instance, bool]:
         disable_implicit_caching = False
-        match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
+        match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency, context):
             case Optional.Some(v):
                 instance = v
                 disable_implicit_caching = True  # Hook should handle caching
@@ -841,7 +842,7 @@ class Container(GlobalContextMixin, var=global_container):
                         instance = factory(self)
 
                     case Optional.Nothing():
-                        instance = self._handle_unsupported_dependency(dependency)
+                        instance = self._handle_unsupported_dependency(dependency, context)
                         disable_implicit_caching = True  # If no error raised, hook should handle caching
 
                     case _:
@@ -852,17 +853,21 @@ class Container(GlobalContextMixin, var=global_container):
                     f"Invalid value returned from hook for dependency: {dependency}, must be a {Optional.__qualname__}."
                 )
 
-        return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance), disable_implicit_caching
+        return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance, context), disable_implicit_caching
 
-    def _handle_unsupported_dependency(self, dependency):
-        match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency):
+    def _handle_unsupported_dependency(self, dependency, context: dict[str, Any]):
+        match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency, context):
             case Optional.Some(v):
                 return v
 
             case Optional.Nothing():
+                parameter_name = "unknown"
+                if "injection_context" in context:
+                    parameter_name = context["injection_context"].parameter_name
+
                 raise DependencyResolutionError(
                     dependency_type=dependency, 
-                    parameter_name="unknown",  # Will be overridden by caller
+                    parameter_name=parameter_name,
                     message=f"No handler found that can handle dependency: {dependency!r}"
                 )
 
