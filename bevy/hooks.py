@@ -156,5 +156,8 @@ class HookDecorator[**P, R]:
     def __call__(self, func: Callable[P, R]) -> HookWrapper[P, R]:
         return HookWrapper(self.hook_type, func)
 
+    def __repr__(self):
+        return f"HookDecorator({self.hook_type})"
+
 
 hooks = HookDecorator

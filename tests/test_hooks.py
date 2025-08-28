@@ -7,7 +7,6 @@ from bevy.hooks import hooks
 from bevy.registries import Registry
 
 
-
 class InjectWrapper:
     def __init__(self, dep):
         self.dep = dep
@@ -47,3 +46,36 @@ def test_get_instance(dep):
     container = registry.create_container()
     result = container.get(dep)
     assert isinstance(result, InjectWrapper)
+
+
+@pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.GET_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
+def test_hooks_are_not_cached(hook_type):
+    @hook_type
+    def hook(container, dependency):
+        return Optional.Some(InjectWrapper(dependency))
+
+    registry = Registry()
+    hook.register_hook(registry)
+    container = registry.create_container()
+    result1 = container.get(InjectClass)
+    result2 = container.get(InjectClass)
+    assert result1 is not result2
+
+
+@pytest.mark.parametrize("hook_type", [hooks.CREATE_INSTANCE, hooks.GET_INSTANCE, hooks.HANDLE_UNSUPPORTED_DEPENDENCY])
+def test_hooks_explicitly_cache(hook_type):
+    @hook_type
+    def hook(container, dependency):
+        if dependency in container.instances:
+            return Optional.Some(container.instances[dependency])
+
+        value = InjectWrapper(dependency)
+        container.add(dependency, value)
+        return Optional.Some(value)
+
+    registry = Registry()
+    hook.register_hook(registry)
+    container = registry.create_container()
+    result1 = container.get(InjectClass)
+    result2 = container.get(InjectClass)
+    assert result1 is result2

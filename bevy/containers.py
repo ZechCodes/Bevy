@@ -222,7 +222,7 @@ class Container(GlobalContextMixin, var=global_container):
         be returned instead of creating a new instance, the default is not stored. When a default_factory is given,
         it will be used instead of normal resolution if no instance exists, and the result will be cached using the 
         factory as the key. When a qualifier is given, it will look up the qualified instance."""
-        using_default = False
+        disable_implicit_caching = False
         default_factory = kwargs.get("default_factory")
         qualifier = kwargs.get("qualifier")
         
@@ -305,6 +305,7 @@ class Container(GlobalContextMixin, var=global_container):
         match self.registry.hooks[Hook.GET_INSTANCE].handle(self, dependency):
             case Optional.Some(v):
                 instance = v
+                disable_implicit_caching = True  # Hook should handle caching
 
             case Optional.Nothing():
                 if dep := self._get_existing_instance(dependency):
@@ -319,9 +320,9 @@ class Container(GlobalContextMixin, var=global_container):
                     if dep is None:
                         if "default" in kwargs:
                             dep = kwargs["default"]
-                            using_default = True
+                            disable_implicit_caching = True
                         else:
-                            dep = self._create_instance(dependency)
+                            dep, disable_implicit_caching = self._create_instance(dependency)
 
                     instance = dep
 
@@ -329,7 +330,7 @@ class Container(GlobalContextMixin, var=global_container):
                 raise ValueError(f"Invalid value for dependency: {dependency}, must be an Optional type.")
 
         instance = self.registry.hooks[Hook.GOT_INSTANCE].filter(self, instance)
-        if not using_default:
+        if not disable_implicit_caching:
             self.instances[dependency] = instance
 
         return instance
@@ -693,10 +694,13 @@ class Container(GlobalContextMixin, var=global_container):
         Returns:
             Created instance
         """
+        disable_implicit_caching = False
+
         # Use existing create_instance logic but with hook integration
         match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
             case Optional.Some(v):
                 instance = v
+                disable_implicit_caching = True  # Hook should handle caching
 
             case Optional.Nothing():
                 match self._find_factory_for_type(dependency):
@@ -705,6 +709,7 @@ class Container(GlobalContextMixin, var=global_container):
 
                     case Optional.Nothing():
                         instance = self._handle_unsupported_dependency(dependency)
+                        disable_implicit_caching = True  # If no error raised, hook should handle caching
 
                     case _:
                         raise RuntimeError(f"Impossible state reached.")
@@ -716,7 +721,8 @@ class Container(GlobalContextMixin, var=global_container):
 
         # Store the instance and apply created instance hooks
         filtered_instance = self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
-        self.instances[dependency] = filtered_instance
+        if not disable_implicit_caching:
+            self.instances[dependency] = filtered_instance
         
         return filtered_instance
 
@@ -822,10 +828,12 @@ class Container(GlobalContextMixin, var=global_container):
         self.call(instance.__init__, *args, **kwargs)
         return instance
 
-    def _create_instance(self, dependency: t.Type[Instance]) -> Instance:
+    def _create_instance(self, dependency: t.Type[Instance]) -> tuple[Instance, bool]:
+        disable_implicit_caching = False
         match self.registry.hooks[Hook.CREATE_INSTANCE].handle(self, dependency):
             case Optional.Some(v):
                 instance = v
+                disable_implicit_caching = True  # Hook should handle caching
 
             case Optional.Nothing():
                 match self._find_factory_for_type(dependency):
@@ -834,6 +842,7 @@ class Container(GlobalContextMixin, var=global_container):
 
                     case Optional.Nothing():
                         instance = self._handle_unsupported_dependency(dependency)
+                        disable_implicit_caching = True  # If no error raised, hook should handle caching
 
                     case _:
                         raise RuntimeError(f"Impossible state reached.")
@@ -843,7 +852,7 @@ class Container(GlobalContextMixin, var=global_container):
                     f"Invalid value returned from hook for dependency: {dependency}, must be a {Optional.__qualname__}."
                 )
 
-        return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance)
+        return self.registry.hooks[Hook.CREATED_INSTANCE].filter(self, instance), disable_implicit_caching
 
     def _handle_unsupported_dependency(self, dependency):
         match self.registry.hooks[Hook.HANDLE_UNSUPPORTED_DEPENDENCY].handle(self, dependency):
