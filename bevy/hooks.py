@@ -1,4 +1,5 @@
 import functools
+import inspect
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Optional as OptionalType, TYPE_CHECKING
@@ -12,6 +13,38 @@ if TYPE_CHECKING:
     from bevy.injection_types import Options, InjectionStrategy, TypeMatchingStrategy
 
 type HookFunction[T] = "Callable[[Container, Type[T], dict[str, Any], T]"
+
+
+def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Container", value: Any, context: dict[str, Any], _from_wrapper: bool = False) -> Any:
+    """Call a hook function with the appropriate number of parameters based on its signature.
+    
+    Supports both legacy 2-parameter hooks (container, value) and new 3-parameter hooks 
+    (container, value, context) for backwards compatibility.
+    """
+    # If this is a HookWrapper and we're not being called from the wrapper itself
+    if isinstance(hook_func, HookWrapper) and not _from_wrapper:
+        # Let the wrapper handle the call
+        return hook_func(container, value, context)
+    
+    # Get the actual function for signature inspection
+    func = hook_func.func if hasattr(hook_func, 'func') else hook_func
+    
+    # Get function signature
+    try:
+        sig = inspect.signature(func)
+        params = list(sig.parameters.keys())
+        
+        # Check if the function expects 3 parameters (container, value, context)
+        # or 2 parameters (container, value) for backwards compatibility
+        if len(params) >= 3:
+            # New style with context
+            return func(container, value, context)
+        else:
+            # Legacy style without context
+            return func(container, value)
+    except (ValueError, TypeError):
+        # If we can't inspect, assume new style with context
+        return func(container, value, context)
 
 
 @dataclass
@@ -71,8 +104,9 @@ class HookManager:
 
     def handle[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> Optional[Any]:
         """Iterates each callback and returns the first result."""
+        ctx = context or {}
         for callback in self.callbacks:
-            match callback(container, value, context or {}):
+            match _call_hook_with_appropriate_signature(callback, container, value, ctx):
                 case Optional.Some() as v:
                     return v
 
@@ -80,8 +114,9 @@ class HookManager:
 
     def filter[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> T:
         """Iterates all callbacks and updates the value when a callback returns a Some result."""
+        ctx = context or {}
         for callback in self.callbacks:
-            match callback(container, value, context or {}):
+            match _call_hook_with_appropriate_signature(callback, container, value, ctx):
                 case Optional.Some(v):
                     value = v
                 case Optional.Nothing():
@@ -100,8 +135,9 @@ class HookWrapper[**P, R]:
 
         functools.update_wrapper(self, func)
 
-    def __call__(self, container: "Container", value: P, context) -> Optional[R]:
-        return self.func(container, value, context)
+    def __call__(self, container: "Container", value: P, context=None) -> Optional[R]:
+        # Use the shared helper to call with appropriate signature, marking we're from wrapper
+        return _call_hook_with_appropriate_signature(self.func, container, value, context or {}, _from_wrapper=True)
 
     def register_hook(self, registry: "r.Registry | None" = None):
         """Adds the callback to a registry for the hook type."""
