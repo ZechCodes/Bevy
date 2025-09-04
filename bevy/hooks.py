@@ -32,8 +32,12 @@ def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Conta
     # Get function signature
     try:
         sig = inspect.signature(func)
+    except (ValueError, TypeError):
+        # If we can't inspect, assume new style with context
+        return func(container, value, context)
+    else:
         params = list(sig.parameters.keys())
-        
+
         # Check if the function expects 3 parameters (container, value, context)
         # or 2 parameters (container, value) for backwards compatibility
         if len(params) >= 3:
@@ -42,9 +46,7 @@ def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Conta
         else:
             # Legacy style without context
             return func(container, value)
-    except (ValueError, TypeError):
-        # If we can't inspect, assume new style with context
-        return func(container, value, context)
+
 
 
 @dataclass
