@@ -1,7 +1,7 @@
 import time
 import typing as t
 from contextvars import ContextVar
-from inspect import signature
+from inspect import signature, Parameter
 from typing import Any
 
 from tramp.optionals import Optional
@@ -417,6 +417,9 @@ class Container(GlobalContextMixin, var=global_container):
         """Inject missing dependencies into bound arguments."""
         injected_params = {}
         
+        # Get the signature to access parameter defaults
+        sig = bound_args.signature
+        
         for param_name, (param_type, options) in injection_config['params'].items():
             # For REQUESTED_ONLY strategy, params only contains Inject[Type] parameters
             # These should always attempt injection, even if they have defaults
@@ -426,10 +429,17 @@ class Container(GlobalContextMixin, var=global_container):
             )
             
             if should_inject:
+                # Extract parameter default using Optional to distinguish between None and unset
+                param = sig.parameters[param_name]
+                if param.default is not Parameter.empty:
+                    parameter_default = Optional.Some(param.default)
+                else:
+                    parameter_default = Optional.Nothing()
+                
                 try:
                     injected_value = self._inject_single_dependency(
                         param_name, param_type, options, injection_config, 
-                        function_name, current_injection_chain
+                        function_name, current_injection_chain, parameter_default
                     )
                     bound_args.arguments[param_name] = injected_value
                     injected_params[param_name] = injected_value
@@ -443,7 +453,7 @@ class Container(GlobalContextMixin, var=global_container):
 
     def _inject_single_dependency(
         self, param_name: str, param_type: type, options, injection_config: dict,
-        function_name: str, current_injection_chain: list[str]
+        function_name: str, current_injection_chain: list[str], parameter_default
     ) -> Any:
         """Inject a single dependency parameter."""
         # Create injection context for hooks
@@ -456,7 +466,8 @@ class Container(GlobalContextMixin, var=global_container):
             type_matching=injection_config['type_matching'],
             strict_mode=injection_config['strict_mode'],
             debug_mode=injection_config['debug_mode'],
-            injection_chain=current_injection_chain.copy()
+            injection_chain=current_injection_chain.copy(),
+            parameter_default=parameter_default
         )
         
         # Call INJECTION_REQUEST hook
@@ -777,8 +788,6 @@ class Container(GlobalContextMixin, var=global_container):
         # Handle qualified dependencies
         if options and options.qualifier:
             # Create a dummy injection context for the legacy path
-            from bevy.hooks import InjectionContext
-            from bevy.injection_types import InjectionStrategy, TypeMatchingStrategy
             injection_context = InjectionContext(
                 function_name="legacy_resolution",
                 parameter_name="unknown",
@@ -788,7 +797,8 @@ class Container(GlobalContextMixin, var=global_container):
                 type_matching=TypeMatchingStrategy.SUBCLASS,
                 strict_mode=True,
                 debug_mode=debug_mode,
-                injection_chain=[]
+                injection_chain=[],
+                parameter_default=Optional.Nothing()  # No default for legacy path
             )
             return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
         

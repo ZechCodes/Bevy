@@ -61,6 +61,7 @@ class InjectionContext:
     strict_mode: bool
     debug_mode: bool
     injection_chain: list[str]  # Stack of function calls leading to this injection
+    parameter_default: Optional[Any]  # Optional.Some(value) if default set, Optional.Nothing() if unset
     
     def __post_init__(self):
         """Ensure injection_chain is a list."""
