@@ -1,5 +1,6 @@
 import functools
 import inspect
+import contextvars
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Optional as OptionalType, TYPE_CHECKING
@@ -19,8 +20,11 @@ def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Conta
     """Call a hook function with the appropriate number of parameters based on its signature.
     
     Supports both legacy 2-parameter hooks (container, value) and new 3-parameter hooks 
-    (container, value, context) for backwards compatibility.
+    (container, value, context) for backwards compatibility. Also handles async hooks.
     """
+    # Avoid circular import
+    from bevy.async_hooks import is_async_hook, call_hook_sync_or_async
+    
     # If this is a HookWrapper and we're not being called from the wrapper itself
     if isinstance(hook_func, HookWrapper) and not _from_wrapper:
         # Let the wrapper handle the call
@@ -29,7 +33,12 @@ def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Conta
     # Get the actual function for signature inspection
     func = hook_func.func if hasattr(hook_func, 'func') else hook_func
     
-    # Get function signature
+    # Check if this is an async hook
+    if is_async_hook(func):
+        # Use async executor with contextvar propagation
+        return call_hook_sync_or_async(func, container, value, context)
+    
+    # Get function signature for sync hooks
     try:
         sig = inspect.signature(func)
     except (ValueError, TypeError):
