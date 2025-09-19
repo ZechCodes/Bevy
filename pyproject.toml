@@ -19,11 +19,9 @@ classifiers = [
 python = "^3.12"
 tramp = "^0.1.17"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"
 pytest-asyncio = "^0.18.3"
-
-[tool.poetry.group.dev.dependencies]
 mkdocs-material = "^9.1.9"
 mkdocstrings = "^0.21.2"
 mkdocstrings-python = "^0.10.1"
