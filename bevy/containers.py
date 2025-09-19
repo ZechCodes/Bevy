@@ -1,7 +1,7 @@
 import time
 import typing as t
 from contextvars import ContextVar
-from inspect import signature, Parameter
+from inspect import signature
 from typing import Any
 
 from tramp.optionals import Optional
@@ -14,7 +14,7 @@ from bevy.hooks import Hook, InjectionContext, PostInjectionContext
 from bevy.injection_types import (
     DependencyResolutionError, get_non_none_type, InjectionStrategy, is_optional_type, TypeMatchingStrategy,
 )
-from bevy.injections import analyze_function_signature, get_injection_info
+from bevy.injections import InjectableCallable
 
 type Instance = t.Any
 
@@ -182,7 +182,11 @@ class Container(GlobalContextMixin, var=global_container):
         
         Works with both @injectable decorated functions and regular functions (analyzed dynamically).
         """
-        return self._call(func, args, kwargs)
+        if isinstance(func, type):
+            return self._call_type(func, args, kwargs)
+
+        injectable = func if isinstance(func, InjectableCallable) else InjectableCallable.from_callable(func)
+        return injectable.call_using(self, *args, **kwargs)
 
     @t.overload
     def get[T: Instance](self, dependency: t.Type[T], *, context: dict[str, Any] | None = None) -> T:
@@ -336,44 +340,6 @@ class Container(GlobalContextMixin, var=global_container):
 
         return instance
 
-    def _call[**P, R](self, func: t.Callable[P, R] | t.Type[R], args: P.args, kwargs: P.kwargs) -> R:
-        match func:
-            case type():
-                return self._call_type(func, args, kwargs)
-
-            case _:
-                return self._call_function(func, args, kwargs, injection_chain=None)
-
-    def _call_function[**P, R](self, func: t.Callable[P, R], args: P.args, kwargs: P.kwargs, injection_chain: list[str] = None) -> R:
-        start_time = time.time()
-        
-        # Prepare function metadata and injection context
-        function_name = getattr(func, '__name__', str(func))
-        current_injection_chain = self._build_injection_chain(function_name, injection_chain)
-        injection_config = self._get_injection_configuration(func)
-        
-        # Bind provided arguments
-        sig = signature(func)
-        bound_args = sig.bind_partial(*args, **kwargs)
-        bound_args.apply_defaults()
-        
-        # Inject missing dependencies
-        injected_params = self._inject_missing_dependencies(
-            injection_config, bound_args, function_name, current_injection_chain
-        )
-        
-        # Call function with resolved arguments
-        result = func(*bound_args.args, **bound_args.kwargs)
-        
-        # Call post-execution hook
-        self._call_post_injection_hook(
-            function_name, injected_params, result, 
-            injection_config['strategy'], injection_config['debug_mode'], 
-            start_time
-        )
-        
-        return result
-
     def _build_injection_chain(self, function_name: str, injection_chain: list[str] = None) -> list[str]:
         """Build the injection chain for tracking nested dependency calls."""
         context_chain = _current_injection_chain.get([])
@@ -387,69 +353,6 @@ class Container(GlobalContextMixin, var=global_container):
         else:
             # Explicit chain provided
             return injection_chain + [function_name]
-
-    def _get_injection_configuration(self, func) -> dict:
-        """Get injection configuration from function metadata or defaults."""
-        injection_info = get_injection_info(func)
-        
-        if injection_info:
-            # Use metadata from @injectable decorator
-            return {
-                'params': injection_info['params'],
-                'strategy': injection_info['strategy'],
-                'type_matching': injection_info['type_matching'],
-                'strict_mode': injection_info['strict_mode'],
-                'debug_mode': injection_info['debug_mode']
-            }
-        else:
-            # Analyze function dynamically using ANY_NOT_PASSED strategy
-            return {
-                'params': analyze_function_signature(func, InjectionStrategy.ANY_NOT_PASSED),
-                'strategy': InjectionStrategy.ANY_NOT_PASSED,
-                'type_matching': TypeMatchingStrategy.SUBCLASS,
-                'strict_mode': True,
-                'debug_mode': False
-            }
-
-    def _inject_missing_dependencies(
-        self, injection_config: dict, bound_args, function_name: str, current_injection_chain: list[str]
-    ) -> dict[str, Any]:
-        """Inject missing dependencies into bound arguments."""
-        injected_params = {}
-        
-        # Get the signature to access parameter defaults
-        sig = bound_args.signature
-        
-        for param_name, (param_type, options) in injection_config['params'].items():
-            # For REQUESTED_ONLY strategy, params only contains Inject[Type] parameters
-            # These should always attempt injection, even if they have defaults
-            should_inject = (
-                param_name not in bound_args.arguments or 
-                injection_config['strategy'] == InjectionStrategy.REQUESTED_ONLY
-            )
-            
-            if should_inject:
-                # Extract parameter default using Optional to distinguish between None and unset
-                param = sig.parameters[param_name]
-                if param.default is not Parameter.empty:
-                    parameter_default = Optional.Some(param.default)
-                else:
-                    parameter_default = Optional.Nothing()
-                
-                try:
-                    injected_value = self._inject_single_dependency(
-                        param_name, param_type, options, injection_config, 
-                        function_name, current_injection_chain, parameter_default
-                    )
-                    bound_args.arguments[param_name] = injected_value
-                    injected_params[param_name] = injected_value
-                except DependencyResolutionError:
-                    # If injection fails and parameter already has a value (from default),
-                    # keep the existing value as fallback
-                    if param_name not in bound_args.arguments:
-                        raise  # Re-raise if no fallback available
-        
-        return injected_params
 
     def _inject_single_dependency(
         self, param_name: str, param_type: type, options, injection_config: dict,
@@ -467,7 +370,7 @@ class Container(GlobalContextMixin, var=global_container):
             strict_mode=injection_config['strict_mode'],
             debug_mode=injection_config['debug_mode'],
             injection_chain=current_injection_chain.copy(),
-            parameter_default=parameter_default
+            parameter_default=parameter_default,
         )
         
         # Call INJECTION_REQUEST hook
@@ -788,6 +691,8 @@ class Container(GlobalContextMixin, var=global_container):
         # Handle qualified dependencies
         if options and options.qualifier:
             # Create a dummy injection context for the legacy path
+            from bevy.hooks import InjectionContext
+            from bevy.injection_types import InjectionStrategy, TypeMatchingStrategy
             injection_context = InjectionContext(
                 function_name="legacy_resolution",
                 parameter_name="unknown",
@@ -797,8 +702,7 @@ class Container(GlobalContextMixin, var=global_container):
                 type_matching=TypeMatchingStrategy.SUBCLASS,
                 strict_mode=True,
                 debug_mode=debug_mode,
-                injection_chain=[],
-                parameter_default=Optional.Nothing()  # No default for legacy path
+                injection_chain=[]
             )
             return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
         

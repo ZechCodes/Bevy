@@ -85,15 +85,15 @@ def test_auto_inject_decorator():
     """Test @auto_inject decorator functionality."""
     print("\nTesting @auto_inject decorator...")
     
-    # Test that auto_inject requires injectable
-    try:
-        @auto_inject
-        def non_injectable_func():
-            pass
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "must be decorated with @injectable first" in str(e)
-        print("  ✓ @auto_inject validates @injectable requirement")
+    # Test that auto_inject will wrap a non-injectable function
+    @auto_inject
+    def non_injectable_func(service: Inject[UserService]):
+        return service.get_user("321")
+
+    assert is_injectable(non_injectable_func)
+    info = get_injection_info(non_injectable_func)
+    assert info is not None and 'service' in info['params']
+    print("  ✓ @auto_inject wraps plain functions and records metadata")
     
     # Test proper usage (injectable must be applied first)
     @injectable

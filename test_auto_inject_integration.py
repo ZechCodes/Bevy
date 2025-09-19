@@ -4,7 +4,6 @@
 from bevy import injectable, auto_inject, Inject
 from bevy import Container
 from bevy.registries import Registry
-from bevy.context_vars import global_container
 from bevy.injection_types import InjectionStrategy
 
 
@@ -31,17 +30,15 @@ def test_auto_inject_with_global_container():
     test_container.add(UserService())
     test_container.add(Database())
     
-    # Set as global container using context variable
-    global_container.set(test_container)
-    
     # Function with auto injection (apply injectable first, then auto_inject)
     @auto_inject
     @injectable
     def process_request(user_service: Inject[UserService], request_id: str):
         return f"Auto-injected: {request_id} with {user_service.name}"
-    
+
     # Call function directly - should auto-inject from global container
-    result = process_request(request_id="456")
+    with test_container:
+        result = process_request(request_id="456")
     print(f"  Result: {result}")
     assert "Auto-injected: 456 with GlobalUserService" in result
     print("  ✓ @auto_inject works with global container")
@@ -57,8 +54,6 @@ def test_auto_inject_with_optional():
     test_container.add(UserService())
     # Not adding Database
     
-    global_container.set(test_container)
-    
     @auto_inject
     @injectable
     def process_with_optional(
@@ -68,8 +63,9 @@ def test_auto_inject_with_optional():
     ):
         db_name = db.name if db else "No database"
         return f"Optional test: {message}, user: {user_service.name}, db: {db_name}"
-    
-    result = process_with_optional(message="hello")
+
+    with test_container:
+        result = process_with_optional(message="hello")
     print(f"  Result: {result}")
     assert "No database" in result and "GlobalUserService" in result
     print("  ✓ @auto_inject works with optional dependencies")
@@ -83,15 +79,14 @@ def test_auto_inject_different_strategies():
     test_container = Container(registry)
     test_container.add(UserService())
     test_container.add(Database())
-    global_container.set(test_container)
-    
     # ANY_NOT_PASSED strategy
     @auto_inject
     @injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)
     def any_not_passed_func(user_service: UserService, db: Database, msg: str):
         return f"Any strategy: {msg} with {user_service.name} and {db.name}"
-    
-    result = any_not_passed_func(msg="test")
+
+    with test_container:
+        result = any_not_passed_func(msg="test")
     print(f"  ANY_NOT_PASSED result: {result}")
     assert "GlobalUserService" in result and "GlobalDatabase" in result
     print("  ✓ ANY_NOT_PASSED strategy works")
@@ -106,7 +101,8 @@ def test_auto_inject_different_strategies():
     # This should work because only user_service gets injected
     manual_db = Database()
     manual_db.name = "ManualDatabase"
-    result = only_strategy_func(db=manual_db, msg="test")
+    with test_container:
+        result = only_strategy_func(db=manual_db, msg="test")
     print(f"  ONLY strategy result: {result}")
     assert "GlobalUserService" in result
     print("  ✓ ONLY strategy works")
