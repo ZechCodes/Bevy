@@ -30,13 +30,12 @@ Example:
 """
 
 import inspect
-from functools import wraps
-from typing import get_type_hints, Optional, Any, Dict, Tuple
+import time
+from dataclasses import dataclass, field
+from functools import update_wrapper
+from typing import Any, Callable, Dict, get_type_hints, Optional, Tuple
 
-from bevy.injection_types import (
-    InjectionStrategy, TypeMatchingStrategy, Options,
-    extract_injection_info, is_optional_type, get_non_none_type
-)
+from bevy.injection_types import (extract_injection_info, InjectionStrategy, Options, TypeMatchingStrategy)
 
 
 def analyze_function_signature(
@@ -117,8 +116,223 @@ def _should_inject_parameter(
     elif strategy == InjectionStrategy.ONLY:
         # Inject only parameters in the specified list
         return params is not None and param_name in params
-    
+
     return False
+
+
+@dataclass
+class _InjectableConfig:
+    """Shared configuration for an injectable callable."""
+
+    strategy: InjectionStrategy
+    params: Optional[list[str]]
+    strict: bool
+    type_matching: TypeMatchingStrategy
+    debug: bool
+    cache_analysis: bool
+    auto_inject: bool = False
+    analysis_cache: Dict[Callable[..., Any], Dict[str, Tuple[type, Optional[Options]]]] = field(default_factory=dict)
+
+
+class InjectableCallable:
+    """Wrapper that performs dependency injection against a container."""
+
+    __slots__ = ("_func", "_config", "__wrapped__", "__dict__")
+
+    def __init__(self, func: Callable[..., Any], config: _InjectableConfig):
+        self._func = func
+        self._config = config
+        update_wrapper(self, func)
+        self.__wrapped__ = func
+
+    # ------------------------------------------------------------------
+    # Descriptor behaviour ------------------------------------------------
+    def __get__(self, instance, owner):
+        descriptor_get = getattr(self._func, "__get__", None)
+        if descriptor_get is None:
+            return self
+
+        bound = descriptor_get(instance, owner)
+        if bound is self._func and instance is None:
+            return self
+
+        return type(self)(bound, self._config)
+
+    def _analyze(self, target_func: Callable[..., Any]) -> Dict[str, Tuple[type, Optional[Options]]]:
+        if self._config.cache_analysis and target_func in self._config.analysis_cache:
+            return self._config.analysis_cache[target_func]
+
+        params = analyze_function_signature(target_func, self._config.strategy, self._config.params)
+        if self._config.cache_analysis:
+            self._config.analysis_cache[target_func] = params
+        return params
+
+    def _build_injection_configuration(self) -> Dict[str, Any]:
+        params = self._analyze(self._func)
+        return {
+            "params": params,
+            "strategy": self._config.strategy,
+            "type_matching": self._config.type_matching,
+            "strict_mode": self._config.strict,
+            "debug_mode": self._config.debug,
+        }
+
+    # ------------------------------------------------------------------
+    # Call handling ------------------------------------------------------
+    def call_using(self, container, /, *args, **kwargs):
+        from bevy.containers import Container  # Local import to avoid cycle
+
+        if not isinstance(container, Container):  # pragma: no cover - defensive
+            raise TypeError("container must be a Container instance")
+
+        start_time = time.time()
+        function_name = getattr(self._func, "__name__", str(self._func))
+        current_injection_chain = container._build_injection_chain(function_name)
+        injection_config = self._build_injection_configuration()
+
+        sig = inspect.signature(self._func)
+        bound_args = sig.bind_partial(*args, **kwargs)
+        bound_args.apply_defaults()
+
+        injected_params = self._inject_missing_dependencies(
+            container,
+            injection_config,
+            bound_args,
+            function_name,
+            current_injection_chain,
+        )
+
+        result = self._func(*bound_args.args, **bound_args.kwargs)
+        container._call_post_injection_hook(
+            function_name,
+            injected_params,
+            result,
+            injection_config["strategy"],
+            injection_config["debug_mode"],
+            start_time,
+        )
+
+        return result
+
+    def __call__(self, *args, **kwargs):
+        if self.auto_inject:
+            from bevy.context_vars import get_global_container
+
+            container = get_global_container()
+            return self.call_using(container, *args, **kwargs)
+
+        return self._func(*args, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Injection helpers --------------------------------------------------
+    def _inject_missing_dependencies(
+        self,
+        container,
+        injection_config: Dict[str, Any],
+        bound_args,
+        function_name: str,
+        current_injection_chain: list[str],
+    ) -> Dict[str, Any]:
+        from bevy.injection_types import DependencyResolutionError
+
+        injected_params: Dict[str, Any] = {}
+
+        for param_name, (param_type, options) in injection_config["params"].items():
+            should_inject = (
+                param_name not in bound_args.arguments
+                or injection_config["strategy"] == InjectionStrategy.REQUESTED_ONLY
+            )
+
+            if not should_inject:
+                continue
+
+            try:
+                injected_value = container._inject_single_dependency(
+                    param_name,
+                    param_type,
+                    options,
+                    injection_config,
+                    function_name,
+                    current_injection_chain,
+                )
+                bound_args.arguments[param_name] = injected_value
+                injected_params[param_name] = injected_value
+            except DependencyResolutionError:
+                if param_name not in bound_args.arguments:
+                    raise
+
+        return injected_params
+
+    # ------------------------------------------------------------------
+    # Introspection ------------------------------------------------------
+    def injection_metadata(self) -> Dict[str, Any]:
+        return {
+            "params": self._analyze(self._func),
+            "strategy": self._config.strategy,
+            "type_matching": self._config.type_matching,
+            "strict_mode": self._config.strict,
+            "debug_mode": self._config.debug,
+            "cache_analysis": self._config.cache_analysis,
+        }
+
+    # ------------------------------------------------------------------
+    # Properties ---------------------------------------------------------
+    @property
+    def auto_inject(self) -> bool:
+        return self._config.auto_inject
+
+    @auto_inject.setter
+    def auto_inject(self, value: bool) -> None:
+        self._config.auto_inject = value
+
+    # ------------------------------------------------------------------
+    # Constructors -------------------------------------------------------
+    @classmethod
+    def from_callable(
+        cls,
+        func: Callable[..., Any],
+        *,
+        strategy: InjectionStrategy | None = None,
+        params: Optional[list[str]] = None,
+        strict: bool = True,
+        type_matching: TypeMatchingStrategy | None = None,
+        debug: bool = False,
+        cache_analysis: bool = True,
+    ) -> "InjectableCallable":
+        if isinstance(func, cls):
+            return func
+
+        actual_strategy = strategy or InjectionStrategy.ANY_NOT_PASSED
+        if actual_strategy == InjectionStrategy.DEFAULT:
+            actual_strategy = InjectionStrategy.REQUESTED_ONLY
+
+        actual_type_matching = type_matching or TypeMatchingStrategy.SUBCLASS
+        if actual_type_matching == TypeMatchingStrategy.DEFAULT:
+            actual_type_matching = TypeMatchingStrategy.SUBCLASS
+
+        config = _InjectableConfig(
+            strategy=actual_strategy,
+            params=list(params) if params is not None else None,
+            strict=strict,
+            type_matching=actual_type_matching,
+            debug=debug,
+            cache_analysis=cache_analysis,
+        )
+        return cls(func, config)
+
+
+def _locate_injectable(func) -> Optional[InjectableCallable]:
+    """Traverse wrappers to find an InjectableCallable instance."""
+
+    current = func
+    visited: set[int] = set()
+    while current is not None and id(current) not in visited:
+        visited.add(id(current))
+        if isinstance(current, InjectableCallable):
+            return current
+        current = getattr(current, "__wrapped__", None)
+
+    return None
 
 
 def injectable(
@@ -182,22 +396,16 @@ def injectable(
     )
     
     def decorator(target_func):
-        # Analyze function signature and store metadata
-        if cache_analysis and hasattr(target_func, '_bevy_injection_params'):
-            # Use cached analysis if available
-            injection_params = target_func._bevy_injection_params
-        else:
-            injection_params = analyze_function_signature(target_func, actual_strategy, params)
-            
-        # Store all configuration on function
-        target_func._bevy_injection_params = injection_params
-        target_func._bevy_injection_strategy = actual_strategy
-        target_func._bevy_type_matching = actual_type_matching
-        target_func._bevy_strict_mode = strict
-        target_func._bevy_debug_mode = debug
-        target_func._bevy_cache_analysis = cache_analysis
-        
-        return target_func
+        config = _InjectableConfig(
+            strategy=actual_strategy,
+            params=list(params) if params is not None else None,
+            strict=strict,
+            type_matching=actual_type_matching,
+            debug=debug,
+            cache_analysis=cache_analysis,
+        )
+
+        return InjectableCallable(target_func, config)
 
     # Handle both @injectable and @injectable() usage
     if func is None:
@@ -209,63 +417,33 @@ def injectable(
 
 
 def auto_inject(func):
+    """Enable automatic injection using the global container.
+
+    The decorator searches through the ``__wrapped__`` chain for an existing
+    :class:`InjectableCallable`. If one is found, the auto-inject flag is set on
+    that wrapper. Otherwise the target is wrapped in a new ``InjectableCallable``
+    using the :class:`InjectionStrategy.REQUESTED_ONLY` strategy.
+
+    Direct invocations call ``call_using`` with the global container, while
+    :meth:`bevy.containers.Container.call` will still inject using the container
+    it was invoked on. If additional decorators wrap the result *after*
+    ``@auto_inject``, they will hide the injectable wrapper from
+    ``Container.call``; in that scenario the wrapper is injected with the calling
+    container while the inner auto-injected callable uses the global container.
+    This double-injection is the intended behaviour and is documented for users.
     """
-    Enable automatic injection using the global container.
-    
-    This decorator wraps the function to automatically inject dependencies
-    from the global container when the function is called. The function must
-    be decorated with @injectable first.
-    
-    **Important:** @auto_inject must come before @injectable in the decorator chain.
-    
-    Args:
-        func: Function to enable auto-injection for
-        
-    Returns:
-        Wrapped function that performs automatic injection
-        
-    Raises:
-        ValueError: If function is not decorated with @injectable
-    
-    Example:
-        >>> @auto_inject
-        >>> @injectable
-        >>> def process_data(service: Inject[UserService], data: str):
-        ...     return service.process(data)
-        >>> 
-        >>> # Can now call directly without container
-        >>> result = process_data(data="test")
-        
-        Error case (wrong decorator order):
-        
-        >>> @injectable
-        >>> @auto_inject  # Wrong order!
-        >>> def bad_function(service: Inject[UserService]):
-        ...     pass  # Raises ValueError
-    """
-    if not hasattr(func, '_bevy_injection_params'):
-        raise ValueError(
-            f"Function {func.__name__} must be decorated with @injectable first. "
-            f"Use @injectable before @auto_inject."
+
+    injectable_callable = _locate_injectable(func)
+    if injectable_callable is None:
+        injectable_callable = InjectableCallable.from_callable(
+            func,
+            strategy=InjectionStrategy.REQUESTED_ONLY,
+            cache_analysis=True,
         )
-    
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # Import here to avoid circular imports
-        from bevy.context_vars import get_global_container
-        
-        container = get_global_container()
-        return container.call(func, *args, **kwargs)
-    
-    # Preserve injection metadata
-    wrapper._bevy_injection_params = func._bevy_injection_params
-    wrapper._bevy_injection_strategy = func._bevy_injection_strategy
-    wrapper._bevy_type_matching = func._bevy_type_matching
-    wrapper._bevy_strict_mode = func._bevy_strict_mode
-    wrapper._bevy_debug_mode = func._bevy_debug_mode
-    wrapper._bevy_cache_analysis = func._bevy_cache_analysis
-    
-    return wrapper
+        func = injectable_callable
+
+    injectable_callable.auto_inject = True
+    return func
 
 
 def get_injection_info(func) -> Optional[Dict[str, Any]]:
@@ -278,17 +456,11 @@ def get_injection_info(func) -> Optional[Dict[str, Any]]:
     Returns:
         Dictionary with injection metadata or None if not injectable
     """
-    if not hasattr(func, '_bevy_injection_params'):
+    injectable_callable = _locate_injectable(func)
+    if injectable_callable is None:
         return None
-        
-    return {
-        'params': func._bevy_injection_params,
-        'strategy': func._bevy_injection_strategy,
-        'type_matching': func._bevy_type_matching,
-        'strict_mode': func._bevy_strict_mode,
-        'debug_mode': func._bevy_debug_mode,
-        'cache_analysis': func._bevy_cache_analysis
-    }
+
+    return injectable_callable.injection_metadata()
 
 
 def is_injectable(func) -> bool:
@@ -301,4 +473,4 @@ def is_injectable(func) -> bool:
     Returns:
         True if function has injection metadata
     """
-    return hasattr(func, '_bevy_injection_params')
+    return _locate_injectable(func) is not None

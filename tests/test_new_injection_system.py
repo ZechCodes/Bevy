@@ -7,7 +7,16 @@ Tests all aspects of the @injectable, @auto_inject, Inject[T], and Options syste
 
 import pytest
 
-from bevy import (auto_inject, Container, Inject, injectable, InjectionStrategy, Options, TypeMatchingStrategy)
+from bevy import (
+    auto_inject,
+    Container,
+    Inject,
+    injectable,
+    InjectionStrategy,
+    Options,
+    TypeMatchingStrategy,
+)
+from bevy.injections import get_injection_info, is_injectable
 from bevy.context_vars import global_container
 from bevy.registries import Registry
 
@@ -46,8 +55,8 @@ class TestInjectableDecorator:
             return service.name
         
         # Should have injection metadata
-        assert hasattr(basic_func, '_bevy_injection_params')
-        params = basic_func._bevy_injection_params
+        assert is_injectable(basic_func)
+        params = get_injection_info(basic_func)['params']
         assert 'service' in params
         assert params['service'][0] == UserService
         assert params['service'][1] is None  # No options
@@ -61,7 +70,7 @@ class TestInjectableDecorator:
         ):
             return "test"
         
-        params = func_with_options._bevy_injection_params
+        params = get_injection_info(func_with_options)['params']
         
         # Check primary_db
         assert 'primary_db' in params
@@ -83,7 +92,7 @@ class TestInjectableDecorator:
         def requested_only(service: Inject[UserService], regular: str):
             return "test"
         
-        params = requested_only._bevy_injection_params
+        params = get_injection_info(requested_only)['params']
         assert 'service' in params
         assert 'regular' not in params
         
@@ -92,7 +101,7 @@ class TestInjectableDecorator:
         def any_not_passed(service: UserService, db: Database, manual: str):
             return "test"
         
-        params = any_not_passed._bevy_injection_params
+        params = get_injection_info(any_not_passed)['params']
         assert 'service' in params
         assert 'db' in params
         assert 'manual' in params  # Has type annotation
@@ -102,7 +111,7 @@ class TestInjectableDecorator:
         def only_strategy(service: UserService, db: Database, manual: str):
             return "test"
         
-        params = only_strategy._bevy_injection_params
+        params = get_injection_info(only_strategy)['params']
         assert 'service' in params
         assert 'db' not in params
         assert 'manual' not in params
@@ -119,22 +128,27 @@ class TestInjectableDecorator:
         def configured_func(service: Inject[UserService]):
             return "test"
         
-        assert configured_func._bevy_injection_strategy == InjectionStrategy.REQUESTED_ONLY
-        assert configured_func._bevy_strict_mode is False
-        assert configured_func._bevy_type_matching == TypeMatchingStrategy.EXACT_TYPE
-        assert configured_func._bevy_debug_mode is True
-        assert configured_func._bevy_cache_analysis is False
+        info = get_injection_info(configured_func)
+        assert info['strategy'] == InjectionStrategy.REQUESTED_ONLY
+        assert info['strict_mode'] is False
+        assert info['type_matching'] == TypeMatchingStrategy.EXACT_TYPE
+        assert info['debug_mode'] is True
+        assert info['cache_analysis'] is False
 
 
 class TestAutoInjectDecorator:
     """Test the @auto_inject decorator functionality."""
     
-    def test_auto_inject_requires_injectable(self):
-        """Test that @auto_inject requires @injectable."""
-        with pytest.raises(ValueError, match="must be decorated with @injectable first"):
-            @auto_inject
-            def non_injectable():
-                pass
+    def test_auto_inject_wraps_plain_functions(self):
+        """Test that @auto_inject wraps plain functions and records metadata."""
+
+        @auto_inject
+        def non_injectable(service: Inject[UserService]):
+            return service.name
+
+        assert is_injectable(non_injectable)
+        params = get_injection_info(non_injectable)['params']
+        assert "service" in params
     
     def test_auto_inject_preserves_metadata(self):
         """Test that @auto_inject preserves injection metadata."""
@@ -144,8 +158,8 @@ class TestAutoInjectDecorator:
             return service.name
         
         # Should still have injection metadata
-        assert hasattr(test_func, '_bevy_injection_params')
-        params = test_func._bevy_injection_params
+        assert is_injectable(test_func)
+        params = get_injection_info(test_func)['params']
         assert 'service' in params
 
 

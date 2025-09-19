@@ -3,7 +3,7 @@ from typing import overload, Type
 
 import bevy.containers as containers
 import bevy.hooks as hooks
-from bevy.context_vars import get_global_registry, global_registry, GlobalContextMixin
+from bevy.context_vars import get_global_registry, global_registry, global_container, GlobalContextMixin
 from bevy.factories import Factory
 
 type DependencyFactory[T] = "Callable[[containers.Container], T]"
@@ -16,6 +16,7 @@ class Registry(GlobalContextMixin, var=global_registry):
         super().__init__()
         self.hooks: dict[hooks.Hook, hooks.HookManager] = defaultdict(hooks.HookManager)
         self.factories: "dict[Type[containers.Instance], DependencyFactory[containers.Instance]]" = {}
+        self._container_tokens: list = []
 
     @overload
     def add_factory(self, factory: "DependencyFactory[containers.Instance]", for_type: "Type[containers.Instance]"):
@@ -61,6 +62,17 @@ class Registry(GlobalContextMixin, var=global_registry):
                 raise ValueError(f"Unexpected arguments to add_hook: {args}")
 
 
+    def __enter__(self):
+        registry = super().__enter__()
+        self._container_tokens.append(global_container.set(self.create_container()))
+        return registry
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._container_tokens:
+            global_container.reset(self._container_tokens.pop())
+        return super().__exit__(exc_type, exc_val, exc_tb)
+
+
     def create_container(self) -> "containers.Container":
         """Creates a new container bound to the registry."""
         return containers.Container(self)
@@ -91,5 +103,4 @@ def get_registry(*args) -> Registry:
 
         case _:
             raise ValueError(f"Unexpected arguments to get_registry: {args}")
-
 

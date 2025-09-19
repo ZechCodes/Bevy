@@ -86,6 +86,12 @@ def process_user_data(
 
 # Call directly - dependencies injected automatically
 result = process_user_data(user_id="456")
+
+# When `process_user_data` is invoked through `container.call`, the container that
+# performs the call provides the dependencies. If you stack additional decorators
+# outside of `@auto_inject`, those wrappers continue to receive dependencies from
+# the calling container while the inner auto-injected function still uses the
+# global container.
 ```
 
 ### Advanced Features

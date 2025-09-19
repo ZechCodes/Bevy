@@ -64,6 +64,8 @@ print(result)  # "Sent 'Notification: Welcome!' to User 123"
 
 - **`@injectable`** - Enables dependency injection for functions
 - **`@auto_inject`** - Automatically uses global container for injection
+  - When you call an auto-injected function through `Container.call`, its dependencies come from the container that invoked it.
+  - If another decorator wraps the auto-injected callable afterwards, the wrapper receives dependencies from the calling container while the inner function still uses the global container. This intentional double-injection avoids breaking existing decorators.
 
 ### Type System
 
