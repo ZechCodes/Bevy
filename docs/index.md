@@ -5,6 +5,7 @@
 ## Quick Links
 
 - **[Quick Start Guide](../BEVY_QUICKSTART.md)** - Get up and running in minutes
+- **[Usage Guide](usage-guide.md)** - Patterns and best practices
 - **[API Reference](api.md)** - Complete API documentation  
 - **[Migration Guide](migration.md)** - Upgrade from Bevy 3.0 beta
 
