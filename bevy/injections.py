@@ -179,6 +179,11 @@ class InjectableCallable:
             "debug_mode": self._config.debug,
         }
 
+    @property
+    def is_async(self) -> bool:
+        """Check if the wrapped function is async."""
+        return inspect.iscoroutinefunction(self._func)
+
     # ------------------------------------------------------------------
     # Call handling ------------------------------------------------------
     def call_using(self, container, /, *args, **kwargs):
@@ -206,16 +211,33 @@ class InjectableCallable:
         )
 
         result = self._func(*bound_args.args, **bound_args.kwargs)
-        container._call_post_injection_hook(
+        return result
+
+    async def call_using_async(self, container, /, *args, **kwargs):
+        """Async version of call_using that uses async dependency resolution."""
+        from bevy.containers import Container  # Local import to avoid cycle
+
+        if not isinstance(container, Container):  # pragma: no cover - defensive
+            raise TypeError("container must be a Container instance")
+
+        function_name = getattr(self._func, "__name__", str(self._func))
+        current_injection_chain = container._build_injection_chain(function_name)
+        injection_config = self._build_injection_configuration()
+
+        sig = inspect.signature(self._func)
+        bound_args = sig.bind_partial(*args, **kwargs)
+        bound_args.apply_defaults()
+
+        await self._inject_missing_dependencies_async(
+            container,
+            injection_config,
+            bound_args,
             function_name,
-            injected_params,
-            result,
-            injection_config["strategy"],
-            injection_config["debug_mode"],
-            start_time,
+            current_injection_chain,
+            sig,
         )
 
-        return result
+        return await self._func(*bound_args.args, **bound_args.kwargs)
 
     def __call__(self, *args, **kwargs):
         if self.auto_inject:
@@ -273,6 +295,54 @@ class InjectableCallable:
                     raise
 
         return injected_params
+
+    async def _inject_missing_dependencies_async(
+        self,
+        container,
+        injection_config: Dict[str, Any],
+        bound_args,
+        function_name: str,
+        current_injection_chain: list[str],
+        signature: inspect.Signature,
+    ) -> None:
+        """Async version of dependency injection using await container.find()."""
+        from bevy.injection_types import DependencyResolutionError
+
+        for param_name, (param_type, options) in injection_config["params"].items():
+            should_inject = (
+                param_name not in bound_args.arguments
+                or injection_config["strategy"] == InjectionStrategy.REQUESTED_ONLY
+            )
+
+            if not should_inject:
+                continue
+
+            try:
+                # Handle cache_factory_result=False (bypass container caching)
+                if options and options.default_factory and not options.cache_factory_result:
+                    # Call factory directly without caching
+                    factory_sig = inspect.signature(options.default_factory)
+                    if len(factory_sig.parameters) > 0:
+                        # Factory accepts parameters, use container for dependency injection
+                        injected_value = container.call(options.default_factory)
+                    else:
+                        # Factory takes no parameters, call directly
+                        injected_value = options.default_factory()
+                else:
+                    # Use async find() for cached/normal resolution
+                    find_kwargs = {}
+                    if options:
+                        if options.qualifier:
+                            find_kwargs['qualifier'] = options.qualifier
+                        if options.default_factory:
+                            find_kwargs['default_factory'] = options.default_factory
+
+                    injected_value = await container.find(param_type, **find_kwargs).get_async()
+
+                bound_args.arguments[param_name] = injected_value
+            except DependencyResolutionError:
+                if param_name not in bound_args.arguments:
+                    raise
 
     # ------------------------------------------------------------------
     # Introspection ------------------------------------------------------
