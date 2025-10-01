@@ -11,6 +11,7 @@ from bevy.bundled.type_factory_hook import type_factory
 from bevy.context_vars import GlobalContextDisabledError
 from bevy.factories import create_type_factory
 from bevy.hooks import Hook, hooks
+from bevy.injection_types import Options
 
 
 class DummyObject:
@@ -279,3 +280,256 @@ def test_decorators():
         test()
 
         assert injections == {f"test({id(obj)} DummyObject)", f"wrapper({id(obj)} DummyObject)"}
+
+
+def test_container_find_basic():
+    """Test that container.find() returns a Result that can be resolved."""
+    registry = Registry()
+    registry.add_factory(create_type_factory(DummyObject))
+    container = registry.create_container()
+
+    result = container.find(DummyObject)
+    instance = result.get()
+
+    assert isinstance(instance, DummyObject)
+    assert container.get(DummyObject) is instance
+
+
+def test_container_find_with_default():
+    """Test that container.find() with default works."""
+    registry = Registry()
+    container = registry.create_container()
+
+    default_obj = DummyObject("default")
+    result = container.find(DummyObject, default=default_obj)
+    instance = result.get()
+
+    assert instance is default_obj
+
+
+def test_container_find_with_default_factory():
+    """Test that container.find() with default_factory works."""
+    registry = Registry()
+    container = registry.create_container()
+
+    result = container.find(DummyObject, default_factory=lambda: DummyObject("factory"))
+    instance = result.get()
+
+    assert isinstance(instance, DummyObject)
+    assert instance.value == "factory"
+
+
+def test_container_find_with_qualifier():
+    """Test that container.find() with qualifier works."""
+    registry = Registry()
+    container = registry.create_container()
+
+    obj1 = DummyObject("qualified")
+    container.add(DummyObject, obj1, qualifier="special")
+
+    result = container.find(DummyObject, qualifier="special")
+    instance = result.get()
+
+    assert instance is obj1
+
+
+@pytest.mark.asyncio
+async def test_container_find_async():
+    """Test that container.find() can be awaited in async context."""
+    registry = Registry()
+    registry.add_factory(create_type_factory(DummyObject))
+    container = registry.create_container()
+
+    result = container.find(DummyObject)
+    instance = await result  # Using __await__
+
+    assert isinstance(instance, DummyObject)
+
+
+@pytest.mark.asyncio
+async def test_container_find_get_async():
+    """Test that container.find().get_async() works."""
+    registry = Registry()
+    registry.add_factory(create_type_factory(DummyObject))
+    container = registry.create_container()
+
+    result = container.find(DummyObject)
+    instance = await result.get_async()
+
+    assert isinstance(instance, DummyObject)
+    assert container.get(DummyObject) is instance
+
+
+@pytest.mark.asyncio
+async def test_container_find_uses_async_hooks():
+    """Test that container.find() uses async hooks, not sync wrappers."""
+    from bevy.hooks import Hook
+    import asyncio
+
+    hook_called = False
+    hook_thread_id = None
+    main_thread_id = asyncio.current_task()
+
+    async def async_create_hook(container, dependency, context):
+        nonlocal hook_called, hook_thread_id
+        hook_called = True
+        hook_thread_id = asyncio.current_task()
+        # Simulate async work
+        await asyncio.sleep(0.001)
+        if dependency is DummyObject:
+            return Optional.Some(DummyObject("async_hook"))
+        return Optional.Nothing()
+
+    registry = Registry()
+    registry.add_hook(Hook.CREATE_INSTANCE, async_create_hook)
+    container = registry.create_container()
+
+    result = container.find(DummyObject)
+    instance = await result.get_async()
+
+    assert hook_called, "Async hook should have been called"
+    assert instance.value == "async_hook"
+    # Verify we're in the same async context (not wrapped in a thread)
+    assert hook_thread_id == main_thread_id, "Hook should run in same async context"
+
+
+@pytest.mark.asyncio
+async def test_async_function_injection_basic():
+    """Test that async functions can be injected with dependencies."""
+    @injectable
+    async def async_func(obj: Inject[DummyObject]):
+        return obj.value
+
+    registry = Registry()
+    registry.add_factory(create_type_factory(DummyObject))
+    container = registry.create_container()
+
+    coro = container.call(async_func)
+    result = await coro
+
+    assert result is None  # DummyObject() has value=None by default
+
+
+@pytest.mark.asyncio
+async def test_async_function_with_async_hooks():
+    """Test that async functions use async hooks during injection."""
+    from bevy.hooks import Hook
+    import asyncio
+
+    hook_called = []
+
+    async def async_create_hook(container, dependency, context):
+        await asyncio.sleep(0.001)
+        hook_called.append(dependency.__name__)
+        if dependency is DummyObject:
+            return Optional.Some(DummyObject("from_hook"))
+        return Optional.Nothing()
+
+    @injectable
+    async def async_func(obj: Inject[DummyObject]):
+        return obj.value
+
+    registry = Registry()
+    registry.add_hook(Hook.CREATE_INSTANCE, async_create_hook)
+    container = registry.create_container()
+
+    result = await container.call(async_func)
+
+    assert result == "from_hook"
+    assert "DummyObject" in hook_called
+
+
+@pytest.mark.asyncio
+async def test_async_function_with_qualified_dependency():
+    """Test async function injection with qualified dependencies."""
+    @injectable
+    async def async_func(obj: Inject[DummyObject, Options(qualifier="special")]):
+        return obj.value
+
+    registry = Registry()
+    container = registry.create_container()
+
+    special_obj = DummyObject("special_value")
+    container.add(DummyObject, special_obj, qualifier="special")
+
+    result = await container.call(async_func)
+
+    assert result == "special_value"
+
+
+@pytest.mark.asyncio
+async def test_async_function_with_default_factory():
+    """Test async function injection with default_factory."""
+    @injectable
+    async def async_func(obj: Inject[DummyObject, Options(default_factory=lambda: DummyObject("factory"))]):
+        return obj.value
+
+    registry = Registry()
+    container = registry.create_container()
+
+    result = await container.call(async_func)
+
+    assert result == "factory"
+
+
+@pytest.mark.asyncio
+async def test_async_function_with_cache_factory_result_false():
+    """Test async function injection with cache_factory_result=False."""
+    call_count = [0]
+
+    def factory():
+        call_count[0] += 1
+        return DummyObject(f"call_{call_count[0]}")
+
+    @injectable
+    async def async_func(obj: Inject[DummyObject, Options(default_factory=factory, cache_factory_result=False)]):
+        return obj.value
+
+    registry = Registry()
+    container = registry.create_container()
+
+    result1 = await container.call(async_func)
+    result2 = await container.call(async_func)
+
+    assert result1 == "call_1"
+    assert result2 == "call_2"  # Should be different instances
+
+
+@pytest.mark.asyncio
+async def test_async_function_returns_coroutine():
+    """Test that calling async function returns coroutine."""
+    import inspect
+
+    @injectable
+    async def async_func(obj: Inject[DummyObject]):
+        return obj.value
+
+    registry = Registry()
+    registry.add_factory(create_type_factory(DummyObject))
+    container = registry.create_container()
+
+    result = container.call(async_func)
+
+    assert inspect.iscoroutine(result), "Should return coroutine"
+    await result  # Clean up
+
+
+@pytest.mark.asyncio
+async def test_sync_and_async_functions_share_dependencies():
+    """Test that sync and async functions can share the same dependency instances."""
+    @injectable
+    def sync_func(obj: Inject[DummyObject]):
+        return obj
+
+    @injectable
+    async def async_func(obj: Inject[DummyObject]):
+        return obj
+
+    registry = Registry()
+    registry.add_factory(create_type_factory(DummyObject))
+    container = registry.create_container()
+
+    sync_result = container.call(sync_func)
+    async_result = await container.call(async_func)
+
+    assert sync_result is async_result, "Should be the same cached instance"
