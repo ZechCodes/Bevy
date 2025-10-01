@@ -1,6 +1,8 @@
+import asyncio
+import concurrent.futures
+import contextvars
 import functools
 import inspect
-import contextvars
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Optional as OptionalType, TYPE_CHECKING
@@ -17,27 +19,21 @@ type HookFunction[T] = "Callable[[Container, Type[T], dict[str, Any], T]"
 
 
 def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Container", value: Any, context: dict[str, Any], _from_wrapper: bool = False) -> Any:
-    """Call a hook function with the appropriate number of parameters based on its signature.
-    
-    Supports both legacy 2-parameter hooks (container, value) and new 3-parameter hooks 
-    (container, value, context) for backwards compatibility. Also handles async hooks.
+    """Call a sync hook function with the appropriate number of parameters based on its signature.
+
+    Supports both legacy 2-parameter hooks (container, value) and new 3-parameter hooks
+    (container, value, context) for backwards compatibility.
+
+    NOTE: This function only handles SYNC hooks. Async hooks are handled by HookManager._call_hook_async().
     """
-    # Avoid circular import
-    from bevy.async_hooks import is_async_hook, call_hook_sync_or_async
-    
     # If this is a HookWrapper and we're not being called from the wrapper itself
     if isinstance(hook_func, HookWrapper) and not _from_wrapper:
         # Let the wrapper handle the call
         return hook_func(container, value, context)
-    
+
     # Get the actual function for signature inspection
     func = hook_func.func if hasattr(hook_func, 'func') else hook_func
-    
-    # Check if this is an async hook
-    if is_async_hook(func):
-        # Use async executor with contextvar propagation
-        return call_hook_sync_or_async(func, container, value, context)
-    
+
     # Get function signature for sync hooks
     try:
         sig = inspect.signature(func)
@@ -105,8 +101,16 @@ class Hook(Enum):
 
 
 class HookManager:
-    """A utility type that makes it easier to work with collections of functions waiting for the
-    hook to be triggered."""
+    """Manages hook callbacks for dependency resolution lifecycle events.
+
+    This class uses an async-native architecture where all hooks are executed asynchronously.
+    Hooks can be either sync or async functions - sync hooks are called directly while async
+    hooks are properly awaited.
+
+    Methods:
+        handle(): Returns the first Some result from any callback, or Nothing if all return Nothing
+        filter(): Applies all callbacks in sequence, updating the value when a callback returns Some
+    """
     def __init__(self):
         self.callbacks = set()
 
@@ -114,27 +118,71 @@ class HookManager:
         """Adds a function that will be called when the hook is triggered."""
         self.callbacks.add(hook)
 
-    def handle[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> Optional[Any]:
-        """Iterates each callback and returns the first result."""
+    async def handle[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> Optional[Any]:
+        """Iterates each callback and returns the first Some result, or Nothing if all return Nothing.
+
+        Args:
+            container: The container instance
+            value: The value to pass to callbacks
+            context: Optional context dictionary
+
+        Returns:
+            Optional.Some(result) from first callback that returns Some, or Optional.Nothing()
+        """
         ctx = context or {}
         for callback in self.callbacks:
-            match _call_hook_with_appropriate_signature(callback, container, value, ctx):
-                case Optional.Some() as v:
-                    return v
-
+            result = await self._call_hook_async(callback, container, value, ctx)
+            match result:
+                case Optional.Some(_):
+                    return result
+                case Optional.Nothing():
+                    continue
         return Optional.Nothing()
 
-    def filter[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> T:
-        """Iterates all callbacks and updates the value when a callback returns a Some result."""
+    async def filter[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> T:
+        """Iterates all callbacks and updates the value when a callback returns Some.
+
+        Args:
+            container: The container instance
+            value: The initial value
+            context: Optional context dictionary
+
+        Returns:
+            The final value after applying all callback transformations
+        """
         ctx = context or {}
         for callback in self.callbacks:
-            match _call_hook_with_appropriate_signature(callback, container, value, ctx):
+            result = await self._call_hook_async(callback, container, value, ctx)
+            match result:
                 case Optional.Some(v):
                     value = v
                 case Optional.Nothing():
                     pass
-
         return value
+
+    async def _call_hook_async(self, hook_func: Callable, container: "Container", value: Any, context: dict[str, Any]) -> Optional[Any]:
+        """Call a hook function (sync or async) and return result."""
+        # Avoid circular import
+        from bevy.async_hooks import is_async_hook
+
+        # Handle HookWrapper
+        if isinstance(hook_func, HookWrapper):
+            actual_func = hook_func.func
+        else:
+            actual_func = hook_func
+
+        # Check if async
+        if is_async_hook(actual_func):
+            # Call async hook
+            sig = inspect.signature(actual_func)
+            params = list(sig.parameters.keys())
+            if len(params) >= 3:
+                return await actual_func(container, value, context)
+            else:
+                return await actual_func(container, value)
+        else:
+            # Call sync hook
+            return _call_hook_with_appropriate_signature(hook_func, container, value, context)
 
 
 class HookWrapper[**P, R]:
