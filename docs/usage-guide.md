@@ -78,7 +78,99 @@ async def send_welcome(user_id: str, notifier: Inject[Notifier]):
 - Call `send_welcome(...)` directly and dependencies resolve from the global container.
 - For alternate wiring, call `container.call(send_welcome, dependencies...)`; the calling container drives injection, while still honoring other decorators.
 
-## 5. Use `Options` for Advanced Wiring
+## 5. Async-Native Dependency Resolution
+
+Bevy is built async-first. For async code, use `container.find()` which returns a `Result` that can be resolved in either sync or async contexts.
+
+### Using `find()` in Async Code
+
+```python
+# ✅ Best practice: Use find() in async code
+async def process_order(order_id: str):
+    db = await container.find(Database)
+    cache = await container.find(Cache, qualifier="redis")
+    config = await container.find(Config, default_factory=load_default_config)
+
+    # Your async logic here
+    await db.save(order_id)
+```
+
+### Async Function Injection
+
+Async functions decorated with `@injectable` work seamlessly with `container.call()`:
+
+```python
+@injectable
+async def send_notification(
+    user_id: str,
+    email: Inject[EmailService],
+    db: Inject[Database]
+):
+    user = await db.get_user(user_id)
+    await email.send(user.email, "Welcome!")
+
+# Call it - returns a coroutine
+await container.call(send_notification, user_id="123")
+```
+
+### The `Result` Type
+
+`container.find()` returns a `Result[T]` that can be resolved in multiple ways:
+
+```python
+result = container.find(Service)
+
+# Async context - truly async resolution with no thread overhead
+instance = await result  # Uses __await__
+# OR
+instance = await result.get_async()
+
+# Sync context - runs async resolution in a thread
+instance = result.get()
+
+# Sync container.get() - shorthand for find().get()
+instance = container.get(Service)
+```
+
+### Why `find()` Instead of `get()` in Async Code?
+
+```python
+# ❌ Avoid: get() in async code creates thread overhead
+async def bad_example():
+    service = container.get(Service)  # Spawns thread + event loop
+    await service.do_work()
+
+# ✅ Better: find() in async code stays truly async
+async def good_example():
+    service = await container.find(Service)  # No thread overhead
+    await service.do_work()
+```
+
+**Key differences:**
+- `container.get(T)` → Sync operation, runs async hooks in isolated threads
+- `await container.find(T)` → Async operation, runs async hooks in same async context
+- Async hooks can do real async work (I/O, delays) when using `find()`
+- Dependencies injected into async functions use `find()` automatically
+
+### Options Work the Same
+
+All `Options` work with both `find()` and `get()`:
+
+```python
+# Qualified dependencies
+primary_db = await container.find(Database, qualifier="primary")
+
+# Default factories
+config = await container.find(Config, default_factory=load_config)
+
+# Non-cached factory calls
+logger = await container.find(Logger,
+    default_factory=create_logger,
+    cache_factory_result=False
+)
+```
+
+## 6. Use `Options` for Advanced Wiring
 
 ```python
 from bevy import Options
@@ -95,7 +187,7 @@ def build_report(
 - **`default_factory`** fills gaps when no instance is registered.
 - **`optional=True`** or `Inject[Thing | None]` handles soft dependencies gracefully.
 
-## 6. Embrace Hooks for Cross-Cutting Needs
+## 7. Embrace Hooks for Cross-Cutting Needs
 
 The async-aware hook system lets you add tracing, caching, or guardrails without touching call sites. Hooks accept sync or async callbacks and forward rich context so you can make informed decisions.
 
@@ -113,40 +205,36 @@ log_request.register_hook(container.registry)
 
 | Hook | When it fires | Value argument | Expected return | Notable context keys |
 | --- | --- | --- | --- | --- |
-| `GET_INSTANCE` | Before the container returns something from `.get()` | Requested type | `Optional.Some(instance)` to short-circuit resolution; `Optional.Nothing()` to continue | `injection_context` (when called from injection), plus anything you passed to `Container.get(context=...)` |
+| `GET_INSTANCE` | Before the container returns something from `.get()` or `.find()` | Requested type | `Optional.Some(instance)` to short-circuit resolution; `Optional.Nothing()` to continue | `injection_context` (when called from injection), plus anything you passed to `Container.get(context=...)` |
 | `GOT_INSTANCE` | After an instance is fetched and before caching | Resolved instance | `Optional.Some(new_instance)` to rewrite before caching; `Optional.Nothing()` keeps the original | Same as above |
 | `CREATE_INSTANCE` | Just before Bevy tries registered factories | Requested type | `Optional.Some(instance)` to provide/custom-cache; `Optional.Nothing()` lets Bevy try factories | `injection_context` |
 | `CREATED_INSTANCE` | Immediately after a factory-built instance is created | Newly created instance | `Optional.Some(new_instance)` to wrap/modify; `Optional.Nothing()` leaves it unchanged | Same as above |
 | `HANDLE_UNSUPPORTED_DEPENDENCY` | When no factory can create the type | Requested type | `Optional.Some(fallback)` to recover; `Optional.Nothing()` raises `DependencyResolutionError` | `injection_context` |
-| `FACTORY_MISSING_TYPE` | When resolution ultimately fails for a parameter | `InjectionContext` | `Optional.Some(fallback)` to recover; `Optional.Nothing()` keeps the failure | n/a (context is already the full `InjectionContext`) |
-| `INJECTION_REQUEST` | Right before a parameter is resolved | `InjectionContext` | `Optional.Some(override_instance)` to skip resolution; `Optional.Nothing()` continues | `InjectionContext` fields listed below |
-| `INJECTION_RESPONSE` | After a dependency is resolved successfully | `InjectionContext` (with `result`) | `Optional.Some(new_result)` to replace the injected value; `Optional.Nothing()` keeps resolved value | Same as above |
-| `MISSING_INJECTABLE` | Right before raising for a missing dependency in strict mode | `InjectionContext` | `Optional.Some(fallback)` to recover; `Optional.Nothing()` propagates the error | Same as above |
-| `POST_INJECTION_CALL` | After the injectable callable finishes | `PostInjectionContext` | `Optional.Some(new_result)` to substitute the return value; `Optional.Nothing()` keeps the original | `PostInjectionContext` fields listed below |
 
-Returning `Optional.Nothing()` (or simply `None` for legacy two-argument hooks) signals “no change, continue the default flow.”
+> **Note**: Injection lifecycle hooks (`INJECTION_REQUEST`, `INJECTION_RESPONSE`, `MISSING_INJECTABLE`, `POST_INJECTION_CALL`, `FACTORY_MISSING_TYPE`) are not called in the async-native architecture. Use the dependency resolution hooks above instead.
 
-`InjectionContext` exposes `function_name`, `parameter_name`, `requested_type`, `options`, `injection_strategy`, `type_matching`, `strict_mode`, `debug_mode`, `injection_chain`, and `parameter_default`. After a successful resolution Bevy also populates `context.result`. `PostInjectionContext` provides the callable’s `function_name`, the map of `injected_params`, the returned `result`, the `injection_strategy`, `debug_mode`, and `execution_time_ms`.
+Returning `Optional.Nothing()` (or simply `None` for legacy two-argument hooks) signals "no change, continue the default flow."
 
-Hooks run for both sync and async call paths, so you can observe or mutate the injection flow safely.
+Hooks are fully async-aware and can be either sync or async functions. When using `await container.find(T)`, async hooks execute in the same async context with no thread overhead.
 
-## 7. Common Patterns
+## 8. Common Patterns
 
 - **Configuration modules**: group `container.add(...)` calls in one module and import it at startup.
 - **Feature toggles**: register alternates on a branched container and pass it where needed.
-- **Background jobs**: spin up a branch per job so overrides don’t leak across tasks.
+- **Background jobs**: spin up a branch per job so overrides don't leak across tasks.
 - **Tests**: branch, override dependencies, and dispose of the branch when the test ends.
 
-## 8. Best Practices
+## 9. Best Practices
 
 - Keep container mutations in deterministic places (boot scripts, fixtures) to avoid hidden state.
 - Avoid decorating the class object with `@injectable`; decorate callables (`__init__`, factories) so inheritance keeps working.
 - Prefer `Inject[T]` annotations, even when using permissive strategies—this keeps types explicit.
-- Use `InjectionStrategy.ANY_NOT_PASSED` sparingly; it’s great for handlers but can hide missing dependencies.
-- When layering decorators, apply `@auto_inject` closest to the function so wrappers don’t block injection.
+- Use `InjectionStrategy.ANY_NOT_PASSED` sparingly; it's great for handlers but can hide missing dependencies.
+- When layering decorators, apply `@auto_inject` closest to the function so wrappers don't block injection.
 - Leverage async hooks to observe long-running workflows; avoid side effects inside hooks that could raise errors.
+- **In async code, use `await container.find(T)` instead of `container.get(T)`** to avoid unnecessary thread overhead.
 
-## 9. Troubleshooting Checklist
+## 10. Troubleshooting Checklist
 
 - **Missing dependency?** Ensure an instance or factory is registered on the container you’re calling with.
 - **Unexpected instance?** Check for leftover overrides on a shared container—branch instead.
