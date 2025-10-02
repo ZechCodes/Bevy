@@ -1,34 +1,37 @@
 """
 Dependency injection decorator system with type-safe annotations.
 
-This module provides the @injectable and @auto_inject decorators for 
+This module provides the @injectable and @auto_inject decorators for
 configuring and enabling dependency injection on functions using the
 Inject[T] type annotation system.
 
 Example:
     Basic usage with container:
-    
+
     >>> from bevy import injectable, Inject, Container, Registry
-    >>> 
+    >>>
     >>> @injectable
     >>> def process_data(service: Inject[UserService], data: str):
     ...     return service.process(data)
-    >>> 
+    >>>
     >>> container = Container(Registry())
     >>> result = container.call(process_data, data="test")
-    
+
     Global container with auto_inject:
-    
+
     >>> from bevy import auto_inject, injectable, Inject
-    >>> 
+    >>>
     >>> @auto_inject
     >>> @injectable
     >>> def process_data(service: Inject[UserService], data: str):
     ...     return service.process(data)
-    >>> 
+    >>>
     >>> result = process_data(data="test")  # Uses global container
 """
 
+import asyncio
+import concurrent.futures
+import contextvars
 import inspect
 import time
 from dataclasses import dataclass, field
@@ -201,14 +204,27 @@ class InjectableCallable:
         bound_args = sig.bind_partial(*args, **kwargs)
         bound_args.apply_defaults()
 
-        injected_params = self._inject_missing_dependencies(
-            container,
-            injection_config,
-            bound_args,
-            function_name,
-            current_injection_chain,
-            sig,
-        )
+        # Run async injection in a thread pool with context preservation
+        def run_injection():
+            return asyncio.run(self._inject_missing_dependencies(
+                container,
+                injection_config,
+                bound_args,
+                function_name,
+                current_injection_chain,
+                sig,
+            ))
+
+        # Capture context variables
+        ctx = contextvars.copy_context()
+
+        # Run in thread with context
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(ctx.run, run_injection)
+            try:
+                injected_params = future.result(timeout=30)
+            except concurrent.futures.TimeoutError:
+                raise TimeoutError(f"Dependency injection timed out after 30 seconds")
 
         result = self._func(*bound_args.args, **bound_args.kwargs)
         return result
@@ -228,7 +244,7 @@ class InjectableCallable:
         bound_args = sig.bind_partial(*args, **kwargs)
         bound_args.apply_defaults()
 
-        await self._inject_missing_dependencies_async(
+        await self._inject_missing_dependencies(
             container,
             injection_config,
             bound_args,
@@ -250,7 +266,7 @@ class InjectableCallable:
 
     # ------------------------------------------------------------------
     # Injection helpers --------------------------------------------------
-    def _inject_missing_dependencies(
+    async def _inject_missing_dependencies(
         self,
         container,
         injection_config: Dict[str, Any],
@@ -259,6 +275,7 @@ class InjectableCallable:
         current_injection_chain: list[str],
         signature: inspect.Signature,
     ) -> Dict[str, Any]:
+        """Async version of dependency injection with full hook support."""
         from bevy.injection_types import DependencyResolutionError
 
         injected_params: Dict[str, Any] = {}
@@ -279,7 +296,7 @@ class InjectableCallable:
                 else:
                     parameter_default = TrampOptional.Nothing()
 
-                injected_value = container._inject_single_dependency(
+                injected_value = await container._inject_single_dependency(
                     param_name,
                     param_type,
                     options,
@@ -295,54 +312,6 @@ class InjectableCallable:
                     raise
 
         return injected_params
-
-    async def _inject_missing_dependencies_async(
-        self,
-        container,
-        injection_config: Dict[str, Any],
-        bound_args,
-        function_name: str,
-        current_injection_chain: list[str],
-        signature: inspect.Signature,
-    ) -> None:
-        """Async version of dependency injection using await container.find()."""
-        from bevy.injection_types import DependencyResolutionError
-
-        for param_name, (param_type, options) in injection_config["params"].items():
-            should_inject = (
-                param_name not in bound_args.arguments
-                or injection_config["strategy"] == InjectionStrategy.REQUESTED_ONLY
-            )
-
-            if not should_inject:
-                continue
-
-            try:
-                # Handle cache_factory_result=False (bypass container caching)
-                if options and options.default_factory and not options.cache_factory_result:
-                    # Call factory directly without caching
-                    factory_sig = inspect.signature(options.default_factory)
-                    if len(factory_sig.parameters) > 0:
-                        # Factory accepts parameters, use container for dependency injection
-                        injected_value = container.call(options.default_factory)
-                    else:
-                        # Factory takes no parameters, call directly
-                        injected_value = options.default_factory()
-                else:
-                    # Use async find() for cached/normal resolution
-                    find_kwargs = {}
-                    if options:
-                        if options.qualifier:
-                            find_kwargs['qualifier'] = options.qualifier
-                        if options.default_factory:
-                            find_kwargs['default_factory'] = options.default_factory
-
-                    injected_value = await container.find(param_type, **find_kwargs).get_async()
-
-                bound_args.arguments[param_name] = injected_value
-            except DependencyResolutionError:
-                if param_name not in bound_args.arguments:
-                    raise
 
     # ------------------------------------------------------------------
     # Introspection ------------------------------------------------------

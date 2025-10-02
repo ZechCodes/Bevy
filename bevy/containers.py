@@ -300,11 +300,11 @@ class Container(GlobalContextMixin, var=global_container):
             # Explicit chain provided
             return injection_chain + [function_name]
 
-    def _inject_single_dependency(
+    async def _inject_single_dependency(
         self, param_name: str, param_type: type, options, injection_config: dict,
         function_name: str, current_injection_chain: list[str], parameter_default
     ) -> Any:
-        """Inject a single dependency parameter."""
+        """Inject a single dependency parameter (async)."""
         # Create injection context for hooks
         injection_context = InjectionContext(
             function_name=function_name,
@@ -319,30 +319,36 @@ class Container(GlobalContextMixin, var=global_container):
             parameter_default=parameter_default,
         )
 
+        # Call INJECTION_REQUEST hook - allows hooks to provide the value directly
+        hook_result = await self.registry.hooks[Hook.INJECTION_REQUEST].handle(self, injection_context)
+        if isinstance(hook_result, Optional.Some):
+            # Hook provided a value, use it directly
+            return await self._handle_injection_success(hook_result.value, injection_context)
+
         # Set the context chain for nested factory calls
         token = _current_injection_chain.set(current_injection_chain)
         try:
-            injected_value = self._resolve_dependency_with_hooks(
+            injected_value = await self._resolve_dependency_with_hooks(
                 param_type, options, injection_context
             )
         except DependencyResolutionError as e:
-            return self._handle_injection_failure(
+            return await self._handle_injection_failure(
                 e, param_type, param_name, injection_context
             )
         else:
-            return self._handle_injection_success(
+            return await self._handle_injection_success(
                 injected_value, injection_context
             )
         finally:
             _current_injection_chain.reset(token)
 
-    def _handle_injection_failure(
-        self, exception: DependencyResolutionError, param_type: type, param_name: str, 
+    async def _handle_injection_failure(
+        self, exception: DependencyResolutionError, param_type: type, param_name: str,
         injection_context: InjectionContext
     ) -> Any:
-        """Handle failed dependency injection."""
+        """Handle failed dependency injection (async)."""
         debug = create_debug_logger(injection_context.debug_mode)
-        
+
         if injection_context.strict_mode:
             if is_optional_type(param_type):
                 debug.optional_dependency_none(param_name)
@@ -354,41 +360,44 @@ class Container(GlobalContextMixin, var=global_container):
             debug.non_strict_mode_none(param_name)
             return None
 
-    def _handle_injection_success(self, injected_value: Any, injection_context: InjectionContext) -> Any:
-        """Handle successful dependency injection."""
+    async def _handle_injection_success(self, injected_value: Any, injection_context: InjectionContext) -> Any:
+        """Handle successful dependency injection (async)."""
         debug = create_debug_logger(injection_context.debug_mode)
 
         debug.injected_parameter(injection_context.parameter_name, injection_context.requested_type, injected_value)
 
-        return injected_value
+        # Call INJECTION_RESPONSE hook - allows hooks to transform the injected value
+        filtered_value = await self.registry.hooks[Hook.INJECTION_RESPONSE].filter(self, injected_value, {"injection_context": injection_context})
 
-    def _resolve_qualified_dependency(self, param_type: type, qualifier: str, injection_context: InjectionContext):
+        return filtered_value
+
+    async def _resolve_qualified_dependency(self, param_type: type, qualifier: str, injection_context: InjectionContext):
         """
-        Resolve a qualified dependency from the container.
-        
+        Resolve a qualified dependency from the container (async).
+
         Args:
             param_type: Type to resolve
             qualifier: String qualifier to distinguish multiple implementations
             injection_context: Rich context for hooks
-            
+
         Returns:
             Resolved qualified dependency instance
-            
+
         Raises:
             DependencyResolutionError: If qualified dependency cannot be resolved
         """
         debug = create_debug_logger(injection_context.debug_mode)
         debug.resolving_qualified(param_type, qualifier)
-        
+
         # Check for existing qualified instance
         qualified_key = (param_type, qualifier)
         if qualified_key in self.instances:
             return self.instances[qualified_key]
-        
+
         # Check parent container
         if self._parent:
             try:
-                return self._parent._resolve_qualified_dependency(param_type, qualifier, injection_context)
+                return await self._parent._resolve_qualified_dependency(param_type, qualifier, injection_context)
             except DependencyResolutionError:
                 pass  # Continue to raise error below
 
@@ -400,24 +409,24 @@ class Container(GlobalContextMixin, var=global_container):
         )
 
 
-    def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
+    async def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
         """
-        Resolve a dependency using the hook system with rich context.
-        
+        Resolve a dependency using the hook system with rich context (async).
+
         Args:
             param_type: Type to resolve
             options: Options object with qualifier, etc.
             injection_context: Rich context for hooks
-            
+
         Returns:
             Resolved dependency instance
         """
         # Extract actual type if optional
         is_optional = is_optional_type(param_type)
         actual_type = get_non_none_type(param_type) if is_optional else param_type
-        
+
         try:
-            return self._resolve_single_type_with_hooks(actual_type, options, injection_context)
+            return await self._resolve_single_type_with_hooks(actual_type, options, injection_context)
         except DependencyResolutionError:
             if is_optional:
                 # Optional dependency not found - return None
@@ -427,85 +436,67 @@ class Container(GlobalContextMixin, var=global_container):
             else:
                 # Required dependency not found - re-raise
                 raise
-    
-    def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
+
+    async def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
         """
-        Resolve a single non-optional type using the hook system.
-        
+        Resolve a single non-optional type using the hook system (async).
+
         Args:
             param_type: Type to resolve
             options: Options object
             injection_context: Rich context for hooks
-            
+
         Returns:
             Resolved instance
-            
+
         Raises:
             Exception if type cannot be resolved
         """
         debug = create_debug_logger(injection_context.debug_mode)
         debug.resolving_dependency(param_type, options)
-        
-        # Handle qualified dependencies
-        if options and options.qualifier:
-            return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
-        
-        # Use the enhanced container.get method which handles default factories
-        try:
-            if options and options.default_factory:
-                # Default factories take precedence over existing instances when explicitly specified
+
+        # Build kwargs for Result.find() - handle all options together
+        find_kwargs = {"context": {"injection_context": injection_context}}
+
+        if options:
+            if options.qualifier:
+                debug.resolving_qualified(param_type, options.qualifier)
+                find_kwargs["qualifier"] = options.qualifier
+            if options.default_factory:
                 debug.using_default_factory(param_type)
-                
-                # Check if factory result caching is disabled
-                if not options.cache_factory_result:
-                    # Don't cache - call factory directly each time
-                    from inspect import signature
-                    factory_sig = signature(options.default_factory)
-                    if len(factory_sig.parameters) > 0:
-                        # Factory accepts parameters, use container for dependency injection
-                        return self.call(options.default_factory)
-                    else:
-                        # Factory takes no parameters, call directly
-                        return options.default_factory()
-                else:
-                    # Check if we already have a cached result from this factory
-                    if options.default_factory in self.instances:
-                        return self.instances[options.default_factory]
-                    
-                    # Check parent container's factory cache
-                    if self._parent:
-                        if parent_result := self._parent._get_factory_cache_result(options.default_factory):
-                            # Cache in this container too for faster future access
-                            self.instances[options.default_factory] = parent_result
-                            return parent_result
-                    
-                    # Create new instance using factory
-                    from inspect import signature
-                    factory_sig = signature(options.default_factory)
-                    if len(factory_sig.parameters) > 0:
-                        # Factory accepts parameters, use container for dependency injection
-                        instance = self.call(options.default_factory)
-                    else:
-                        # Factory takes no parameters, call directly
-                        instance = options.default_factory()
-                    
-                    # Cache the result using factory as key
-                    self.instances[options.default_factory] = instance
-                    return instance
-            else:
-                # Normal resolution without default factory
-                return self.get(param_type, context={"injection_context": injection_context})
+                find_kwargs["default_factory"] = options.default_factory
+                find_kwargs["cache_factory_result"] = options.cache_factory_result
+
+        # Delegate ALL resolution to Result.get_async() which handles qualified + default_factory combinations
+        try:
+            return await self.find(param_type, **find_kwargs).get_async()
 
         except DependencyResolutionError as e:
             # Re-raise with proper parameter name if it's not already set
             if e.parameter_name == "unknown":
-                # Handle types that don't have __name__ attribute (like UnionType)
-                type_name = getattr(param_type, '__name__', str(param_type))
-                raise DependencyResolutionError(
-                    dependency_type=param_type,
-                    parameter_name=injection_context.parameter_name,
-                    message=f"Cannot resolve dependency {type_name} for parameter '{injection_context.parameter_name}'"
-                ) from e
+                # Preserve qualified dependency error messages and add parameter context
+                error_msg = str(e)
+                if "qualified" in error_msg.lower():
+                    # Update message to include parameter name
+                    if "parameter '" in error_msg:
+                        # Message already has parameter info, just replace it
+                        updated_msg = error_msg.replace("parameter 'unknown'", f"parameter '{injection_context.parameter_name}'")
+                    else:
+                        # Add parameter info to the message
+                        updated_msg = f"{error_msg} for parameter '{injection_context.parameter_name}'"
+                    raise DependencyResolutionError(
+                        dependency_type=param_type,
+                        parameter_name=injection_context.parameter_name,
+                        message=updated_msg
+                    ) from e
+                else:
+                    # Generic dependency error
+                    type_name = getattr(param_type, '__name__', str(param_type))
+                    raise DependencyResolutionError(
+                        dependency_type=param_type,
+                        parameter_name=injection_context.parameter_name,
+                        message=f"Cannot resolve dependency {type_name} for parameter '{injection_context.parameter_name}'"
+                    ) from e
             else:
                 # Parameter name already set, just re-raise
                 raise
@@ -555,22 +546,22 @@ class Container(GlobalContextMixin, var=global_container):
     def _resolve_single_type(self, param_type, options, type_matching, debug_mode):
         """
         Resolve a single non-optional type from the container.
-        
+
         Args:
             param_type: Type to resolve
             options: Options object
             type_matching: Type matching strategy
             debug_mode: Whether to log debug info
-            
+
         Returns:
             Resolved instance
-            
+
         Raises:
             Exception if type cannot be resolved
         """
         debug = create_debug_logger(debug_mode)
         debug.resolving_dependency(param_type, options)
-        
+
         # Handle qualified dependencies
         if options and options.qualifier:
             # Create a dummy injection context for the legacy path
@@ -588,38 +579,15 @@ class Container(GlobalContextMixin, var=global_container):
                 injection_chain=[]
             )
             return self._resolve_qualified_dependency(param_type, options.qualifier, injection_context)
-        
-        # Handle default factory - use it instead of normal resolution
+
+        # Delegate ALL resolution to container.get() which uses Result (single source of truth)
+        get_kwargs = {}
         if options and options.default_factory:
-            # Check factory cache first (if caching is enabled)
-            if options.cache_factory_result and options.default_factory in self.instances:
-                return self.instances[options.default_factory]
-            
-            # Check parent container's factory cache
-            if options.cache_factory_result and self._parent:
-                if parent_result := self._parent._get_factory_cache_result(options.default_factory):
-                    # Cache in this container too for faster future access
-                    self.instances[options.default_factory] = parent_result
-                    return parent_result
-            
             debug.using_default_factory(param_type)
-            # Check if factory accepts parameters for dependency injection
-            factory_sig = signature(options.default_factory)
-            if len(factory_sig.parameters) > 0:
-                # Factory accepts parameters, use container for dependency injection
-                instance = self.call(options.default_factory)
-            else:
-                # Factory takes no parameters, call directly
-                instance = options.default_factory()
-            
-            # Cache the result if caching is enabled
-            if options.cache_factory_result:
-                self.instances[options.default_factory] = instance
-            
-            return instance
-        
-        # Standard resolution using container.get()
-        return self.get(param_type)
+            get_kwargs["default_factory"] = options.default_factory
+            get_kwargs["cache_factory_result"] = options.cache_factory_result
+
+        return self.get(param_type, **get_kwargs)
 
     def _call_type[T](self, type_: t.Type[T], args, kwargs) -> T:
         instance = type_.__new__(type_, *args, **kwargs)
