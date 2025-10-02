@@ -1,6 +1,7 @@
 import asyncio
 import concurrent.futures
 import contextvars
+import inspect
 import typing as t
 from typing import TYPE_CHECKING, Any
 
@@ -39,6 +40,40 @@ class Result[T]:
 
     def __await__(self):
         return self.get_async().__await__()
+
+    async def _call_factory(self, factory: t.Callable) -> t.Any:
+        """
+        Call a factory function (sync or async) and await if necessary.
+
+        Supports:
+        - Sync factories: lambda: SomeType()
+        - Async factories: async def create() -> SomeType
+        - Factories with dependencies: def create(dep: Inject[OtherType]) -> SomeType
+
+        Args:
+            factory: Factory function to call
+
+        Returns:
+            Instance created by factory
+        """
+        # Check if factory accepts parameters for dependency injection
+        factory_sig = inspect.signature(factory)
+        if len(factory_sig.parameters) > 0:
+            # Factory accepts parameters, use container for dependency injection
+            result = self.container.call(factory)
+        else:
+            # Factory takes no parameters, call directly
+            result = factory()
+
+        # Await if result is a coroutine or awaitable
+        if inspect.iscoroutine(result):
+            return await result
+        elif hasattr(result, "__await__"):
+            # Awaitable but not a coroutine (e.g., asyncio.Task)
+            return await result
+        else:
+            # Sync result, return as-is
+            return result
 
     def _get_existing_instance(self, dependency: t.Type) -> Optional[Any]:
         """Lookup an existing instance in the container's cache.
@@ -180,6 +215,7 @@ class Result[T]:
         """Fetches the value from the container in an async context."""
         disable_implicit_caching = False
         default_factory = self.kwargs.get("default_factory", None)
+        cache_factory_result = self.kwargs.get("cache_factory_result", True)
         qualifier = self.kwargs.get("qualifier", None)
         context: dict[str, Any] = self.kwargs.get("context", {})
 
@@ -204,21 +240,16 @@ class Result[T]:
             # If we have a default_factory for qualified dependency, use it
             if default_factory:
                 # Check factory cache first (qualified factories use same cache as unqualified)
-                if default_factory in self.container.instances:
+                if cache_factory_result and default_factory in self.container.instances:
                     return self.container.instances[default_factory]
 
-                from inspect import signature
-                factory_sig = signature(default_factory)
-                if len(factory_sig.parameters) > 0:
-                    # Factory accepts parameters, use container for dependency injection
-                    instance = self.container.call(default_factory)
-                else:
-                    # Factory takes no parameters, call directly
-                    instance = default_factory()
+                # Call factory (handles sync and async factories)
+                instance = await self._call_factory(default_factory)
 
-                # Cache using both the factory key and qualified key
-                self.container.instances[default_factory] = instance
-                self.container.instances[qualified_key] = instance
+                # Cache using both the factory key and qualified key (if caching enabled)
+                if cache_factory_result:
+                    self.container.instances[default_factory] = instance
+                    self.container.instances[qualified_key] = instance
                 return instance
             elif "default" in self.kwargs:
                 return self.kwargs["default"]
@@ -233,29 +264,23 @@ class Result[T]:
         # Handle unqualified dependencies - prioritize default_factory when specified
         if default_factory:
             # Default factory takes precedence over existing instances
-            # Check if we already have a cached result from that factory
-            if default_factory in self.container.instances:
+            # Check if we already have a cached result from that factory (if caching enabled)
+            if cache_factory_result and default_factory in self.container.instances:
                 return self.container.instances[default_factory]
 
-            # Check parent container's factory cache
-            if self.container.parent:
+            # Check parent container's factory cache (if caching enabled)
+            if cache_factory_result and self.container.parent:
                 if parent_result := self._get_factory_cache_result(default_factory):
                     # Cache in this container too for faster future access
                     self.container.instances[default_factory] = parent_result
                     return parent_result
 
-            # Create new instance using factory
-            from inspect import signature
-            factory_sig = signature(default_factory)
-            if len(factory_sig.parameters) > 0:
-                # Factory accepts parameters, use container for dependency injection
-                instance = self.container.call(default_factory)
-            else:
-                # Factory takes no parameters, call directly
-                instance = default_factory()
+            # Call factory (handles sync and async factories)
+            instance = await self._call_factory(default_factory)
 
-            # Cache using the factory as the key (always in the current container)
-            self.container.instances[default_factory] = instance
+            # Cache using the factory as the key (if caching enabled)
+            if cache_factory_result:
+                self.container.instances[default_factory] = instance
             return instance
 
         # No default factory, use normal resolution with async hooks
