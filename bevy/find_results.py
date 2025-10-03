@@ -150,7 +150,15 @@ class Result[T]:
             case Optional.Nothing():
                 match self._find_factory_for_type(dependency):
                     case Optional.Some(factory):
-                        instance = factory(self.container)
+                        # Call factory - handles both sync and async factories
+                        result = factory(self.container)
+                        # Await if it's a coroutine
+                        if inspect.iscoroutine(result):
+                            instance = await result
+                        elif hasattr(result, "__await__"):
+                            instance = await result
+                        else:
+                            instance = result
 
                     case Optional.Nothing():
                         instance = await self._handle_unsupported_dependency(dependency, context)
