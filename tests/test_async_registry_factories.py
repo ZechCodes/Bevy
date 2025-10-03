@@ -124,3 +124,39 @@ async def test_mixed_sync_and_async_factories():
     
     assert service.value == 1
     assert async_service.value == "sync"
+
+
+@pytest.mark.asyncio
+async def test_factory_returning_awaitable_object():
+    """Test that factory returning an awaitable object (like Result) returns it directly."""
+    
+    class AwaitableService:
+        """A service that is awaitable but should be returned as-is from factory."""
+        def __init__(self, value: int):
+            self.value = value
+        
+        def __await__(self):
+            async def _wait():
+                await asyncio.sleep(0.001)
+                return self.value * 2
+            return _wait().__await__()
+    
+    def factory_returning_awaitable(container):
+        # This factory returns an awaitable object
+        # It should NOT be awaited - the object itself is the dependency
+        return AwaitableService(10)
+    
+    registry = Registry()
+    registry.add_factory(factory_returning_awaitable, AwaitableService)
+    container = Container(registry)
+    
+    # Get the service - should be AwaitableService instance, not the awaited result
+    service = await container.find(AwaitableService).get_async()
+    
+    # Verify it's the AwaitableService instance
+    assert isinstance(service, AwaitableService)
+    assert service.value == 10
+    
+    # Verify we can await it ourselves to get the doubled value
+    result = await service
+    assert result == 20
