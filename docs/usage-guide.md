@@ -57,11 +57,17 @@ class Notifier:
 ```
 
 - Decorate constructor-style callables (`__init__`, factory functions) so the class itself stays a normal `type` for inheritance.
-- Register instances explicitly when they have runtime data, or register callables for lazy creation:
+- Register instances explicitly when they have runtime data:
 
 ```python
 container.add(EmailService, EmailService())
-container.add_factory(TemplateService, lambda: TemplateService(cache_dir="/tmp"))
+container.add(TemplateService, TemplateService(cache_dir="/tmp"))
+```
+
+- Register factories on the registry for types that need custom construction:
+
+```python
+registry.add_factory(TemplateService, lambda container: TemplateService(cache_dir="/tmp"))
 ```
 
 ## 4. Invoke with `@auto_inject`
