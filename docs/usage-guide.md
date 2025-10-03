@@ -216,8 +216,8 @@ log_request.register_hook(container.registry)
 | `CREATE_INSTANCE` | Just before Bevy tries registered factories | Requested type | `Optional.Some(instance)` to provide/custom-cache; `Optional.Nothing()` lets Bevy try factories | `injection_context` |
 | `CREATED_INSTANCE` | Immediately after a factory-built instance is created | Newly created instance | `Optional.Some(new_instance)` to wrap/modify; `Optional.Nothing()` leaves it unchanged | Same as above |
 | `HANDLE_UNSUPPORTED_DEPENDENCY` | When no factory can create the type | Requested type | `Optional.Some(fallback)` to recover; `Optional.Nothing()` raises `DependencyResolutionError` | `injection_context` |
-
-> **Note**: Injection lifecycle hooks (`INJECTION_REQUEST`, `INJECTION_RESPONSE`, `MISSING_INJECTABLE`, `POST_INJECTION_CALL`, `FACTORY_MISSING_TYPE`) are not called in the async-native architecture. Use the dependency resolution hooks above instead.
+| `INJECTION_REQUEST` | Before resolving a dependency for injection | `InjectionContext` with parameter info | `Optional.Some(instance)` to provide value directly; `Optional.Nothing()` to continue resolution | `injection_context` includes function name, parameter name, requested type, defaults |
+| `INJECTION_RESPONSE` | After resolving a dependency for injection | Resolved instance | `Optional.Some(new_instance)` to transform; `Optional.Nothing()` keeps original | Same as above |
 
 Returning `Optional.Nothing()` (or simply `None` for legacy two-argument hooks) signals "no change, continue the default flow."
 
