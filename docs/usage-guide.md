@@ -18,7 +18,7 @@ def audit_creation(container, dependency, context):
     ...
 
 audit_creation.register_hook(registry)
-registry.add_factory(Logger, lambda container: Logger(container.get(Config)))
+registry.add_factory(lambda container: Logger(container.get(Config)), Logger)
 ```
 
 Key points:
@@ -69,7 +69,7 @@ container.add(TemplateService, TemplateService(cache_dir="/tmp"))
 
 ```python
 # Sync factory
-registry.add_factory(TemplateService, lambda container: TemplateService(cache_dir="/tmp"))
+registry.add_factory(lambda container: TemplateService(cache_dir="/tmp"), TemplateService)
 
 # Async factory - properly awaited during resolution
 async def create_database(container):
@@ -210,10 +210,13 @@ The async-aware hook system lets you add tracing, caching, or guardrails without
 
 ```python
 from bevy.hooks import hooks
+from tramp.optionals import Optional
 
 @hooks.INJECTION_REQUEST
-def log_request(container, context):
-    container.logger.info("Injecting %s", context.requested_type)
+def log_request(container, injection_context):
+    print(f"Injecting {injection_context.requested_type} for parameter {injection_context.parameter_name}")
+    # Return Nothing to continue normal resolution
+    return Optional.Nothing()
 
 log_request.register_hook(container.registry)
 ```
