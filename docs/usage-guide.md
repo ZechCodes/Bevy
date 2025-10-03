@@ -24,6 +24,7 @@ registry.add_factory(Logger, lambda container: Logger(container.get(Config)))
 Key points:
 - `get_registry()` returns the process-wide registry; configure it during startup.
 - Register factories for types that need custom construction or expensive setup.
+- Factories can be sync or async functions - async factories are properly awaited.
 - Register hooks before containers to keep observability and overrides consistent everywhere.
 
 ## 2. Establish a Container
@@ -67,7 +68,17 @@ container.add(TemplateService, TemplateService(cache_dir="/tmp"))
 - Register factories on the registry for types that need custom construction:
 
 ```python
+# Sync factory
 registry.add_factory(TemplateService, lambda container: TemplateService(cache_dir="/tmp"))
+
+# Async factory - properly awaited during resolution
+async def create_database(container):
+    config = container.get(Config)
+    db = Database(config.db_url)
+    await db.connect()
+    return db
+
+registry.add_factory(create_database, Database)
 ```
 
 ## 4. Invoke with `@auto_inject`
