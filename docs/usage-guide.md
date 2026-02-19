@@ -24,7 +24,6 @@ registry.add_factory(lambda container: Logger(container.get(Config)), Logger)
 Key points:
 - `get_registry()` returns the process-wide registry; configure it during startup.
 - Register factories for types that need custom construction or expensive setup.
-- Factories can be sync or async functions - async factories are properly awaited.
 - Register hooks before containers to keep observability and overrides consistent everywhere.
 
 ## 2. Establish a Container
@@ -68,17 +67,7 @@ container.add(TemplateService, TemplateService(cache_dir="/tmp"))
 - Register factories on the registry for types that need custom construction:
 
 ```python
-# Sync factory
 registry.add_factory(lambda container: TemplateService(cache_dir="/tmp"), TemplateService)
-
-# Async factory - properly awaited during resolution
-async def create_database(container):
-    config = container.get(Config)
-    db = Database(config.db_url)
-    await db.connect()
-    return db
-
-registry.add_factory(create_database, Database)
 ```
 
 ## 4. Invoke with `@auto_inject`
@@ -88,106 +77,14 @@ from bevy import auto_inject
 
 @auto_inject
 @injectable
-async def send_welcome(user_id: str, notifier: Inject[Notifier]):
-    await notifier.send(user_id)
+def send_welcome(user_id: str, notifier: Inject[Notifier]):
+    notifier.send(user_id)
 ```
 
 - Call `send_welcome(...)` directly and dependencies resolve from the global container.
 - For alternate wiring, call `container.call(send_welcome, dependencies...)`; the calling container drives injection, while still honoring other decorators.
 
-## 5. Async-Native Dependency Resolution
-
-Bevy is built async-first. For async code, use `container.find()` which returns a `Result` that can be resolved in either sync or async contexts.
-
-### Using `find()` in Async Code
-
-```python
-# ✅ Best practice: Use find() in async code
-async def process_order(order_id: str):
-    db = await container.find(Database)
-    cache = await container.find(Cache, qualifier="redis")
-    config = await container.find(Config, default_factory=load_default_config)
-
-    # Your async logic here
-    await db.save(order_id)
-```
-
-### Async Function Injection
-
-Async functions decorated with `@injectable` work seamlessly with `container.call()`:
-
-```python
-@injectable
-async def send_notification(
-    user_id: str,
-    email: Inject[EmailService],
-    db: Inject[Database]
-):
-    user = await db.get_user(user_id)
-    await email.send(user.email, "Welcome!")
-
-# Call it - returns a coroutine
-await container.call(send_notification, user_id="123")
-```
-
-### The `Result` Type
-
-`container.find()` returns a `Result[T]` that can be resolved in multiple ways:
-
-```python
-result = container.find(Service)
-
-# Async context - truly async resolution with no thread overhead
-instance = await result  # Uses __await__
-# OR
-instance = await result.get_async()
-
-# Sync context - runs async resolution in a thread
-instance = result.get()
-
-# Sync container.get() - shorthand for find().get()
-instance = container.get(Service)
-```
-
-### Why `find()` Instead of `get()` in Async Code?
-
-```python
-# ❌ Avoid: get() in async code creates thread overhead
-async def bad_example():
-    service = container.get(Service)  # Spawns thread + event loop
-    await service.do_work()
-
-# ✅ Better: find() in async code stays truly async
-async def good_example():
-    service = await container.find(Service)  # No thread overhead
-    await service.do_work()
-```
-
-**Key differences:**
-- `container.get(T)` → Sync operation, runs async hooks in isolated threads
-- `await container.find(T)` → Async operation, runs async hooks in same async context
-- Async hooks can do real async work (I/O, delays) when using `find()`
-- Dependencies injected into async functions use `find()` automatically
-
-### Options Work the Same
-
-All `Options` work with both `find()` and `get()`:
-
-```python
-# Qualified dependencies
-primary_db = await container.find(Database, qualifier="primary")
-
-# Default factories
-config = await container.find(Config, default_factory=load_config)
-
-# Non-cached factory calls
-logger = await container.find(Logger,
-    default_factory=create_logger,
-    cache_factory_result=False
-)
-```
-
-## 6. Use `Options` for Advanced Wiring
+## 5. Use `Options` for Advanced Wiring
 
 ```python
 from bevy import Options
@@ -204,9 +101,9 @@ def build_report(
 - **`default_factory`** fills gaps when no instance is registered.
 - **`optional=True`** or `Inject[Thing | None]` handles soft dependencies gracefully.
 
-## 7. Embrace Hooks for Cross-Cutting Needs
+## 6. Embrace Hooks for Cross-Cutting Needs
 
-The async-aware hook system lets you add tracing, caching, or guardrails without touching call sites. Hooks accept sync or async callbacks and forward rich context so you can make informed decisions.
+The hook system lets you add tracing, caching, or guardrails without touching call sites. Hooks forward rich context so you can make informed decisions.
 
 ```python
 from bevy.hooks import hooks
@@ -235,29 +132,26 @@ log_request.register_hook(container.registry)
 
 Returning `Optional.Nothing()` (or simply `None` for legacy two-argument hooks) signals "no change, continue the default flow."
 
-Hooks are fully async-aware and can be either sync or async functions. When using `await container.find(T)`, async hooks execute in the same async context with no thread overhead.
 
-## 8. Common Patterns
+## 7. Common Patterns
 
 - **Configuration modules**: group `container.add(...)` calls in one module and import it at startup.
 - **Feature toggles**: register alternates on a branched container and pass it where needed.
 - **Background jobs**: spin up a branch per job so overrides don't leak across tasks.
 - **Tests**: branch, override dependencies, and dispose of the branch when the test ends.
 
-## 9. Best Practices
+## 8. Best Practices
 
 - Keep container mutations in deterministic places (boot scripts, fixtures) to avoid hidden state.
 - Avoid decorating the class object with `@injectable`; decorate callables (`__init__`, factories) so inheritance keeps working.
 - Prefer `Inject[T]` annotations, even when using permissive strategies—this keeps types explicit.
 - Use `InjectionStrategy.ANY_NOT_PASSED` sparingly; it's great for handlers but can hide missing dependencies.
 - When layering decorators, apply `@auto_inject` closest to the function so wrappers don't block injection.
-- Leverage async hooks to observe long-running workflows; avoid side effects inside hooks that could raise errors.
-- **In async code, use `await container.find(T)` instead of `container.get(T)`** to avoid unnecessary thread overhead.
 
-## 10. Troubleshooting Checklist
+## 9. Troubleshooting Checklist
 
 - **Missing dependency?** Ensure an instance or factory is registered on the container you’re calling with.
 - **Unexpected instance?** Check for leftover overrides on a shared container—branch instead.
 - **Double execution?** Wrapping decorators may run inner functions twice; ensure idempotency or move logic to injected services.
 
-With these patterns, Bevy stays predictable across services, scripts, async workers, and tests while keeping injection setup minimal.
+With these patterns, Bevy stays predictable across services, scripts, and tests while keeping injection setup minimal.

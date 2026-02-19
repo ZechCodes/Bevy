@@ -18,7 +18,6 @@ Critical features expected in a mature DI framework:
 
 - **[Lifecycle Management](missing-features/lifecycle-management.md)** - Instance disposal and resource cleanup
 - **[Scoping and Lifetime](missing-features/scoping-and-lifetime.md)** - Request/session scopes, transient instances
-- **[Async Support](missing-features/async-support.md)** - Full async/await support for modern Python
 - **[Configuration System](missing-features/configuration-system.md)** - Config binding, modules, auto-discovery
 - **[Introspection and Debugging](missing-features/introspection-debugging.md)** - Container visualization and debugging tools
 
@@ -38,7 +37,6 @@ Existing features that cause confusion and need simplification:
 2. **Error Handling** - Essential for debugging experience
 3. **Lifecycle Management** - Critical for resource management
 4. **Scoping and Lifetime** - Essential for web applications
-5. **Async Support** - Required for modern Python apps
 
 ### Medium-High Priority (Important for Maturity)
 1. **Type Annotation Support** - Modern Python development standard
@@ -65,7 +63,6 @@ Existing features that cause confusion and need simplification:
 
 ### Phase 2: Core Features (Months 3-4)  
 - Scoping and lifetime management
-- Async support foundation
 - Container branching simplification
 
 ### Phase 3: Developer Experience (Months 5-6)
@@ -110,7 +107,7 @@ Existing features that cause confusion and need simplification:
 | Category | Total Effort | High Priority Items |
 |----------|-------------|-------------------|
 | Enhancements | Medium-High | Documentation, Error Handling |
-| Missing Features | High | Lifecycle, Scoping, Async |
+| Missing Features | High | Lifecycle, Scoping |
 | Complex Features | Medium | Container Branching, Factory/Hooks |
 | **Overall** | **High** | **10 months estimated** |
 

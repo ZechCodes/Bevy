@@ -29,9 +29,6 @@ Example:
     >>> result = process_data(data="test")  # Uses global container
 """
 
-import asyncio
-import concurrent.futures
-import contextvars
 import inspect
 import time
 from dataclasses import dataclass, field
@@ -44,48 +41,48 @@ from bevy.injection_types import (extract_injection_info, InjectionStrategy, Opt
 
 
 def analyze_function_signature(
-    func, 
-    strategy: InjectionStrategy, 
+    func,
+    strategy: InjectionStrategy,
     params: Optional[list[str]] = None
 ) -> Dict[str, Tuple[type, Optional[Options]]]:
     """
     Analyze function signature to determine which parameters should be injected.
-    
+
     Args:
         func: Function to analyze
         strategy: Strategy for determining injectable parameters
         params: List of parameter names (used with ONLY strategy)
-        
+
     Returns:
         Dictionary mapping parameter names to (type, options) tuples
     """
     sig = inspect.signature(func)
     type_hints = get_type_hints(func, include_extras=True)
     injection_params = {}
-    
+
     for param_name, param in sig.parameters.items():
         # Skip *args and **kwargs
         if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
             continue
-            
+
         # Get type annotation
         annotation = type_hints.get(param_name, param.annotation)
         if annotation == inspect.Parameter.empty:
             continue
-            
+
         # Extract injection info
         actual_type, options = extract_injection_info(annotation)
-        
+
         # Determine if this parameter should be injected
         # For REQUESTED_ONLY, we need to know if the original annotation was Inject[]
         is_inject_annotation = (actual_type != annotation)
         should_inject = _should_inject_parameter(
             param_name, actual_type, options, strategy, params, is_inject_annotation
         )
-        
+
         if should_inject:
             injection_params[param_name] = (actual_type, options)
-    
+
     return injection_params
 
 
@@ -99,25 +96,25 @@ def _should_inject_parameter(
 ) -> bool:
     """
     Determine if a parameter should be injected based on strategy.
-    
+
     Args:
         param_name: Name of the parameter
         actual_type: The parameter's type
         options: Injection options (None if not using Inject[])
         strategy: Injection strategy
         params: List of parameter names (for ONLY strategy)
-        
+
     Returns:
         True if parameter should be injected
     """
     if strategy == InjectionStrategy.REQUESTED_ONLY:
         # Only inject if parameter uses Inject[] syntax
         return is_inject_annotation
-    
+
     elif strategy == InjectionStrategy.ANY_NOT_PASSED:
         # Inject any parameter with type annotation
         return actual_type != inspect.Parameter.empty
-    
+
     elif strategy == InjectionStrategy.ONLY:
         # Inject only parameters in the specified list
         return params is not None and param_name in params
@@ -182,11 +179,6 @@ class InjectableCallable:
             "debug_mode": self._config.debug,
         }
 
-    @property
-    def is_async(self) -> bool:
-        """Check if the wrapped function is async."""
-        return inspect.iscoroutinefunction(self._func)
-
     # ------------------------------------------------------------------
     # Call handling ------------------------------------------------------
     def call_using(self, container, /, *args, **kwargs):
@@ -204,47 +196,7 @@ class InjectableCallable:
         bound_args = sig.bind_partial(*args, **kwargs)
         bound_args.apply_defaults()
 
-        # Run async injection in a thread pool with context preservation
-        def run_injection():
-            return asyncio.run(self._inject_missing_dependencies(
-                container,
-                injection_config,
-                bound_args,
-                function_name,
-                current_injection_chain,
-                sig,
-            ))
-
-        # Capture context variables
-        ctx = contextvars.copy_context()
-
-        # Run in thread with context
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(ctx.run, run_injection)
-            try:
-                injected_params = future.result(timeout=30)
-            except concurrent.futures.TimeoutError:
-                raise TimeoutError(f"Dependency injection timed out after 30 seconds")
-
-        result = self._func(*bound_args.args, **bound_args.kwargs)
-        return result
-
-    async def call_using_async(self, container, /, *args, **kwargs):
-        """Async version of call_using that uses async dependency resolution."""
-        from bevy.containers import Container  # Local import to avoid cycle
-
-        if not isinstance(container, Container):  # pragma: no cover - defensive
-            raise TypeError("container must be a Container instance")
-
-        function_name = getattr(self._func, "__name__", str(self._func))
-        current_injection_chain = container._build_injection_chain(function_name)
-        injection_config = self._build_injection_configuration()
-
-        sig = inspect.signature(self._func)
-        bound_args = sig.bind_partial(*args, **kwargs)
-        bound_args.apply_defaults()
-
-        await self._inject_missing_dependencies(
+        self._inject_missing_dependencies(
             container,
             injection_config,
             bound_args,
@@ -253,7 +205,8 @@ class InjectableCallable:
             sig,
         )
 
-        return await self._func(*bound_args.args, **bound_args.kwargs)
+        result = self._func(*bound_args.args, **bound_args.kwargs)
+        return result
 
     def __call__(self, *args, **kwargs):
         if self.auto_inject:
@@ -266,7 +219,7 @@ class InjectableCallable:
 
     # ------------------------------------------------------------------
     # Injection helpers --------------------------------------------------
-    async def _inject_missing_dependencies(
+    def _inject_missing_dependencies(
         self,
         container,
         injection_config: Dict[str, Any],
@@ -275,7 +228,7 @@ class InjectableCallable:
         current_injection_chain: list[str],
         signature: inspect.Signature,
     ) -> Dict[str, Any]:
-        """Async version of dependency injection with full hook support."""
+        """Inject missing dependencies into bound arguments."""
         from bevy.injection_types import DependencyResolutionError
 
         injected_params: Dict[str, Any] = {}
@@ -296,7 +249,7 @@ class InjectableCallable:
                 else:
                     parameter_default = TrampOptional.Nothing()
 
-                injected_value = await container._inject_single_dependency(
+                injected_value = container._inject_single_dependency(
                     param_name,
                     param_type,
                     options,
@@ -397,12 +350,12 @@ def injectable(
 ):
     """
     Configure dependency injection for a function.
-    
+
     This decorator analyzes the function signature and stores injection metadata
     but does not change the function's runtime behavior. Use @auto_inject to
     enable automatic injection using the global container, or call the function
     via Container.call().
-    
+
     Args:
         strategy: Controls which parameters are injected (default: REQUESTED_ONLY)
         params: List of parameter names to inject (used with ONLY strategy)
@@ -410,41 +363,41 @@ def injectable(
         type_matching: How to match types during resolution (default: SUBCLASS)
         debug: Enable debug logging during injection (default: False)
         cache_analysis: Cache function signature analysis for performance (default: True)
-    
+
     Example:
         Basic usage:
-        
+
         >>> @injectable
         >>> def process_data(service: Inject[UserService], data: str):
         ...     return service.process(data)
-        
+
         With configuration:
-        
+
         >>> @injectable(strategy=InjectionStrategy.ANY_NOT_PASSED, debug=True)
         >>> def auto_inject_all(service: UserService, db: Database, data: str):
         ...     return f"Processed {data} with {service} and {db}"
-        
+
         Selective injection:
-        
+
         >>> @injectable(strategy=InjectionStrategy.ONLY, params=["service"])
         >>> def selective(service: UserService, manual: str):
         ...     return f"{service} processed {manual}"
-    
+
     Returns:
         The decorated function with injection metadata attached.
     """
     # Convert DEFAULT enums to actual strategies
     actual_strategy = (
-        InjectionStrategy.REQUESTED_ONLY 
-        if strategy == InjectionStrategy.DEFAULT 
+        InjectionStrategy.REQUESTED_ONLY
+        if strategy == InjectionStrategy.DEFAULT
         else strategy
     )
     actual_type_matching = (
-        TypeMatchingStrategy.SUBCLASS 
-        if type_matching == TypeMatchingStrategy.DEFAULT 
+        TypeMatchingStrategy.SUBCLASS
+        if type_matching == TypeMatchingStrategy.DEFAULT
         else type_matching
     )
-    
+
     def decorator(target_func):
         config = _InjectableConfig(
             strategy=actual_strategy,
@@ -499,10 +452,10 @@ def auto_inject(func):
 def get_injection_info(func) -> Optional[Dict[str, Any]]:
     """
     Get injection metadata from a function.
-    
+
     Args:
         func: Function to get metadata from
-        
+
     Returns:
         Dictionary with injection metadata or None if not injectable
     """
@@ -516,10 +469,10 @@ def get_injection_info(func) -> Optional[Dict[str, Any]]:
 def is_injectable(func) -> bool:
     """
     Check if a function has been configured for injection.
-    
+
     Args:
         func: Function to check
-        
+
     Returns:
         True if function has injection metadata
     """

@@ -1,6 +1,3 @@
-import asyncio
-import concurrent.futures
-import contextvars
 import functools
 import inspect
 from dataclasses import dataclass
@@ -19,12 +16,10 @@ type HookFunction[T] = "Callable[[Container, Type[T], dict[str, Any], T]"
 
 
 def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Container", value: Any, context: dict[str, Any], _from_wrapper: bool = False) -> Any:
-    """Call a sync hook function with the appropriate number of parameters based on its signature.
+    """Call a hook function with the appropriate number of parameters based on its signature.
 
     Supports both legacy 2-parameter hooks (container, value) and new 3-parameter hooks
     (container, value, context) for backwards compatibility.
-
-    NOTE: This function only handles SYNC hooks. Async hooks are handled by HookManager._call_hook_async().
     """
     # If this is a HookWrapper and we're not being called from the wrapper itself
     if isinstance(hook_func, HookWrapper) and not _from_wrapper:
@@ -34,7 +29,7 @@ def _call_hook_with_appropriate_signature(hook_func: Callable, container: "Conta
     # Get the actual function for signature inspection
     func = hook_func.func if hasattr(hook_func, 'func') else hook_func
 
-    # Get function signature for sync hooks
+    # Get function signature
     try:
         sig = inspect.signature(func)
     except (ValueError, TypeError):
@@ -67,14 +62,14 @@ class InjectionContext:
     debug_mode: bool
     injection_chain: list[str]  # Stack of function calls leading to this injection
     parameter_default: Optional[Any]  # Optional.Some(value) if default set, Optional.Nothing() if unset
-    
+
     def __post_init__(self):
         """Ensure injection_chain is a list."""
         if self.injection_chain is None:
             self.injection_chain = []
 
 
-@dataclass  
+@dataclass
 class PostInjectionContext:
     """Context for post-injection hooks after function call completion."""
     function_name: str
@@ -91,7 +86,7 @@ class Hook(Enum):
     CREATE_INSTANCE = "create_instance"
     CREATED_INSTANCE = "created_instance"
     HANDLE_UNSUPPORTED_DEPENDENCY = "handle_unsupported_dependency"
-    
+
     # Injection-specific hooks
     INJECTION_REQUEST = "injection_request"      # Before resolving a dependency for injection
     INJECTION_RESPONSE = "injection_response"    # After resolving a dependency for injection
@@ -102,10 +97,6 @@ class Hook(Enum):
 
 class HookManager:
     """Manages hook callbacks for dependency resolution lifecycle events.
-
-    This class uses an async-native architecture where all hooks are executed asynchronously.
-    Hooks can be either sync or async functions - sync hooks are called directly while async
-    hooks are properly awaited.
 
     Methods:
         handle(): Returns the first Some result from any callback, or Nothing if all return Nothing
@@ -118,7 +109,7 @@ class HookManager:
         """Adds a function that will be called when the hook is triggered."""
         self.callbacks.add(hook)
 
-    async def handle[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> Optional[Any]:
+    def handle[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> Optional[Any]:
         """Iterates each callback and returns the first Some result, or Nothing if all return Nothing.
 
         Args:
@@ -131,7 +122,7 @@ class HookManager:
         """
         ctx = context or {}
         for callback in self.callbacks:
-            result = await self._call_hook_async(callback, container, value, ctx)
+            result = _call_hook_with_appropriate_signature(callback, container, value, ctx)
             match result:
                 case Optional.Some(_):
                     return result
@@ -139,7 +130,7 @@ class HookManager:
                     continue
         return Optional.Nothing()
 
-    async def filter[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> T:
+    def filter[T](self, container: "Container", value: T, context: dict[str, Any] | None = None) -> T:
         """Iterates all callbacks and updates the value when a callback returns Some.
 
         Args:
@@ -152,37 +143,13 @@ class HookManager:
         """
         ctx = context or {}
         for callback in self.callbacks:
-            result = await self._call_hook_async(callback, container, value, ctx)
+            result = _call_hook_with_appropriate_signature(callback, container, value, ctx)
             match result:
                 case Optional.Some(v):
                     value = v
                 case Optional.Nothing():
                     pass
         return value
-
-    async def _call_hook_async(self, hook_func: Callable, container: "Container", value: Any, context: dict[str, Any]) -> Optional[Any]:
-        """Call a hook function (sync or async) and return result."""
-        # Avoid circular import
-        from bevy.async_hooks import is_async_hook
-
-        # Handle HookWrapper
-        if isinstance(hook_func, HookWrapper):
-            actual_func = hook_func.func
-        else:
-            actual_func = hook_func
-
-        # Check if async
-        if is_async_hook(actual_func):
-            # Call async hook
-            sig = inspect.signature(actual_func)
-            params = list(sig.parameters.keys())
-            if len(params) >= 3:
-                return await actual_func(container, value, context)
-            else:
-                return await actual_func(container, value)
-        else:
-            # Call sync hook
-            return _call_hook_with_appropriate_signature(hook_func, container, value, context)
 
 
 class HookWrapper[**P, R]:
@@ -238,7 +205,7 @@ class HookDecorator[**P, R]:
     CREATE_INSTANCE = _HookDecoratorDescriptor()
     CREATED_INSTANCE = _HookDecoratorDescriptor()
     HANDLE_UNSUPPORTED_DEPENDENCY = _HookDecoratorDescriptor()
-    
+
     # Injection-specific hook decorators
     INJECTION_REQUEST = _HookDecoratorDescriptor()
     INJECTION_RESPONSE = _HookDecoratorDescriptor()
