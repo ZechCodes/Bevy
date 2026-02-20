@@ -20,7 +20,7 @@ python = "^3.12"
 tramp = "^0.1.17"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^6.2.5"
+pytest = "^8.0"
 mkdocs-material = "^9.1.9"
 mkdocstrings = "^0.21.2"
 mkdocstrings-python = "^0.10.1"
