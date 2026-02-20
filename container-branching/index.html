@@ -1,0 +1,1061 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>Container Branching Guide - Bevy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#container-branching-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Bevy" class="md-header__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bevy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Container Branching Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Bevy" class="md-nav__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bevy
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BEVY_QUICKSTART.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-container-branching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is Container Branching?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-inheritance-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Inheritance Rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Inheritance Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-inheritance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Inheritance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-override-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Override Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-sibling-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Sibling Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-factory-cache-inheritance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Factory Cache Inheritance
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing-with-mocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing with Mocks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#request-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-tenant-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Tenant Applications
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-not-to-use-branching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When NOT to Use Branching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="When NOT to Use Branching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#complete-application-separation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Application Separation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-configuration-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple Configuration Overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-off-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One-off Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision Tree
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-name-your-containers-clearly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Name Your Containers Clearly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-document-override-reasons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Document Override Reasons
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-keep-hierarchies-shallow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Keep Hierarchies Shallow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-clean-up-when-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Clean Up When Done
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolution-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution Speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#garbage-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Garbage Collection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#problem-child-doesnt-see-parents-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem: Child doesn't see parent's instance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#problem-changes-affecting-wrong-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem: Changes affecting wrong container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#problem-factory-called-multiple-times" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem: Factory called multiple times
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="container-branching-guide">Container Branching Guide</h1>
+<p>Container branching is one of Bevy's most powerful features for managing dependencies across different contexts like testing, request handling, and environment configurations. This guide explains how to use container branching effectively.</p>
+<h2 id="what-is-container-branching">What is Container Branching?</h2>
+<p>Container branching creates a parent-child relationship between containers where:
+- <strong>Child containers inherit</strong> all instances from their parent
+- <strong>Child containers can override</strong> parent instances without affecting the parent
+- <strong>Sibling containers are isolated</strong> from each other's changes
+- <strong>Resolution walks up</strong> the container hierarchy (child → parent → grandparent)</p>
+<h2 id="core-inheritance-rules">Core Inheritance Rules</h2>
+<h3 id="1-inheritance">1. Inheritance</h3>
+<pre><code class="language-python">from bevy import Container, Registry
+
+registry = Registry()
+parent = Container(registry)
+parent.add(DatabaseConnection(&quot;parent-db&quot;))
+
+child = parent.branch()
+# Child can access parent's database
+db = child.get(DatabaseConnection)  # Returns &quot;parent-db&quot;
+</code></pre>
+<h3 id="2-override-isolation">2. Override Isolation</h3>
+<pre><code class="language-python"># Child overrides don't affect parent
+child.add(DatabaseConnection(&quot;child-db&quot;))  # Override parent's DB
+
+child_db = child.get(DatabaseConnection)    # Returns &quot;child-db&quot;
+parent_db = parent.get(DatabaseConnection)  # Still returns &quot;parent-db&quot;
+</code></pre>
+<h3 id="3-sibling-isolation">3. Sibling Isolation</h3>
+<pre><code class="language-python"># Siblings don't affect each other
+sibling1 = parent.branch()
+sibling1.add(EmailService(&quot;sibling1-email&quot;))
+
+sibling2 = parent.branch() 
+sibling2.add(CacheService(&quot;sibling2-cache&quot;))
+
+# sibling1 cannot access sibling2's cache service
+# sibling2 cannot access sibling1's email service
+# Both can access parent's database
+</code></pre>
+<h3 id="4-factory-cache-inheritance">4. Factory Cache Inheritance</h3>
+<pre><code class="language-python">from bevy import inject, Inject, Options
+
+@inject
+def expensive_service_factory():
+    # Expensive creation logic
+    return ExpensiveService()
+
+# Parent creates and caches the instance
+parent_service = parent.get(ExpensiveService, default_factory=expensive_service_factory)
+
+# Child inherits the cached instance (no re-creation)
+child = parent.branch()
+child_service = child.get(ExpensiveService, default_factory=expensive_service_factory)
+
+assert parent_service is child_service  # Same instance
+</code></pre>
+<h2 id="common-use-cases">Common Use Cases</h2>
+<h3 id="testing-with-mocks">Testing with Mocks</h3>
+<p>Replace production services with test doubles while keeping everything else:</p>
+<pre><code class="language-python"># Production setup
+app_container = Container(registry)
+app_container.add(DatabaseConnection(&quot;postgresql://prod-server&quot;))
+app_container.add(EmailService(SmtpConfig(&quot;prod-smtp.company.com&quot;)))
+app_container.add(PaymentProcessor(StripeConfig(&quot;pk_live_...&quot;)))
+app_container.add(Logger(level=&quot;INFO&quot;))
+
+# Test setup - override problematic services
+test_container = app_container.branch()
+test_container.add(DatabaseConnection(&quot;sqlite://memory&quot;))  # In-memory test DB
+test_container.add(EmailService(MockEmailConfig()))        # Mock email
+test_container.add(PaymentProcessor(MockPaymentConfig()))  # Mock payments
+
+# Test inherits logger and other safe services unchanged
+# But uses test-specific database, email, and payment services
+
+@inject
+def create_user(name: str, email: str, 
+                db: Inject[DatabaseConnection],
+                email_service: Inject[EmailService],
+                payment: Inject[PaymentProcessor]):
+    # This function works identically in both containers
+    # but uses different implementations
+    pass
+
+# Test uses mock services
+test_container.call(create_user, &quot;Test User&quot;, &quot;test@example.com&quot;)
+
+# Production uses real services  
+app_container.call(create_user, &quot;Real User&quot;, &quot;real@example.com&quot;)
+</code></pre>
+<h3 id="request-scoping">Request Scoping</h3>
+<p>Add request-specific data while sharing application-level services:</p>
+<pre><code class="language-python"># Application-level container
+app_container = Container(registry)
+app_container.add(DatabasePool(max_connections=20))
+app_container.add(CacheService(redis_url=&quot;redis://cache-cluster&quot;))
+app_container.add(ConfigService())
+app_container.add(MetricsCollector())
+
+def handle_request(request):
+    # Create request-scoped container
+    request_container = app_container.branch()
+
+    # Add request-specific data
+    request_container.add(CurrentUser(request.user_id))
+    request_container.add(RequestContext(request.id, request.headers))
+    request_container.add(SessionData(request.session))
+
+    # Services that need request context get it automatically
+    # while still accessing shared database pool and cache
+    return request_container.call(process_request)
+
+@inject
+def process_request(user: Inject[CurrentUser],
+                   db_pool: Inject[DatabasePool],      # From app container
+                   cache: Inject[CacheService],        # From app container
+                   context: Inject[RequestContext]):   # From request container
+    # Can access both request-specific and application-level dependencies
+    pass
+</code></pre>
+<h3 id="environment-configuration">Environment Configuration</h3>
+<p>Share common configuration while overriding environment-specific services:</p>
+<pre><code class="language-python"># Base configuration shared across environments
+base_container = Container(registry)
+base_container.add(Logger())
+base_container.add(MetricsCollector())
+base_container.add(ConfigLoader())
+base_container.add(SecurityValidator())
+
+# Development environment
+dev_container = base_container.branch()
+dev_container.add(DatabaseConnection(&quot;localhost:5432&quot;))
+dev_container.add(RedisCache(&quot;localhost:6379&quot;))
+dev_container.add(EmailService(LoggingEmailService()))  # Just log emails
+dev_container.add(PaymentProcessor(MockPaymentProcessor()))
+
+# Staging environment  
+staging_container = base_container.branch()
+staging_container.add(DatabaseConnection(&quot;staging-db:5432&quot;))
+staging_container.add(RedisCache(&quot;staging-redis:6379&quot;))
+staging_container.add(EmailService(TestEmailService()))  # Send to test accounts
+staging_container.add(PaymentProcessor(SandboxPaymentProcessor()))
+
+# Production environment
+prod_container = base_container.branch()
+prod_container.add(DatabaseConnection(&quot;prod-cluster:5432&quot;))
+prod_container.add(RedisCache(&quot;prod-redis-cluster:6379&quot;))
+prod_container.add(EmailService(SmtpEmailService()))
+prod_container.add(PaymentProcessor(LivePaymentProcessor()))
+
+# All environments share logger, metrics, config, and security
+# but use environment-appropriate databases, caches, and external services
+</code></pre>
+<h3 id="plugin-isolation">Plugin Isolation</h3>
+<p>Isolate plugin dependencies to prevent conflicts:</p>
+<pre><code class="language-python"># Main application container
+app_container = Container(registry)
+app_container.add(CoreDatabase())
+app_container.add(UserService())
+app_container.add(AuthService())
+
+# Plugin A - e.g., analytics plugin
+analytics_container = app_container.branch()
+analytics_container.add(AnalyticsDatabase(&quot;analytics-db&quot;))
+analytics_container.add(EventTracker())
+analytics_container.add(ReportGenerator())
+
+# Plugin B - e.g., notification plugin  
+notification_container = app_container.branch()
+notification_container.add(NotificationQueue(&quot;notification-queue&quot;))
+notification_container.add(TemplateEngine())
+notification_container.add(DeliveryService())
+
+# Plugins can access core services but are isolated from each other
+# Analytics plugin cannot access notification queue
+# Notification plugin cannot access analytics database
+# Both can access core database and user service
+</code></pre>
+<h3 id="multi-tenant-applications">Multi-Tenant Applications</h3>
+<p>Isolate tenant-specific data while sharing core infrastructure:</p>
+<pre><code class="language-python"># Shared infrastructure
+base_container = Container(registry)
+base_container.add(DatabasePool())
+base_container.add(CacheCluster())
+base_container.add(FileStorage())
+base_container.add(EmailInfrastructure())
+
+def get_tenant_container(tenant_id: str) -&gt; Container:
+    tenant_container = base_container.branch()
+
+    # Tenant-specific configuration
+    tenant_config = load_tenant_config(tenant_id)
+    tenant_container.add(TenantConfig(tenant_config))
+    tenant_container.add(TenantDatabase(tenant_config.db_name))
+    tenant_container.add(TenantTheme(tenant_config.theme))
+    tenant_container.add(TenantFeatures(tenant_config.enabled_features))
+
+    return tenant_container
+
+# Each tenant gets isolated configuration
+tenant_a_container = get_tenant_container(&quot;tenant-a&quot;)
+tenant_b_container = get_tenant_container(&quot;tenant-b&quot;)
+
+# But shares infrastructure like database pools and file storage
+</code></pre>
+<h2 id="when-not-to-use-branching">When NOT to Use Branching</h2>
+<h3 id="complete-application-separation">Complete Application Separation</h3>
+<pre><code class="language-python"># DON'T: Branch for completely different applications
+user_app = base_container.branch()      # ❌ Wrong
+admin_app = base_container.branch()     # ❌ Wrong  
+
+# DO: Use separate containers
+user_app = Container(user_registry)     # ✅ Correct
+admin_app = Container(admin_registry)   # ✅ Correct
+</code></pre>
+<h3 id="simple-configuration-overrides">Simple Configuration Overrides</h3>
+<pre><code class="language-python"># DON'T: Branch just to change a config value
+debug_container = prod_container.branch()           # ❌ Overkill
+debug_container.add(Logger(level=&quot;DEBUG&quot;))          # ❌ Overkill
+
+# DO: Use qualified dependencies
+prod_container.add(Logger, Logger(level=&quot;INFO&quot;), qualifier=&quot;production&quot;)    # ✅ Better
+prod_container.add(Logger, Logger(level=&quot;DEBUG&quot;), qualifier=&quot;debug&quot;)        # ✅ Better
+</code></pre>
+<h3 id="one-off-testing">One-off Testing</h3>
+<pre><code class="language-python"># DON'T: Branch for simple unit tests
+def test_user_service():
+    test_container = app_container.branch()    # ❌ Unnecessary
+    test_container.add(MockDatabase())         # ❌ Unnecessary
+    # ...
+
+# DO: Mock at the function level
+def test_user_service():
+    mock_db = MockDatabase()
+    user_service = UserService(mock_db)        # ✅ Simpler
+    # ...
+</code></pre>
+<h2 id="decision-tree">Decision Tree</h2>
+<p>Use this flowchart to decide when to use container branching:</p>
+<pre><code>Do you need to override some (but not all) dependencies?
+├─ YES → Do the new dependencies need to be isolated from other contexts?
+│  ├─ YES → Use container.branch() ✅
+│  └─ NO → Consider qualified dependencies instead
+└─ NO → Do you need completely separate dependency graphs?
+   ├─ YES → Use separate Container instances
+   └─ NO → Use the existing container
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-name-your-containers-clearly">1. Name Your Containers Clearly</h3>
+<pre><code class="language-python"># Good: Purpose is clear
+test_container = app_container.branch()
+request_container = app_container.branch()
+dev_environment = base_config.branch()
+
+# Bad: Purpose is unclear
+container2 = container1.branch()
+temp_container = main_container.branch()
+</code></pre>
+<h3 id="2-document-override-reasons">2. Document Override Reasons</h3>
+<pre><code class="language-python">test_container = app_container.branch()
+# Override database for isolated testing
+test_container.add(DatabaseConnection(&quot;sqlite://memory&quot;))
+# Override email to prevent sending real emails in tests  
+test_container.add(EmailService(LoggingEmailService()))
+</code></pre>
+<h3 id="3-keep-hierarchies-shallow">3. Keep Hierarchies Shallow</h3>
+<pre><code class="language-python"># Good: Shallow hierarchy
+app → test
+app → dev  
+app → prod
+
+# Bad: Deep nesting (harder to understand)
+app → env → region → tenant → request → user
+</code></pre>
+<h3 id="4-clean-up-when-done">4. Clean Up When Done</h3>
+<pre><code class="language-python">def handle_request(request):
+    request_container = app_container.branch()
+    try:
+        # ... process request
+        return response
+    finally:
+        # Container will be garbage collected
+        # No explicit cleanup needed for branching
+        pass
+</code></pre>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<h3 id="memory-usage">Memory Usage</h3>
+<ul>
+<li>Child containers only store their own instances plus a reference to parent</li>
+<li>Shared instances are not duplicated in memory</li>
+<li>Deep hierarchies use more memory for parent references</li>
+</ul>
+<h3 id="resolution-speed">Resolution Speed</h3>
+<ul>
+<li>Resolution checks child first, then walks up parent chain</li>
+<li>Deep hierarchies have slightly slower resolution</li>
+<li>Factory caching mitigates repeated resolution costs</li>
+</ul>
+<h3 id="garbage-collection">Garbage Collection</h3>
+<ul>
+<li>Child containers can be garbage collected independently</li>
+<li>Parent containers stay alive as long as children reference them</li>
+<li>No circular references - children reference parents, not vice versa</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="problem-child-doesnt-see-parents-instance">Problem: Child doesn't see parent's instance</h3>
+<pre><code class="language-python"># Check: Did you add the instance to parent before branching?
+parent.add(SomeService())
+child = parent.branch()
+service = child.get(SomeService)  # Should work
+
+# Not: 
+child = parent.branch()
+parent.add(SomeService())  # Added after branching
+service = child.get(SomeService)  # Will still work - inheritance is dynamic
+</code></pre>
+<h3 id="problem-changes-affecting-wrong-container">Problem: Changes affecting wrong container</h3>
+<pre><code class="language-python"># Check: Are you modifying the right container?
+child1 = parent.branch()
+child2 = parent.branch()
+
+child1.add(SomeService())  # Only affects child1
+child2.get(SomeService)    # Will fail - child2 doesn't have it
+</code></pre>
+<h3 id="problem-factory-called-multiple-times">Problem: Factory called multiple times</h3>
+<pre><code class="language-python"># Check: Are you using the same factory function object?
+def factory1(): return Service()
+def factory2(): return Service()  # Different function!
+
+parent.get(Service, default_factory=factory1)
+child.get(Service, default_factory=factory2)  # Will call factory2!
+
+# Use the same factory function for caching:
+service_factory = lambda: Service()
+parent.get(Service, default_factory=service_factory)
+child.get(Service, default_factory=service_factory)  # Reuses cached result
+</code></pre>
+<p>This guide should help you use container branching effectively in your applications. For more advanced scenarios, see the API documentation for <code>Container.branch()</code> and related methods.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

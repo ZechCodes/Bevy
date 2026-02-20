@@ -1,0 +1,1142 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+        <link rel="next" href="api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>Bevy</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#bevy-documentation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Bevy" class="md-header__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bevy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Bevy" class="md-nav__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bevy
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-bevy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is Bevy?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is Bevy?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decorators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#qualified-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qualified Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-factories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Factories
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#injection-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Injection Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hook-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook System
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-choose-bevy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Choose Bevy?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Choose Bevy?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Safety
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-and-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Community and Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#license" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        License
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BEVY_QUICKSTART.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-bevy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is Bevy?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is Bevy?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decorators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#qualified-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qualified Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-factories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Factories
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#injection-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Injection Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hook-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook System
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-choose-bevy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Choose Bevy?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Choose Bevy?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Safety
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-and-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Community and Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#license" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        License
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="bevy-documentation">Bevy Documentation</h1>
+<p><strong>Bevy</strong> is a modern, type-safe dependency injection framework for Python 3.12+ that makes managing dependencies simple and elegant.</p>
+<h2 id="quick-links">Quick Links</h2>
+<ul>
+<li><strong><a href="../BEVY_QUICKSTART.md">Quick Start Guide</a></strong> - Get up and running in minutes</li>
+<li><strong><a href="usage-guide/">Usage Guide</a></strong> - Patterns and best practices</li>
+<li><strong><a href="api/">API Reference</a></strong> - Complete API documentation  </li>
+<li><strong><a href="migration/">Migration Guide</a></strong> - Upgrade from Bevy 3.0 beta</li>
+</ul>
+<h2 id="what-is-bevy">What is Bevy?</h2>
+<p>Bevy provides elegant dependency injection for Python applications using modern type hints and decorators. It enables you to write loosely coupled, testable code while maintaining full IDE support and type safety.</p>
+<h3 id="key-features">Key Features</h3>
+<ul>
+<li><strong>🎯 Type Safe</strong>: Full IDE autocomplete and type checking with <code>Inject[T]</code></li>
+<li><strong>🚀 Python 3.12+</strong>: Leverages modern type system features</li>
+<li><strong>🔧 Flexible</strong>: Multiple injection strategies for different use cases</li>
+<li><strong>🔍 Debuggable</strong>: Rich debug mode and execution tracking</li>
+<li><strong>🪝 Extensible</strong>: Powerful hook system for customization</li>
+<li><strong>⚡ Fast</strong>: Optimized dependency resolution with caching</li>
+<li><strong>🧪 Testable</strong>: Container branching for test isolation</li>
+</ul>
+<h2 id="basic-example">Basic Example</h2>
+<pre><code class="language-python">from bevy import injectable, auto_inject, Inject, get_container
+from bevy.bundled.type_factory_hook import type_factory
+
+# Define your services
+class UserService:
+    def get_user(self, user_id: str):
+        return f&quot;User {user_id}&quot;
+
+class EmailService:
+    def send_email(self, to: str, subject: str):
+        return f&quot;Sent '{subject}' to {to}&quot;
+
+# Set up global container
+container = get_container()
+type_factory.register_hook(container.registry)
+
+# Use dependency injection
+@auto_inject
+@injectable
+def notify_user(
+    user_service: Inject[UserService],
+    email_service: Inject[EmailService],
+    user_id: str,
+    message: str
+):
+    user = user_service.get_user(user_id)
+    return email_service.send_email(user, f&quot;Notification: {message}&quot;)
+
+# Call directly - dependencies injected automatically
+result = notify_user(user_id=&quot;123&quot;, message=&quot;Welcome!&quot;)
+print(result)  # &quot;Sent 'Notification: Welcome!' to User 123&quot;
+</code></pre>
+<h2 id="core-concepts">Core Concepts</h2>
+<h3 id="decorators">Decorators</h3>
+<ul>
+<li><strong><code>@injectable</code></strong> - Enables dependency injection for functions</li>
+<li><strong><code>@auto_inject</code></strong> - Automatically uses global container for injection</li>
+<li>When you call an auto-injected function through <code>Container.call</code>, its dependencies come from the container that invoked it.</li>
+<li>If another decorator wraps the auto-injected callable afterwards, the wrapper receives dependencies from the calling container while the inner function still uses the global container. This intentional double-injection avoids breaking existing decorators.</li>
+</ul>
+<h3 id="type-system">Type System</h3>
+<ul>
+<li><strong><code>Inject[T]</code></strong> - Declares a parameter as injectable</li>
+<li><strong><code>Inject[T | None]</code></strong> - Optional dependency (can be None)</li>
+<li><strong><code>Options(...)</code></strong> - Configuration for dependency behavior</li>
+</ul>
+<h3 id="container-management">Container Management</h3>
+<ul>
+<li><strong><code>Container</code></strong> - Manages dependency instances and injection</li>
+<li><strong><code>Registry</code></strong> - Stores factories and hooks for dependency creation</li>
+<li><strong><code>container.branch()</code></strong> - Create isolated containers for testing</li>
+</ul>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="qualified-dependencies">Qualified Dependencies</h3>
+<p>Use multiple instances of the same type:</p>
+<pre><code class="language-python">from bevy import Options
+
+@injectable
+def database_operations(
+    primary_db: Inject[Database, Options(qualifier=&quot;primary&quot;)],
+    backup_db: Inject[Database, Options(qualifier=&quot;backup&quot;)]
+):
+    # Use different database instances
+    pass
+
+# Set up qualified instances
+container.add(Database, primary_db, qualifier=&quot;primary&quot;)
+container.add(Database, backup_db, qualifier=&quot;backup&quot;)
+</code></pre>
+<h3 id="default-factories">Default Factories</h3>
+<p>Provide fallback instances when dependencies aren't found:</p>
+<pre><code class="language-python">@injectable
+def app_startup(
+    config: Inject[AppConfig, Options(default_factory=lambda: AppConfig(&quot;default&quot;))],
+    logger: Inject[Logger, Options(default_factory=create_logger)]
+):
+    # Config and logger created by factories if not in container
+    pass
+</code></pre>
+<h3 id="injection-strategies">Injection Strategies</h3>
+<p>Control which parameters get injected:</p>
+<pre><code class="language-python">from bevy import InjectionStrategy
+
+# Only inject Inject[T] parameters (default)
+@injectable
+def explicit_injection(service: Inject[UserService], manual: str):
+    pass
+
+# Inject any typed parameter not provided
+@injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)
+def auto_injection(service: UserService, manual: str):
+    pass
+</code></pre>
+<h3 id="hook-system">Hook System</h3>
+<p>Customize dependency creation and injection:</p>
+<pre><code class="language-python">from bevy.hooks import hooks
+
+@hooks.INJECTION_REQUEST
+def log_injection_request(container, context):
+    print(f&quot;Injecting {context.requested_type.__name__}&quot;)
+
+@hooks.POST_INJECTION_CALL
+def log_execution_time(container, context):
+    print(f&quot;Executed in {context.execution_time_ms:.2f}ms&quot;)
+
+# Register hooks
+registry = get_registry()
+log_injection_request.register_hook(registry)
+log_execution_time.register_hook(registry)
+</code></pre>
+<h2 id="getting-started">Getting Started</h2>
+<ol>
+<li>
+<p><strong>Install Bevy</strong>:
+   <code>bash
+   pip install bevy&gt;=3.1.0</code></p>
+</li>
+<li>
+<p><strong>Follow the Quick Start</strong>: See <a href="../BEVY_QUICKSTART.md">BEVY_QUICKSTART.md</a> for detailed examples</p>
+</li>
+<li>
+<p><strong>Explore the API</strong>: Check out <a href="api/">API Reference</a> for complete documentation</p>
+</li>
+<li>
+<p><strong>Migrate from 3.0</strong>: Use <a href="migration/">Migration Guide</a> if upgrading</p>
+</li>
+</ol>
+<h2 id="why-choose-bevy">Why Choose Bevy?</h2>
+<h3 id="type-safety">Type Safety</h3>
+<p>Full IDE support with autocomplete, refactoring, and type checking:</p>
+<pre><code class="language-python">@injectable
+def process_user(service: Inject[UserService]):  # IDE knows this is UserService
+    service.get_user(&quot;123&quot;)  # Autocomplete available
+</code></pre>
+<h3 id="testing">Testing</h3>
+<p>Easy test isolation with container branching:</p>
+<pre><code class="language-python"># Production container
+prod_container = get_container()
+prod_container.add(DatabaseService(&quot;production&quot;))
+
+# Test container with mocks
+test_container = prod_container.branch()
+test_container.add(DatabaseService(&quot;test&quot;))  # Override for testing
+</code></pre>
+<h3 id="performance">Performance</h3>
+<p>Optimized dependency resolution with intelligent caching:</p>
+<pre><code class="language-python"># Expensive factory called only once
+@injectable
+def service_a(db: Inject[Database, Options(default_factory=create_expensive_db)]):
+    pass
+
+@injectable  
+def service_b(db: Inject[Database, Options(default_factory=create_expensive_db)]):
+    pass  # Reuses cached instance from service_a
+</code></pre>
+<h3 id="debugging">Debugging</h3>
+<p>Rich debug information for troubleshooting:</p>
+<pre><code class="language-python">@injectable(debug=True)
+def debug_function(service: Inject[UserService]):
+    pass
+
+# Output:
+# [BEVY DEBUG] Resolving &lt;class 'UserService'&gt; with options None
+# [BEVY DEBUG] Injected service: &lt;class 'UserService'&gt; = &lt;UserService object&gt;
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Use type hints consistently</strong> - Always provide <code>Inject[T]</code> annotations</li>
+<li><strong>Register type_factory hook</strong> - Enables automatic type creation  </li>
+<li><strong>Prefer @auto_inject for simple cases</strong> - Reduces boilerplate</li>
+<li><strong>Use container branching for tests</strong> - Isolate test dependencies</li>
+<li><strong>Handle optional dependencies</strong> - Use <code>T | None</code> for non-critical services</li>
+<li><strong>Enable debug mode during development</strong> - Understand injection behavior</li>
+</ol>
+<h2 id="community-and-support">Community and Support</h2>
+<ul>
+<li><strong>Source Code</strong>: <a href="https://github.com/ZechCodes/Bevy">GitHub Repository</a></li>
+<li><strong>Issues</strong>: <a href="https://github.com/ZechCodes/Bevy/issues">Report bugs and request features</a></li>
+<li><strong>Discussions</strong>: <a href="https://github.com/ZechCodes/Bevy/discussions">Community discussions</a></li>
+</ul>
+<h2 id="license">License</h2>
+<p>Bevy is licensed under the MIT License. See <a href="../LICENSE">LICENSE</a> for details.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": [], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

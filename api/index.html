@@ -1,0 +1,1973 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../migration/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>API Reference - Bevy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Bevy" class="md-header__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bevy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Bevy" class="md-nav__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bevy
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BEVY_QUICKSTART.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Decorators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Decorators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injectable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @injectable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_inject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @auto_inject
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injectt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inject[T]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enums">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injectionstrategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InjectionStrategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#typematchingstrategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TypeMatchingStrategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-and-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container and Registry
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Container and Registry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resultt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result[T]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get_container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Utilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type Utilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-inspection-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Inspection Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hooks-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hooks System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hooks System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hook-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hook-decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Decorators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hook-context-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Context Classes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundled-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bundled Utilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bundled Utilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-factory-hook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Factory Hook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict-vs-non-strict-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strict vs Non-Strict Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#factory-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Factory Caching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Factory Caching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-factory-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Factory Caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factory-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Factory Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-from-bevy-30-beta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration from Bevy 3.0 Beta
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration from Bevy 3.0 Beta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Migration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Decorators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Decorators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injectable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @injectable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_inject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @auto_inject
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injectt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inject[T]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enums">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injectionstrategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InjectionStrategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#typematchingstrategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TypeMatchingStrategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-and-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container and Registry
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Container and Registry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resultt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result[T]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get_container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Utilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type Utilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-inspection-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Inspection Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hooks-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hooks System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hooks System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hook-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hook-decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Decorators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hook-context-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Context Classes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundled-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bundled Utilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bundled Utilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-factory-hook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Factory Hook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict-vs-non-strict-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strict vs Non-Strict Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#factory-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Factory Caching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Factory Caching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-factory-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Factory Caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factory-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Factory Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-from-bevy-30-beta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration from Bevy 3.0 Beta
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration from Bevy 3.0 Beta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Migration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="api-reference">API Reference</h1>
+<h2 id="core-decorators">Core Decorators</h2>
+<h3 id="injectable">@injectable</h3>
+<p>Decorator that enables dependency injection for functions. Functions with <code>Inject[T]</code> parameters must use this decorator or be called via <code>Container.call()</code>.</p>
+<pre><code class="language-python">from bevy import injectable, Inject
+
+@injectable
+def process_data(service: Inject[UserService], data: str):
+    return service.process(data)
+</code></pre>
+<p><strong>Parameters:</strong>
+- <code>strategy: InjectionStrategy</code> - Controls which parameters are injected (default: <code>REQUESTED_ONLY</code>)
+- <code>params: list[str]</code> - Specific parameter names to inject (used with <code>ONLY</code> strategy)
+- <code>strict: bool</code> - Whether to raise errors for missing dependencies (default: <code>True</code>)
+- <code>debug: bool</code> - Enable debug logging (default: <code>False</code>)
+- <code>type_matching: TypeMatchingStrategy</code> - How to match types (default: <code>SUBCLASS</code>)
+- <code>cache_analysis: bool</code> - Cache function signature analysis (default: <code>True</code>)</p>
+<p><strong>Usage Examples:</strong></p>
+<pre><code class="language-python"># Basic usage
+@injectable
+def basic_function(service: Inject[UserService]):
+    pass
+
+# With options
+@injectable(strategy=InjectionStrategy.ANY_NOT_PASSED, debug=True)
+def configured_function(service: UserService, data: str):
+    pass
+
+# Specific parameters only
+@injectable(strategy=InjectionStrategy.ONLY, params=[&quot;service&quot;])
+def selective_function(service: UserService, manual: str):
+    pass
+</code></pre>
+<h3 id="auto_inject">@auto_inject</h3>
+<p>Decorator that automatically uses the global container for dependency injection. Must be combined with <code>@injectable</code>.</p>
+<pre><code class="language-python">from bevy import auto_inject, injectable, Inject
+
+@auto_inject
+@injectable
+def global_function(service: Inject[UserService]):
+    return service.process()
+
+# Call directly - no container needed
+result = global_function()
+</code></pre>
+<p><strong>Important:</strong> <code>@auto_inject</code> must come before <code>@injectable</code> in the decorator chain.</p>
+<h2 id="type-system">Type System</h2>
+<h3 id="injectt">Inject[T]</h3>
+<p>Type alias for declaring injectable parameters. Preserves IDE type hints and autocomplete.</p>
+<pre><code class="language-python">from bevy import Inject
+
+# Basic injection
+def func(service: Inject[UserService]): pass
+
+# With options
+def func(service: Inject[UserService, Options(qualifier=&quot;primary&quot;)]): pass
+
+# Optional dependency
+def func(service: Inject[UserService | None]): pass
+</code></pre>
+<h3 id="options">Options</h3>
+<p>Configuration class for dependency behavior.</p>
+<pre><code class="language-python">from bevy import Options
+
+class Options:
+    def __init__(
+        self,
+        qualifier: str | None = None,
+        default_factory: Callable[[], Any] | None = None,
+        cache_factory_result: bool = True
+    ):
+        pass
+</code></pre>
+<p><strong>Parameters:</strong>
+- <code>qualifier: str</code> - Named qualifier for multiple instances of same type<br />
+- <code>default_factory: Callable</code> - Factory function to use when dependency not found
+- <code>cache_factory_result: bool</code> - Whether to cache factory results (default: True)</p>
+<p><strong>Usage Examples:</strong></p>
+<pre><code class="language-python"># Qualified dependencies
+@injectable 
+def func(
+    primary_db: Inject[Database, Options(qualifier=&quot;primary&quot;)],
+    backup_db: Inject[Database, Options(qualifier=&quot;backup&quot;)]
+):
+    pass
+
+# Default factory
+@injectable
+def func(
+    logger: Inject[Logger, Options(default_factory=lambda: Logger(&quot;default&quot;))]
+):
+    pass
+
+# Factory caching control
+@injectable  
+def test_func(
+    # Cached factory result (default behavior)
+    db: Inject[Database, Options(default_factory=create_db)],
+    # Fresh instance each call (testing scenarios)
+    test_db: Inject[Database, Options(
+        default_factory=create_test_db, 
+        cache_factory_result=False
+    )]
+):
+    pass
+</code></pre>
+<h2 id="enums">Enums</h2>
+<h3 id="injectionstrategy">InjectionStrategy</h3>
+<p>Controls which function parameters are eligible for injection.</p>
+<pre><code class="language-python">from bevy import InjectionStrategy
+
+class InjectionStrategy(Enum):
+    REQUESTED_ONLY = &quot;requested_only&quot;  # Only Inject[T] parameters (default)
+    ANY_NOT_PASSED = &quot;any_not_passed&quot;  # Any typed parameter not provided
+    ONLY = &quot;only&quot;                      # Only specific parameters (requires params list)
+</code></pre>
+<p><strong>Examples:</strong></p>
+<pre><code class="language-python"># Default - only inject Inject[T] parameters
+@injectable
+def explicit(service: Inject[UserService], manual: str): pass
+
+# Inject any typed parameter not provided at call time
+@injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)
+def auto(service: UserService, data: str): pass
+
+# Only inject specific parameters
+@injectable(strategy=InjectionStrategy.ONLY, params=[&quot;service&quot;])
+def selective(service: UserService, manual: str): pass
+</code></pre>
+<h3 id="typematchingstrategy">TypeMatchingStrategy</h3>
+<p>Controls how types are matched during dependency resolution.</p>
+<pre><code class="language-python">from bevy import TypeMatchingStrategy
+
+class TypeMatchingStrategy(Enum):
+    EXACT_TYPE = &quot;exact_type&quot;    # Exact type match only
+    SUBCLASS = &quot;subclass&quot;        # Allow subclasses (default)
+</code></pre>
+<h2 id="container-and-registry">Container and Registry</h2>
+<h3 id="container">Container</h3>
+<p>Manages dependency instances and handles injection.</p>
+<pre><code class="language-python">from bevy import Container, Registry
+
+class Container:
+    def __init__(self, registry: Registry, *, parent: Container | None = None):
+        &quot;&quot;&quot;Create a new container.
+
+        Args:
+            registry: Registry with factories and hooks
+            parent: Parent container for inheritance (optional)
+        &quot;&quot;&quot;
+
+    def add(self, instance: Any) -&gt; None:
+        &quot;&quot;&quot;Add instance using its type as key.&quot;&quot;&quot;
+
+    def add(self, for_dependency: type, instance: Any) -&gt; None:
+        &quot;&quot;&quot;Add instance for specific type.&quot;&quot;&quot;
+
+    def add(self, for_dependency: type, instance: Any, *, qualifier: str) -&gt; None:
+        &quot;&quot;&quot;Add qualified instance for specific type.&quot;&quot;&quot;
+
+    def get[T](self, dependency: type[T]) -&gt; T:
+        &quot;&quot;&quot;Get instance of dependency type, creating if needed.&quot;&quot;&quot;
+
+    def get[T](self, dependency: type[T], *, default: Any) -&gt; T | Any:
+        &quot;&quot;&quot;Get instance with default fallback.&quot;&quot;&quot;
+
+    def find[T](self, dependency: type[T]) -&gt; Result[T]:
+        &quot;&quot;&quot;Get Result for async/sync dependency resolution.&quot;&quot;&quot;
+
+    def find[T](self, dependency: type[T], *, qualifier: str) -&gt; Result[T]:
+        &quot;&quot;&quot;Get Result for qualified dependency.&quot;&quot;&quot;
+
+    def find[T](self, dependency: type[T], *, default_factory: Callable[[], T]) -&gt; Result[T]:
+        &quot;&quot;&quot;Get Result with default factory.&quot;&quot;&quot;
+
+    def call[**P, R](self, func: Callable[P, R], /, *args: P.args, **kwargs: P.kwargs) -&gt; R:
+        &quot;&quot;&quot;Call function with dependency injection.
+
+        For async functions, returns a coroutine that must be awaited.
+        &quot;&quot;&quot;
+
+    def branch(self) -&gt; Container:
+        &quot;&quot;&quot;Create child container that inherits from this one.&quot;&quot;&quot;
+</code></pre>
+<p><strong>Usage Examples:</strong></p>
+<pre><code class="language-python"># Create container
+registry = Registry()
+container = Container(registry)
+
+# Add instances
+container.add(UserService())
+container.add(Database, ProductionDatabase())
+
+# Add qualified instances
+container.add(Database, primary_db, qualifier=&quot;primary&quot;)
+container.add(Database, backup_db, qualifier=&quot;backup&quot;)
+
+# Get instances (sync)
+service = container.get(UserService)
+db = container.get(Database, default=None)
+
+# Get instances (async)
+service = await container.find(UserService)
+primary_db = await container.find(Database, qualifier=&quot;primary&quot;)
+config = await container.find(Config, default_factory=load_config)
+
+# Call functions with injection (sync)
+@injectable
+def process(service: Inject[UserService], data: str):
+    return service.process(data)
+
+result = container.call(process, data=&quot;test&quot;)
+
+# Call functions with injection (async)
+@injectable
+async def process_async(service: Inject[UserService], data: str):
+    return await service.process_async(data)
+
+result = await container.call(process_async, data=&quot;test&quot;)
+
+# Container branching
+child = container.branch()
+child.add(Database, TestDatabase())  # Override for testing
+</code></pre>
+<h3 id="resultt">Result[T]</h3>
+<p>Represents a deferred dependency resolution that can be executed in either sync or async contexts.</p>
+<pre><code class="language-python">from bevy.find_results import Result
+
+class Result[T]:
+    def get(self) -&gt; T:
+        &quot;&quot;&quot;Resolve dependency synchronously.
+
+        Runs async resolution in a thread with an isolated event loop.
+        Use this only when you cannot use async/await.
+        &quot;&quot;&quot;
+
+    async def get_async(self) -&gt; T:
+        &quot;&quot;&quot;Resolve dependency asynchronously.
+
+        Truly async-native resolution with no thread overhead.
+        Async hooks execute in the same async context.
+        &quot;&quot;&quot;
+
+    def __await__(self):
+        &quot;&quot;&quot;Allow direct awaiting: instance = await result&quot;&quot;&quot;
+</code></pre>
+<p><strong>Usage Examples:</strong></p>
+<pre><code class="language-python"># In async code - recommended
+async def process_order():
+    db = await container.find(Database)  # Truly async
+    cache = await container.find(Cache)
+
+    # Or equivalently
+    result = container.find(Database)
+    db = await result.get_async()
+
+# In sync code
+def sync_process():
+    db = container.find(Database).get()  # Runs async in thread
+    # Or just use get() directly
+    db = container.get(Database)
+
+# All options work with find()
+result = container.find(
+    Database,
+    qualifier=&quot;primary&quot;,
+    default_factory=create_db,
+)
+db = await result  # Direct await
+</code></pre>
+<p><strong>Why use <code>find()</code> over <code>get()</code> in async code?</strong></p>
+<ul>
+<li><code>container.get(T)</code> spawns a thread + event loop for async hooks</li>
+<li><code>await container.find(T)</code> stays truly async with no thread overhead</li>
+<li>Async hooks can do real async work (I/O, delays) when using <code>find()</code></li>
+<li>Dependencies injected into async functions use <code>find()</code> automatically</li>
+</ul>
+<h3 id="registry">Registry</h3>
+<p>Stores factories and hooks for dependency creation.</p>
+<pre><code class="language-python">from bevy import Registry
+
+class Registry:
+    def __init__(self):
+        &quot;&quot;&quot;Create new registry.&quot;&quot;&quot;
+
+    def add_factory(self, factory: Callable, dependency_type: type | None = None):
+        &quot;&quot;&quot;Add factory for dependency type.&quot;&quot;&quot;
+
+    def add_hook(self, hook_type: Hook, callback: Callable):
+        &quot;&quot;&quot;Add hook callback.&quot;&quot;&quot;
+
+    def create_container(self) -&gt; Container:
+        &quot;&quot;&quot;Create container using this registry.&quot;&quot;&quot;
+</code></pre>
+<h2 id="global-functions">Global Functions</h2>
+<h3 id="get_container">get_container</h3>
+<p>Get or create global container.</p>
+<pre><code class="language-python">from bevy import get_container
+
+def get_container() -&gt; Container:
+    &quot;&quot;&quot;Get global container, creating if needed.&quot;&quot;&quot;
+
+def get_container(obj: Container | None) -&gt; Container:
+    &quot;&quot;&quot;Get provided container or global if None.&quot;&quot;&quot;
+
+def get_container(*, using_registry: Registry) -&gt; Container:
+    &quot;&quot;&quot;Create container with specific registry.&quot;&quot;&quot;
+</code></pre>
+<h3 id="get_registry">get_registry</h3>
+<p>Get or create global registry.</p>
+<pre><code class="language-python">from bevy import get_registry
+
+def get_registry() -&gt; Registry:
+    &quot;&quot;&quot;Get global registry, creating if needed.&quot;&quot;&quot;
+
+def get_registry(obj: Registry | None) -&gt; Registry:
+    &quot;&quot;&quot;Get provided registry or global if None.&quot;&quot;&quot;
+</code></pre>
+<h2 id="type-utilities">Type Utilities</h2>
+<h3 id="type-inspection-functions">Type Inspection Functions</h3>
+<p>Utilities for working with injection types.</p>
+<pre><code class="language-python">from bevy.injection_types import (
+    extract_injection_info,
+    is_optional_type,
+    get_non_none_type
+)
+
+def extract_injection_info(annotation: type) -&gt; tuple[type, Options | None]:
+    &quot;&quot;&quot;Extract type and options from Inject[T] or Inject[T, Options] annotation.&quot;&quot;&quot;
+
+def is_optional_type(annotation: type) -&gt; bool:
+    &quot;&quot;&quot;Check if type is optional (T | None).&quot;&quot;&quot;
+
+def get_non_none_type(annotation: type) -&gt; type:
+    &quot;&quot;&quot;Get the non-None type from T | None union.&quot;&quot;&quot;
+</code></pre>
+<p><strong>Examples:</strong></p>
+<pre><code class="language-python"># Extract injection info
+def func(service: Inject[UserService, Options(qualifier=&quot;test&quot;)]): pass
+
+annotation = func.__annotations__['service']
+actual_type, options = extract_injection_info(annotation)
+# actual_type = UserService
+# options.qualifier = &quot;test&quot;
+
+# Optional type checking
+def func(service: UserService | None): pass
+
+annotation = func.__annotations__['service']
+is_optional = is_optional_type(annotation)  # True
+actual_type = get_non_none_type(annotation)  # UserService
+</code></pre>
+<h2 id="hooks-system">Hooks System</h2>
+<h3 id="hook-types">Hook Types</h3>
+<p>Available hook types for extending behavior.</p>
+<pre><code class="language-python">from bevy.hooks import Hook
+
+class Hook(Enum):
+    # Core instance hooks
+    GET_INSTANCE = &quot;get_instance&quot;
+    GOT_INSTANCE = &quot;got_instance&quot; 
+    CREATE_INSTANCE = &quot;create_instance&quot;
+    CREATED_INSTANCE = &quot;created_instance&quot;
+    HANDLE_UNSUPPORTED_DEPENDENCY = &quot;handle_unsupported_dependency&quot;
+
+    # Injection-specific hooks
+    INJECTION_REQUEST = &quot;injection_request&quot;
+    INJECTION_RESPONSE = &quot;injection_response&quot;
+    POST_INJECTION_CALL = &quot;post_injection_call&quot;
+    FACTORY_MISSING_TYPE = &quot;factory_missing_type&quot;
+    MISSING_INJECTABLE = &quot;missing_injectable&quot;
+</code></pre>
+<h3 id="hook-decorators">Hook Decorators</h3>
+<p>Convenient decorators for registering hooks.</p>
+<pre><code class="language-python">from bevy.hooks import hooks
+
+@hooks.INJECTION_REQUEST
+def log_injection_request(container, context):
+    print(f&quot;Injecting {context.requested_type}&quot;)
+
+@hooks.POST_INJECTION_CALL
+def log_execution_time(container, context):
+    print(f&quot;Executed in {context.execution_time_ms}ms&quot;)
+
+# Register with registry
+registry = get_registry()
+log_injection_request.register_hook(registry)
+log_execution_time.register_hook(registry)
+</code></pre>
+<h3 id="hook-context-classes">Hook Context Classes</h3>
+<p>Rich context objects provided to hooks.</p>
+<pre><code class="language-python">from bevy.hooks import InjectionContext, PostInjectionContext
+
+@dataclass
+class InjectionContext:
+    function_name: str
+    parameter_name: str
+    requested_type: type
+    options: Options | None
+    injection_strategy: InjectionStrategy
+    type_matching: TypeMatchingStrategy
+    strict_mode: bool
+    debug_mode: bool
+    injection_chain: list[str]
+
+@dataclass  
+class PostInjectionContext:
+    function_name: str
+    injected_params: dict[str, Any]
+    result: Any
+    injection_strategy: InjectionStrategy
+    debug_mode: bool
+    execution_time_ms: float
+</code></pre>
+<h2 id="bundled-utilities">Bundled Utilities</h2>
+<h3 id="type-factory-hook">Type Factory Hook</h3>
+<p>Automatic type creation hook for simple dependency management.</p>
+<pre><code class="language-python">from bevy.bundled.type_factory_hook import type_factory
+
+# Register with registry to enable automatic type creation
+registry = get_registry()
+type_factory.register_hook(registry)
+
+# Now any class can be automatically created
+@injectable
+def func(service: Inject[UserService]):  # UserService() created automatically
+    pass
+</code></pre>
+<h2 id="error-handling">Error Handling</h2>
+<h3 id="strict-vs-non-strict-mode">Strict vs Non-Strict Mode</h3>
+<p>Control error handling behavior for missing dependencies.</p>
+<pre><code class="language-python"># Strict mode (default) - raises errors
+@injectable(strict=True)
+def strict_func(service: Inject[MissingService]):
+    pass  # Raises exception if MissingService not found
+
+# Non-strict mode - injects None
+@injectable(strict=False)
+def lenient_func(service: Inject[MissingService]):
+    if service is None:
+        # Handle missing dependency gracefully
+        pass
+</code></pre>
+<h3 id="optional-dependencies">Optional Dependencies</h3>
+<p>Use union types for optional dependencies.</p>
+<pre><code class="language-python">@injectable
+def handle_optional(
+    required: Inject[UserService],           # Must be available
+    optional: Inject[CacheService | None]    # Can be None
+):
+    if optional:
+        # Use optional service
+        pass
+</code></pre>
+<h2 id="factory-caching">Factory Caching</h2>
+<h3 id="default-factory-caching">Default Factory Caching</h3>
+<p>Default factories are cached by factory function to optimize performance while maintaining semantic correctness.</p>
+<pre><code class="language-python">def create_expensive_db():
+    print(&quot;Creating expensive database connection...&quot;)
+    return Database(&quot;expensive://connection&quot;)
+
+@injectable
+def service_a(db: Inject[Database, Options(default_factory=create_expensive_db)]):
+    return f&quot;Service A: {db.url}&quot;
+
+@injectable 
+def service_b(db: Inject[Database, Options(default_factory=create_expensive_db)]):
+    return f&quot;Service B: {db.url}&quot;
+
+# Factory is called only once - same instance shared
+container.call(service_a)  # &quot;Creating expensive database connection...&quot;
+container.call(service_b)  # No factory call - reuses cached instance
+</code></pre>
+<h3 id="caching-control">Caching Control</h3>
+<p>Control factory caching behavior with <code>cache_factory_result</code>:</p>
+<pre><code class="language-python"># Cached (default) - same factory = same instance
+@injectable
+def cached_service(
+    db: Inject[Database, Options(default_factory=create_db)]
+):
+    pass
+
+# Uncached - fresh instance each time
+@injectable
+def fresh_service(
+    db: Inject[Database, Options(
+        default_factory=create_test_db,
+        cache_factory_result=False
+    )]
+):
+    pass
+</code></pre>
+<h3 id="factory-isolation">Factory Isolation</h3>
+<p>Different factory functions create isolated instances:</p>
+<pre><code class="language-python">def create_prod_db():
+    return Database(&quot;postgresql://prod&quot;)
+
+def create_test_db():
+    return Database(&quot;sqlite://test&quot;)
+
+@injectable
+def prod_service(db: Inject[Database, Options(default_factory=create_prod_db)]):
+    pass  # Gets production database
+
+@injectable
+def test_service(db: Inject[Database, Options(default_factory=create_test_db)]):
+    pass  # Gets test database (different instance)
+</code></pre>
+<h2 id="configuration">Configuration</h2>
+<h3 id="debug-mode">Debug Mode</h3>
+<p>Enable detailed logging for troubleshooting.</p>
+<pre><code class="language-python">@injectable(debug=True)
+def debug_function(service: Inject[UserService]):
+    pass
+
+# Output:
+# [BEVY DEBUG] Resolving &lt;class 'UserService'&gt; with options None
+# [BEVY DEBUG] Injected service: &lt;class 'UserService'&gt; = &lt;UserService object at 0x...&gt;
+</code></pre>
+<h3 id="context-variables">Context Variables</h3>
+<p>Control global context behavior.</p>
+<pre><code class="language-python">import os
+
+# Disable global context (testing)
+os.environ[&quot;BEVY_ENABLE_GLOBAL_CONTEXT&quot;] = &quot;False&quot;
+
+# This will raise GlobalContextDisabledError
+container = get_container()  # Error!
+</code></pre>
+<h2 id="migration-from-bevy-30-beta">Migration from Bevy 3.0 Beta</h2>
+<h3 id="api-changes">API Changes</h3>
+<table>
+<thead>
+<tr>
+<th>Bevy 3.0 Beta</th>
+<th>Bevy 3.1 Beta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@inject</code></td>
+<td><code>@injectable</code> or <code>@auto_inject</code> + <code>@injectable</code></td>
+</tr>
+<tr>
+<td><code>dependency()</code></td>
+<td><code>Inject[T]</code></td>
+</tr>
+<tr>
+<td><code>dependency(factory)</code></td>
+<td><code>Inject[T, Options(default_factory=factory)]</code></td>
+</tr>
+<tr>
+<td>Default parameters</td>
+<td>Type annotations only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-migration">Example Migration</h3>
+<pre><code class="language-python"># OLD (3.0 beta)
+@inject
+def old_function(
+    service: UserService = dependency(),
+    db: Database = dependency(custom_factory)
+):
+    pass
+
+# Current (3.1 beta)
+@auto_inject
+@injectable
+def process_user(
+    service: Inject[UserService],
+    db: Inject[Database, Options(default_factory=custom_factory)]
+):
+    pass
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Type Hints</strong>: Always use proper type annotations with <code>Inject[T]</code></li>
+<li><strong>IDE Support</strong>: The system preserves full IDE autocomplete and type checking</li>
+<li><strong>Container Management</strong>: Use container branching for test isolation</li>
+<li><strong>Hook Registration</strong>: Register <code>type_factory</code> hook for convenience</li>
+<li><strong>Optional Dependencies</strong>: Use <code>T | None</code> for non-critical dependencies</li>
+<li><strong>Debug Mode</strong>: Enable during development for troubleshooting</li>
+<li><strong>Error Handling</strong>: Use strict mode in production, non-strict for graceful degradation</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

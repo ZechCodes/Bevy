@@ -1,0 +1,812 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>Bevy Usage Guide - Bevy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#bevy-usage-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Bevy" class="md-header__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bevy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Bevy Usage Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Bevy" class="md-nav__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bevy
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BEVY_QUICKSTART.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-configure-the-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Configure the Registry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-establish-a-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Establish a Container
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-register-dependencies-intentionally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Register Dependencies Intentionally
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-invoke-with-auto_inject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Invoke with @auto_inject
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-async-native-dependency-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Async-Native Dependency Resolution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Async-Native Dependency Resolution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-find-in-async-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using find() in Async Code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#async-function-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Function Injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-result-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Result Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-find-instead-of-get-in-async-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why find() Instead of get() in Async Code?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options-work-the-same" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options Work the Same
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-use-options-for-advanced-wiring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Use Options for Advanced Wiring
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-embrace-hooks-for-cross-cutting-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Embrace Hooks for Cross-Cutting Needs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Embrace Hooks for Cross-Cutting Needs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hook-reference-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook Reference at a Glance
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Common Patterns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-troubleshooting-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Troubleshooting Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="bevy-usage-guide">Bevy Usage Guide</h1>
+<p>This guide highlights the core workflows in Bevy 3.1, plus patterns and practices to keep your projects maintainable.</p>
+<h2 id="1-configure-the-registry">1. Configure the Registry</h2>
+<p>Use the shared registry to declare factories and hooks <em>before</em> any containers exist. Pull it once and keep configuration in dedicated modules so every container shares the same wiring.</p>
+<pre><code class="language-python">from bevy import get_registry
+from bevy.hooks import hooks
+
+registry = get_registry()
+
+# Register hook callbacks
+@hooks.CREATE_INSTANCE
+def audit_creation(container, dependency, context):
+    ...
+
+audit_creation.register_hook(registry)
+registry.add_factory(lambda container: Logger(container.get(Config)), Logger)
+</code></pre>
+<p>Key points:
+- <code>get_registry()</code> returns the process-wide registry; configure it during startup.
+- Register factories for types that need custom construction or expensive setup.
+- Factories can be sync or async functions - async factories are properly awaited.
+- Register hooks before containers to keep observability and overrides consistent everywhere.</p>
+<h2 id="2-establish-a-container">2. Establish a Container</h2>
+<pre><code class="language-python">from bevy import get_container
+
+container = get_container()  # global singleton
+branch = container.branch()  # isolated container for tests/tasks
+</code></pre>
+<p>Keep one global container for production code. Use <code>Container.branch()</code> for request handling, tests, or any workflow that needs isolated overrides.</p>
+<h2 id="3-register-dependencies-intentionally">3. Register Dependencies Intentionally</h2>
+<pre><code class="language-python">from bevy import injectable, Inject
+
+class EmailService: ...
+class TemplateService: ...
+
+class Notifier:
+    @injectable
+    def __init__(
+        self,
+        email: Inject[EmailService],
+        templates: Inject[TemplateService],
+    ):
+        self.email = email
+        self.templates = templates
+</code></pre>
+<ul>
+<li>Decorate constructor-style callables (<code>__init__</code>, factory functions) so the class itself stays a normal <code>type</code> for inheritance.</li>
+<li>Register instances explicitly when they have runtime data:</li>
+</ul>
+<pre><code class="language-python">container.add(EmailService, EmailService())
+container.add(TemplateService, TemplateService(cache_dir=&quot;/tmp&quot;))
+</code></pre>
+<ul>
+<li>Register factories on the registry for types that need custom construction:</li>
+</ul>
+<pre><code class="language-python"># Sync factory
+registry.add_factory(lambda container: TemplateService(cache_dir=&quot;/tmp&quot;), TemplateService)
+
+# Async factory - properly awaited during resolution
+async def create_database(container):
+    config = container.get(Config)
+    db = Database(config.db_url)
+    await db.connect()
+    return db
+
+registry.add_factory(create_database, Database)
+</code></pre>
+<h2 id="4-invoke-with-auto_inject">4. Invoke with <code>@auto_inject</code></h2>
+<pre><code class="language-python">from bevy import auto_inject
+
+@auto_inject
+@injectable
+async def send_welcome(user_id: str, notifier: Inject[Notifier]):
+    await notifier.send(user_id)
+</code></pre>
+<ul>
+<li>Call <code>send_welcome(...)</code> directly and dependencies resolve from the global container.</li>
+<li>For alternate wiring, call <code>container.call(send_welcome, dependencies...)</code>; the calling container drives injection, while still honoring other decorators.</li>
+</ul>
+<h2 id="5-async-native-dependency-resolution">5. Async-Native Dependency Resolution</h2>
+<p>Bevy is built async-first. For async code, use <code>container.find()</code> which returns a <code>Result</code> that can be resolved in either sync or async contexts.</p>
+<h3 id="using-find-in-async-code">Using <code>find()</code> in Async Code</h3>
+<pre><code class="language-python"># ✅ Best practice: Use find() in async code
+async def process_order(order_id: str):
+    db = await container.find(Database)
+    cache = await container.find(Cache, qualifier=&quot;redis&quot;)
+    config = await container.find(Config, default_factory=load_default_config)
+
+    # Your async logic here
+    await db.save(order_id)
+</code></pre>
+<h3 id="async-function-injection">Async Function Injection</h3>
+<p>Async functions decorated with <code>@injectable</code> work seamlessly with <code>container.call()</code>:</p>
+<pre><code class="language-python">@injectable
+async def send_notification(
+    user_id: str,
+    email: Inject[EmailService],
+    db: Inject[Database]
+):
+    user = await db.get_user(user_id)
+    await email.send(user.email, &quot;Welcome!&quot;)
+
+# Call it - returns a coroutine
+await container.call(send_notification, user_id=&quot;123&quot;)
+</code></pre>
+<h3 id="the-result-type">The <code>Result</code> Type</h3>
+<p><code>container.find()</code> returns a <code>Result[T]</code> that can be resolved in multiple ways:</p>
+<pre><code class="language-python">result = container.find(Service)
+
+# Async context - truly async resolution with no thread overhead
+instance = await result  # Uses __await__
+# OR
+instance = await result.get_async()
+
+# Sync context - runs async resolution in a thread
+instance = result.get()
+
+# Sync container.get() - shorthand for find().get()
+instance = container.get(Service)
+</code></pre>
+<h3 id="why-find-instead-of-get-in-async-code">Why <code>find()</code> Instead of <code>get()</code> in Async Code?</h3>
+<pre><code class="language-python"># ❌ Avoid: get() in async code creates thread overhead
+async def bad_example():
+    service = container.get(Service)  # Spawns thread + event loop
+    await service.do_work()
+
+# ✅ Better: find() in async code stays truly async
+async def good_example():
+    service = await container.find(Service)  # No thread overhead
+    await service.do_work()
+</code></pre>
+<p><strong>Key differences:</strong>
+- <code>container.get(T)</code> → Sync operation, runs async hooks in isolated threads
+- <code>await container.find(T)</code> → Async operation, runs async hooks in same async context
+- Async hooks can do real async work (I/O, delays) when using <code>find()</code>
+- Dependencies injected into async functions use <code>find()</code> automatically</p>
+<h3 id="options-work-the-same">Options Work the Same</h3>
+<p>All <code>Options</code> work with both <code>find()</code> and <code>get()</code>:</p>
+<pre><code class="language-python"># Qualified dependencies
+primary_db = await container.find(Database, qualifier=&quot;primary&quot;)
+
+# Default factories
+config = await container.find(Config, default_factory=load_config)
+
+# Non-cached factory calls
+logger = await container.find(Logger,
+    default_factory=create_logger,
+    cache_factory_result=False
+)
+</code></pre>
+<h2 id="6-use-options-for-advanced-wiring">6. Use <code>Options</code> for Advanced Wiring</h2>
+<pre><code class="language-python">from bevy import Options
+
+@injectable
+def build_report(
+    primary_db: Inject[Database, Options(qualifier=&quot;primary&quot;)],
+    backup_db: Inject[Database, Options(qualifier=&quot;backup&quot;)],
+    config: Inject[Config, Options(default_factory=load_config)],
+): ...
+</code></pre>
+<ul>
+<li><strong>Qualifiers</strong> let you keep multiple variants of the same type.</li>
+<li><strong><code>default_factory</code></strong> fills gaps when no instance is registered.</li>
+<li><strong><code>optional=True</code></strong> or <code>Inject[Thing | None]</code> handles soft dependencies gracefully.</li>
+</ul>
+<h2 id="7-embrace-hooks-for-cross-cutting-needs">7. Embrace Hooks for Cross-Cutting Needs</h2>
+<p>The async-aware hook system lets you add tracing, caching, or guardrails without touching call sites. Hooks accept sync or async callbacks and forward rich context so you can make informed decisions.</p>
+<pre><code class="language-python">from bevy.hooks import hooks
+from tramp.optionals import Optional
+
+@hooks.INJECTION_REQUEST
+def log_request(container, injection_context):
+    print(f&quot;Injecting {injection_context.requested_type} for parameter {injection_context.parameter_name}&quot;)
+    # Return Nothing to continue normal resolution
+    return Optional.Nothing()
+
+log_request.register_hook(container.registry)
+</code></pre>
+<h3 id="hook-reference-at-a-glance">Hook Reference at a Glance</h3>
+<table>
+<thead>
+<tr>
+<th>Hook</th>
+<th>When it fires</th>
+<th>Value argument</th>
+<th>Expected return</th>
+<th>Notable context keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET_INSTANCE</code></td>
+<td>Before the container returns something from <code>.get()</code> or <code>.find()</code></td>
+<td>Requested type</td>
+<td><code>Optional.Some(instance)</code> to short-circuit resolution; <code>Optional.Nothing()</code> to continue</td>
+<td><code>injection_context</code> (when called from injection), plus anything you passed to <code>Container.get(context=...)</code></td>
+</tr>
+<tr>
+<td><code>GOT_INSTANCE</code></td>
+<td>After an instance is fetched and before caching</td>
+<td>Resolved instance</td>
+<td><code>Optional.Some(new_instance)</code> to rewrite before caching; <code>Optional.Nothing()</code> keeps the original</td>
+<td>Same as above</td>
+</tr>
+<tr>
+<td><code>CREATE_INSTANCE</code></td>
+<td>Just before Bevy tries registered factories</td>
+<td>Requested type</td>
+<td><code>Optional.Some(instance)</code> to provide/custom-cache; <code>Optional.Nothing()</code> lets Bevy try factories</td>
+<td><code>injection_context</code></td>
+</tr>
+<tr>
+<td><code>CREATED_INSTANCE</code></td>
+<td>Immediately after a factory-built instance is created</td>
+<td>Newly created instance</td>
+<td><code>Optional.Some(new_instance)</code> to wrap/modify; <code>Optional.Nothing()</code> leaves it unchanged</td>
+<td>Same as above</td>
+</tr>
+<tr>
+<td><code>HANDLE_UNSUPPORTED_DEPENDENCY</code></td>
+<td>When no factory can create the type</td>
+<td>Requested type</td>
+<td><code>Optional.Some(fallback)</code> to recover; <code>Optional.Nothing()</code> raises <code>DependencyResolutionError</code></td>
+<td><code>injection_context</code></td>
+</tr>
+<tr>
+<td><code>INJECTION_REQUEST</code></td>
+<td>Before resolving a dependency for injection</td>
+<td><code>InjectionContext</code> with parameter info</td>
+<td><code>Optional.Some(instance)</code> to provide value directly; <code>Optional.Nothing()</code> to continue resolution</td>
+<td><code>injection_context</code> includes function name, parameter name, requested type, defaults</td>
+</tr>
+<tr>
+<td><code>INJECTION_RESPONSE</code></td>
+<td>After resolving a dependency for injection</td>
+<td>Resolved instance</td>
+<td><code>Optional.Some(new_instance)</code> to transform; <code>Optional.Nothing()</code> keeps original</td>
+<td>Same as above</td>
+</tr>
+</tbody>
+</table>
+<p>Returning <code>Optional.Nothing()</code> (or simply <code>None</code> for legacy two-argument hooks) signals "no change, continue the default flow."</p>
+<p>Hooks are fully async-aware and can be either sync or async functions. When using <code>await container.find(T)</code>, async hooks execute in the same async context with no thread overhead.</p>
+<h2 id="8-common-patterns">8. Common Patterns</h2>
+<ul>
+<li><strong>Configuration modules</strong>: group <code>container.add(...)</code> calls in one module and import it at startup.</li>
+<li><strong>Feature toggles</strong>: register alternates on a branched container and pass it where needed.</li>
+<li><strong>Background jobs</strong>: spin up a branch per job so overrides don't leak across tasks.</li>
+<li><strong>Tests</strong>: branch, override dependencies, and dispose of the branch when the test ends.</li>
+</ul>
+<h2 id="9-best-practices">9. Best Practices</h2>
+<ul>
+<li>Keep container mutations in deterministic places (boot scripts, fixtures) to avoid hidden state.</li>
+<li>Avoid decorating the class object with <code>@injectable</code>; decorate callables (<code>__init__</code>, factories) so inheritance keeps working.</li>
+<li>Prefer <code>Inject[T]</code> annotations, even when using permissive strategies—this keeps types explicit.</li>
+<li>Use <code>InjectionStrategy.ANY_NOT_PASSED</code> sparingly; it's great for handlers but can hide missing dependencies.</li>
+<li>When layering decorators, apply <code>@auto_inject</code> closest to the function so wrappers don't block injection.</li>
+<li>Leverage async hooks to observe long-running workflows; avoid side effects inside hooks that could raise errors.</li>
+<li><strong>In async code, use <code>await container.find(T)</code> instead of <code>container.get(T)</code></strong> to avoid unnecessary thread overhead.</li>
+</ul>
+<h2 id="10-troubleshooting-checklist">10. Troubleshooting Checklist</h2>
+<ul>
+<li><strong>Missing dependency?</strong> Ensure an instance or factory is registered on the container you’re calling with.</li>
+<li><strong>Unexpected instance?</strong> Check for leftover overrides on a shared container—branch instead.</li>
+<li><strong>Double execution?</strong> Wrapping decorators may run inner functions twice; ensure idempotency or move logic to injected services.</li>
+</ul>
+<p>With these patterns, Bevy stays predictable across services, scripts, async workers, and tests while keeping injection setup minimal.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

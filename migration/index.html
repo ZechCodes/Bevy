@@ -1,0 +1,1418 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../api/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>Migration Guide - Bevy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#migration-guide-bevy-30-beta-to-31-beta" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Bevy" class="md-header__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bevy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Migration Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Bevy" class="md-nav__button md-logo" aria-label="Bevy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bevy
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BEVY_QUICKSTART.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview-of-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview of Changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-decorator-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Decorator Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-type-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Type Annotations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-factory-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Factory Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Migration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step-by-Step Migration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-update-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Update Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-replace-decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Replace Decorators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-update-parameter-declarations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Update Parameter Declarations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-update-container-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Update Container Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-update-class-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Update Class Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-migration-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Migration Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Migration Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-simple-service-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 1: Simple Service Classes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-container-based-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 2: Container-Based Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-optional-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 3: Optional Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-4-configuration-based-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 4: Configuration-Based Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features Available
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Features Available">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-injection-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Injection Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Debug Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-rich-hook-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Rich Hook System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-error-handling-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Error Handling Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Help
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview-of-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview of Changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-decorator-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Decorator Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-type-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Type Annotations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-factory-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Factory Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Migration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step-by-Step Migration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-update-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Update Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-replace-decorators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Replace Decorators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-update-parameter-declarations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Update Parameter Declarations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-update-container-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Update Container Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-update-class-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Update Class Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-migration-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Migration Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Migration Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-simple-service-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 1: Simple Service Classes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-container-based-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 2: Container-Based Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-optional-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 3: Optional Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-4-configuration-based-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 4: Configuration-Based Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features Available
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Features Available">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-injection-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Injection Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Debug Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-rich-hook-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Rich Hook System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-error-handling-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Error Handling Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Help
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="migration-guide-bevy-30-beta-to-31-beta">Migration Guide: Bevy 3.0 Beta to 3.1 Beta</h1>
+<p>This guide will help you migrate your code from Bevy 3.0 beta to Bevy 3.1 beta.</p>
+<h2 id="overview-of-changes">Overview of Changes</h2>
+<p>Bevy 3.1 beta introduces a dependency injection system with the following key improvements:</p>
+<ul>
+<li>✅ <strong>Type-safe</strong>: Full IDE autocomplete and type checking with <code>Inject[T]</code></li>
+<li>✅ <strong>Python 3.12+ features</strong>: Uses modern type system with <code>type</code> keyword</li>
+<li>✅ <strong>Rich hook system</strong>: Enhanced extensibility with detailed context</li>
+<li>✅ <strong>Better debugging</strong>: Comprehensive debug mode and execution tracking</li>
+<li>✅ <strong>Flexible strategies</strong>: Multiple injection strategies for different use cases</li>
+<li>✅ <strong>Optional dependencies</strong>: Native support for <code>T | None</code> types</li>
+</ul>
+<h2 id="breaking-changes">Breaking Changes</h2>
+<h3 id="1-decorator-changes">1. Decorator Changes</h3>
+<p><strong>Before (3.0 beta):</strong></p>
+<pre><code class="language-python">from bevy import inject, dependency
+
+@inject
+def process_data(service: UserService = dependency()):
+    return service.process()
+</code></pre>
+<p><strong>After (3.1 beta):</strong></p>
+<pre><code class="language-python">from bevy import injectable, auto_inject, Inject
+
+# Option 1: Use with container
+@injectable
+def process_data(service: Inject[UserService]):
+    return service.process()
+
+# Option 2: Use with global container
+@auto_inject
+@injectable
+def process_data(service: Inject[UserService]):
+    return service.process()
+</code></pre>
+<h3 id="2-type-annotations">2. Type Annotations</h3>
+<p><strong>Before (3.0 beta):</strong></p>
+<pre><code class="language-python"># Default parameter approach
+def func(service: UserService = dependency()): pass
+</code></pre>
+<p><strong>After (3.1 beta):</strong></p>
+<pre><code class="language-python"># Type annotation approach
+def func(service: Inject[UserService]): pass
+</code></pre>
+<h3 id="3-factory-functions">3. Factory Functions</h3>
+<p><strong>Before (3.0 beta):</strong></p>
+<pre><code class="language-python">def custom_factory(container):
+    return UserService(&quot;custom&quot;)
+
+@inject
+def func(service: UserService = dependency(custom_factory)):
+    pass
+</code></pre>
+<p><strong>After (3.1 beta):</strong></p>
+<pre><code class="language-python">from bevy import Options
+
+def custom_factory():
+    return UserService(&quot;custom&quot;)
+
+@injectable
+def func(service: Inject[UserService, Options(default_factory=custom_factory)]):
+    pass
+</code></pre>
+<h2 id="step-by-step-migration">Step-by-Step Migration</h2>
+<h3 id="step-1-update-imports">Step 1: Update Imports</h3>
+<p><strong>Before:</strong></p>
+<pre><code class="language-python">from bevy import inject, dependency, get_registry, get_container
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="language-python">from bevy import injectable, auto_inject, Inject, Options, get_registry, get_container
+</code></pre>
+<h3 id="step-2-replace-decorators">Step 2: Replace Decorators</h3>
+<p>Replace all <code>@inject</code> decorators:</p>
+<p><strong>Simple functions (global):</strong></p>
+<pre><code class="language-python"># OLD
+@inject
+def func(service: UserService = dependency()):
+    pass
+
+# NEW
+@auto_inject
+@injectable
+def func(service: Inject[UserService]):
+    pass
+</code></pre>
+<p><strong>Functions called via container:</strong></p>
+<pre><code class="language-python"># OLD
+def func(service: UserService = dependency()):
+    pass
+
+container.call(func)
+
+# NEW
+@injectable
+def func(service: Inject[UserService]):
+    pass
+
+container.call(func)
+</code></pre>
+<h3 id="step-3-update-parameter-declarations">Step 3: Update Parameter Declarations</h3>
+<p>Replace <code>dependency()</code> defaults with <code>Inject[T]</code> annotations:</p>
+<p><strong>Basic dependencies:</strong></p>
+<pre><code class="language-python"># OLD
+def func(
+    service: UserService = dependency(),
+    db: Database = dependency()
+):
+    pass
+
+# NEW
+def func(
+    service: Inject[UserService],
+    db: Inject[Database]
+):
+    pass
+</code></pre>
+<p><strong>Custom factories:</strong></p>
+<pre><code class="language-python"># OLD
+def func(
+    service: UserService = dependency(my_factory)
+):
+    pass
+
+# NEW
+def func(
+    service: Inject[UserService, Options(default_factory=my_factory)]
+):
+    pass
+</code></pre>
+<h3 id="step-4-update-container-setup">Step 4: Update Container Setup</h3>
+<p><strong>Before (3.0 beta):</strong></p>
+<pre><code class="language-python">from bevy import get_registry
+from bevy.factories import create_type_factory
+
+registry = get_registry()
+registry.add_factory(create_type_factory(UserService))
+</code></pre>
+<p><strong>After (3.1 beta):</strong></p>
+<pre><code class="language-python">from bevy import get_registry
+from bevy.bundled.type_factory_hook import type_factory
+
+# Option 1: Use type_factory hook for automatic creation
+registry = get_registry()
+type_factory.register_hook(registry)
+
+# Option 2: Still use explicit factories
+from bevy.factories import create_type_factory
+registry.add_factory(create_type_factory(UserService))
+</code></pre>
+<h3 id="step-5-update-class-dependencies">Step 5: Update Class Dependencies</h3>
+<p><strong>Before (3.0 beta):</strong></p>
+<pre><code class="language-python">class UserService:
+    @inject
+    def __init__(self, db: Database = dependency()):
+        self.db = db
+</code></pre>
+<p><strong>After (3.1 beta):</strong></p>
+<pre><code class="language-python">class UserService:
+    @injectable
+    def __init__(self, db: Inject[Database]):
+        self.db = db
+
+# Or use constructor injection automatically
+class UserService:
+    def __init__(self, db: Database):  # Will be injected if using ANY_NOT_PASSED
+        self.db = db
+</code></pre>
+<h2 id="common-migration-patterns">Common Migration Patterns</h2>
+<h3 id="pattern-1-simple-service-classes">Pattern 1: Simple Service Classes</h3>
+<p><strong>Before:</strong></p>
+<pre><code class="language-python">@inject
+def get_user_data(user_id: str, service: UserService = dependency()):
+    return service.get_user(user_id)
+
+registry = get_registry()
+registry.add_factory(create_type_factory(UserService))
+
+result = get_user_data(&quot;123&quot;)
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="language-python">@auto_inject
+@injectable
+def get_user_data(user_id: str, service: Inject[UserService]):
+    return service.get_user(user_id)
+
+registry = get_registry()
+type_factory.register_hook(registry)  # Enables automatic creation
+
+result = get_user_data(&quot;123&quot;)
+</code></pre>
+<h3 id="pattern-2-container-based-testing">Pattern 2: Container-Based Testing</h3>
+<p><strong>Before:</strong></p>
+<pre><code class="language-python"># Test setup
+registry = Registry()
+registry.add_factory(create_type_factory(Database, &quot;test&quot;))
+container = registry.create_container()
+
+def process_data(db: Database = dependency()):
+    return db.process()
+
+result = container.call(process_data)
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="language-python"># Test setup  
+registry = Registry()
+type_factory.register_hook(registry)
+container = Container(registry)
+container.add(Database(&quot;test&quot;))  # Override default
+
+@injectable
+def process_data(db: Inject[Database]):
+    return db.process()
+
+result = container.call(process_data)
+</code></pre>
+<h3 id="pattern-3-optional-dependencies">Pattern 3: Optional Dependencies</h3>
+<p><strong>Before:</strong></p>
+<pre><code class="language-python"># Not directly supported - had to use try/catch or manual checks
+@inject
+def func(required: UserService = dependency()):
+    try:
+        optional = get_container().get(CacheService)
+    except:
+        optional = None
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="language-python"># Native support for optional dependencies
+@injectable
+def func(
+    required: Inject[UserService],
+    optional: Inject[CacheService | None]
+):
+    if optional:
+        # Use optional service
+        pass
+</code></pre>
+<h3 id="pattern-4-configuration-based-dependencies">Pattern 4: Configuration-Based Dependencies</h3>
+<p><strong>Before:</strong></p>
+<pre><code class="language-python">def config_factory(container):
+    return AppConfig(env=&quot;production&quot;)
+
+@inject
+def app_startup(config: AppConfig = dependency(config_factory)):
+    pass
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="language-python">@injectable
+def app_startup(
+    config: Inject[AppConfig, Options(default_factory=lambda: AppConfig(env=&quot;production&quot;))]
+):
+    pass
+</code></pre>
+<h2 id="features-available">Features Available</h2>
+<h3 id="1-injection-strategies">1. Injection Strategies</h3>
+<p>Control which parameters get injected:</p>
+<pre><code class="language-python"># Only inject Inject[T] parameters (default)
+@injectable
+def explicit(service: Inject[UserService], manual: str): pass
+
+# Inject any typed parameter not provided
+@injectable(strategy=InjectionStrategy.ANY_NOT_PASSED)  
+def auto(service: UserService, manual: str): pass
+
+# Only inject specific parameters
+@injectable(strategy=InjectionStrategy.ONLY, params=[&quot;service&quot;])
+def selective(service: UserService, manual: str): pass
+</code></pre>
+<h3 id="2-debug-mode">2. Debug Mode</h3>
+<p>Get detailed injection logging:</p>
+<pre><code class="language-python">@injectable(debug=True)
+def debug_function(service: Inject[UserService]):
+    pass
+
+# Output:
+# [BEVY DEBUG] Resolving &lt;class 'UserService'&gt; with options None
+# [BEVY DEBUG] Injected service: &lt;class 'UserService'&gt; = &lt;UserService object at 0x...&gt;
+</code></pre>
+<h3 id="3-rich-hook-system">3. Rich Hook System</h3>
+<p>Hooks with detailed context:</p>
+<pre><code class="language-python">from bevy.hooks import hooks
+
+@hooks.INJECTION_REQUEST
+def log_injection_request(container, context):
+    print(f&quot;Injecting {context.requested_type.__name__} for {context.function_name}&quot;)
+
+@hooks.POST_INJECTION_CALL
+def log_execution_time(container, context):
+    print(f&quot;Function {context.function_name} took {context.execution_time_ms:.2f}ms&quot;)
+</code></pre>
+<h3 id="4-error-handling-options">4. Error Handling Options</h3>
+<p>Choose between strict and lenient error handling:</p>
+<pre><code class="language-python"># Strict mode (default) - raises errors for missing dependencies
+@injectable(strict=True)
+def strict_func(service: Inject[UserService]): pass
+
+# Non-strict mode - injects None for missing dependencies
+@injectable(strict=False)  
+def lenient_func(service: Inject[UserService]):
+    if service is None:
+        # Handle gracefully
+        pass
+</code></pre>
+<h2 id="migration-checklist">Migration Checklist</h2>
+<ul>
+<li>[ ] Update imports to use new decorators and types</li>
+<li>[ ] Replace <code>@inject</code> with <code>@injectable</code> or <code>@auto_inject</code> + <code>@injectable</code></li>
+<li>[ ] Replace <code>dependency()</code> defaults with <code>Inject[T]</code> annotations</li>
+<li>[ ] Update factory usage to use <code>Options(default_factory=...)</code></li>
+<li>[ ] Register <code>type_factory</code> hook for automatic type creation</li>
+<li>[ ] Update class constructors to use injection system</li>
+<li>[ ] Test container setup and dependency resolution</li>
+<li>[ ] Update any custom hooks to use hook types  </li>
+<li>[ ] Consider using optional dependency features</li>
+<li>[ ] Enable debug mode during migration for troubleshooting</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<p><strong>1. "Missing dependencies" errors</strong>
+- Ensure <code>type_factory</code> hook is registered for automatic creation
+- Or add explicit factories/instances to containers</p>
+<p><strong>2. "Type errors" with IDE</strong>
+- Make sure you're using <code>Inject[T]</code> annotations correctly
+- Check that type imports are available in the function's namespace</p>
+<p><strong>3. "@auto_inject requires @injectable" errors</strong>
+- Ensure decorator order: <code>@auto_inject</code> comes before <code>@injectable</code></p>
+<p><strong>4. "Circular import" issues</strong>
+- Use factory functions or lazy initialization
+- Consider restructuring module dependencies</p>
+<h3 id="getting-help">Getting Help</h3>
+<ol>
+<li><strong>Enable debug mode</strong>: Add <code>debug=True</code> to <code>@injectable</code> decorators</li>
+<li><strong>Check container state</strong>: Use <code>container.instances</code> to see what's registered</li>
+<li><strong>Test with minimal setup</strong>: Start with <code>type_factory</code> hook for simplicity</li>
+<li><strong>Use container branching</strong>: Isolate test scenarios with <code>container.branch()</code></li>
+</ol>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<p>The system generally performs better due to:</p>
+<ul>
+<li><strong>Cached analysis</strong>: Function signatures are analyzed once and cached</li>
+<li><strong>Optimized type checking</strong>: Faster type resolution with modern algorithms</li>
+<li><strong>Reduced overhead</strong>: Less dynamic inspection at runtime</li>
+</ul>
+<p>However, be aware that:</p>
+<ul>
+<li><strong>First call overhead</strong>: Initial function analysis has some cost</li>
+<li><strong>Memory usage</strong>: Cached analysis uses slightly more memory</li>
+<li><strong>Debug mode cost</strong>: Debug logging has performance impact</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>While the migration requires updating your decorators and type annotations, the system provides:</p>
+<ul>
+<li><strong>Better type safety</strong> with full IDE support</li>
+<li><strong>More powerful hooks</strong> for extensibility  </li>
+<li><strong>Flexible injection strategies</strong> for different scenarios</li>
+<li><strong>Native optional dependency support</strong></li>
+<li><strong>Improved debugging capabilities</strong></li>
+</ul>
+<p>The effort to migrate pays off with a more robust, type-safe, and feature-rich dependency injection system.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
