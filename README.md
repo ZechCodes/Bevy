@@ -1,4 +1,9 @@
 # Bevy
+
+[![PyPI version](https://img.shields.io/pypi/v/bevy?style=flat-square)](https://pypi.org/project/bevy/)
+[![Python versions](https://img.shields.io/pypi/pyversions/bevy?style=flat-square)](https://pypi.org/project/bevy/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/ZechCodes/Bevy?style=flat-square)](https://github.com/ZechCodes/Bevy/stargazers)
 Bevy makes using *Dependency Injection* in *Python* a breeze so that you can focus on creating amazing code.
 
 ## Installation
