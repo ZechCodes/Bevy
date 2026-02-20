@@ -187,17 +187,12 @@ class Container(GlobalContextMixin, var=global_container):
         parents.
 
         Works with both @injectable decorated functions and regular functions (analyzed dynamically).
-        For async functions, returns a coroutine that must be awaited.
         """
         if isinstance(func, type):
             return self._call_type(func, args, kwargs)
 
         injectable = func if isinstance(func, InjectableCallable) else InjectableCallable.from_callable(func)
-
-        if injectable.is_async:
-            return injectable.call_using_async(self, *args, **kwargs)
-        else:
-            return injectable.call_using(self, *args, **kwargs)
+        return injectable.call_using(self, *args, **kwargs)
 
     @t.overload
     def get[T: Instance](self, dependency: t.Type[T], *, context: dict[str, Any] | None = None) -> T:
@@ -272,17 +267,17 @@ class Container(GlobalContextMixin, var=global_container):
         ...
 
     def find[T: Instance, D](self, dependency: t.Type[T], **kwargs) -> Result[T | D]:
-        """Returns a Result object for async/sync dependency resolution.
+        """Returns a Result object for dependency resolution.
 
         This method mirrors the get() signature but returns a Result that can be resolved
-        in either sync (via .get()) or async (via .get_async() or await) contexts.
+        via .get().
 
         Args:
             dependency: The type to resolve
             **kwargs: Same parameters as get() - default, default_factory, qualifier, context
 
         Returns:
-            Result: A Result object that can be resolved sync or async
+            Result: A Result object that can be resolved via .get()
         """
         return Result(self, dependency, **kwargs)
 
@@ -300,11 +295,11 @@ class Container(GlobalContextMixin, var=global_container):
             # Explicit chain provided
             return injection_chain + [function_name]
 
-    async def _inject_single_dependency(
+    def _inject_single_dependency(
         self, param_name: str, param_type: type, options, injection_config: dict,
         function_name: str, current_injection_chain: list[str], parameter_default
     ) -> Any:
-        """Inject a single dependency parameter (async)."""
+        """Inject a single dependency parameter."""
         # Create injection context for hooks
         injection_context = InjectionContext(
             function_name=function_name,
@@ -320,33 +315,33 @@ class Container(GlobalContextMixin, var=global_container):
         )
 
         # Call INJECTION_REQUEST hook - allows hooks to provide the value directly
-        hook_result = await self.registry.hooks[Hook.INJECTION_REQUEST].handle(self, injection_context)
+        hook_result = self.registry.hooks[Hook.INJECTION_REQUEST].handle(self, injection_context)
         if isinstance(hook_result, Optional.Some):
             # Hook provided a value, use it directly
-            return await self._handle_injection_success(hook_result.value, injection_context)
+            return self._handle_injection_success(hook_result.value, injection_context)
 
         # Set the context chain for nested factory calls
         token = _current_injection_chain.set(current_injection_chain)
         try:
-            injected_value = await self._resolve_dependency_with_hooks(
+            injected_value = self._resolve_dependency_with_hooks(
                 param_type, options, injection_context
             )
         except DependencyResolutionError as e:
-            return await self._handle_injection_failure(
+            return self._handle_injection_failure(
                 e, param_type, param_name, injection_context
             )
         else:
-            return await self._handle_injection_success(
+            return self._handle_injection_success(
                 injected_value, injection_context
             )
         finally:
             _current_injection_chain.reset(token)
 
-    async def _handle_injection_failure(
+    def _handle_injection_failure(
         self, exception: DependencyResolutionError, param_type: type, param_name: str,
         injection_context: InjectionContext
     ) -> Any:
-        """Handle failed dependency injection (async)."""
+        """Handle failed dependency injection."""
         debug = create_debug_logger(injection_context.debug_mode)
 
         if injection_context.strict_mode:
@@ -360,20 +355,20 @@ class Container(GlobalContextMixin, var=global_container):
             debug.non_strict_mode_none(param_name)
             return None
 
-    async def _handle_injection_success(self, injected_value: Any, injection_context: InjectionContext) -> Any:
-        """Handle successful dependency injection (async)."""
+    def _handle_injection_success(self, injected_value: Any, injection_context: InjectionContext) -> Any:
+        """Handle successful dependency injection."""
         debug = create_debug_logger(injection_context.debug_mode)
 
         debug.injected_parameter(injection_context.parameter_name, injection_context.requested_type, injected_value)
 
         # Call INJECTION_RESPONSE hook - allows hooks to transform the injected value
-        filtered_value = await self.registry.hooks[Hook.INJECTION_RESPONSE].filter(self, injected_value, {"injection_context": injection_context})
+        filtered_value = self.registry.hooks[Hook.INJECTION_RESPONSE].filter(self, injected_value, {"injection_context": injection_context})
 
         return filtered_value
 
-    async def _resolve_qualified_dependency(self, param_type: type, qualifier: str, injection_context: InjectionContext):
+    def _resolve_qualified_dependency(self, param_type: type, qualifier: str, injection_context: InjectionContext):
         """
-        Resolve a qualified dependency from the container (async).
+        Resolve a qualified dependency from the container.
 
         Args:
             param_type: Type to resolve
@@ -397,7 +392,7 @@ class Container(GlobalContextMixin, var=global_container):
         # Check parent container
         if self._parent:
             try:
-                return await self._parent._resolve_qualified_dependency(param_type, qualifier, injection_context)
+                return self._parent._resolve_qualified_dependency(param_type, qualifier, injection_context)
             except DependencyResolutionError:
                 pass  # Continue to raise error below
 
@@ -409,9 +404,9 @@ class Container(GlobalContextMixin, var=global_container):
         )
 
 
-    async def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
+    def _resolve_dependency_with_hooks(self, param_type, options, injection_context):
         """
-        Resolve a dependency using the hook system with rich context (async).
+        Resolve a dependency using the hook system with rich context.
 
         Args:
             param_type: Type to resolve
@@ -426,7 +421,7 @@ class Container(GlobalContextMixin, var=global_container):
         actual_type = get_non_none_type(param_type) if is_optional else param_type
 
         try:
-            return await self._resolve_single_type_with_hooks(actual_type, options, injection_context)
+            return self._resolve_single_type_with_hooks(actual_type, options, injection_context)
         except DependencyResolutionError:
             if is_optional:
                 # Optional dependency not found - return None
@@ -437,9 +432,9 @@ class Container(GlobalContextMixin, var=global_container):
                 # Required dependency not found - re-raise
                 raise
 
-    async def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
+    def _resolve_single_type_with_hooks(self, param_type, options, injection_context):
         """
-        Resolve a single non-optional type using the hook system (async).
+        Resolve a single non-optional type using the hook system.
 
         Args:
             param_type: Type to resolve
@@ -467,9 +462,9 @@ class Container(GlobalContextMixin, var=global_container):
                 find_kwargs["default_factory"] = options.default_factory
                 find_kwargs["cache_factory_result"] = options.cache_factory_result
 
-        # Delegate ALL resolution to Result.get_async() which handles qualified + default_factory combinations
+        # Delegate ALL resolution to Result.get()
         try:
-            return await self.find(param_type, **find_kwargs).get_async()
+            return self.find(param_type, **find_kwargs).get()
 
         except DependencyResolutionError as e:
             # Re-raise with proper parameter name if it's not already set
@@ -500,19 +495,18 @@ class Container(GlobalContextMixin, var=global_container):
             else:
                 # Parameter name already set, just re-raise
                 raise
-    
+
     def _create_instance_with_hooks(self, dependency, injection_context):
         """
         Create an instance with hook integration for richer context.
-        
+
         Args:
             dependency: Type to create
             injection_context: Rich context for hooks
-            
+
         Returns:
             Created instance
         """
-        # Use container.get() which delegates to Result (async-native)
         return self.get(dependency, context={"injection_context": injection_context})
 
     def _resolve_dependency(self, param_type, options, type_matching, strict_mode, debug_mode):

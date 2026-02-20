@@ -60,7 +60,6 @@
 - [ ] Support hook performance profiling
 
 ### Phase 5: Advanced Hook Features
-- [ ] Async hook support for async dependency resolution
 - [ ] Hook composition and chaining mechanisms
 - [ ] Hook templates for common patterns
 - [ ] Plugin system built on hooks

@@ -209,7 +209,7 @@ class Container:
         """Get instance with default fallback."""
 
     def find[T](self, dependency: type[T]) -> Result[T]:
-        """Get Result for async/sync dependency resolution."""
+        """Get Result for dependency resolution."""
 
     def find[T](self, dependency: type[T], *, qualifier: str) -> Result[T]:
         """Get Result for qualified dependency."""
@@ -218,10 +218,7 @@ class Container:
         """Get Result with default factory."""
 
     def call[**P, R](self, func: Callable[P, R], /, *args: P.args, **kwargs: P.kwargs) -> R:
-        """Call function with dependency injection.
-
-        For async functions, returns a coroutine that must be awaited.
-        """
+        """Call function with dependency injection."""
 
     def branch(self) -> Container:
         """Create child container that inherits from this one."""
@@ -242,28 +239,16 @@ container.add(Database, ProductionDatabase())
 container.add(Database, primary_db, qualifier="primary")
 container.add(Database, backup_db, qualifier="backup")
 
-# Get instances (sync)
+# Get instances
 service = container.get(UserService)
 db = container.get(Database, default=None)
 
-# Get instances (async)
-service = await container.find(UserService)
-primary_db = await container.find(Database, qualifier="primary")
-config = await container.find(Config, default_factory=load_config)
-
-# Call functions with injection (sync)
+# Call functions with injection
 @injectable
 def process(service: Inject[UserService], data: str):
     return service.process(data)
 
 result = container.call(process, data="test")
-
-# Call functions with injection (async)
-@injectable
-async def process_async(service: Inject[UserService], data: str):
-    return await service.process_async(data)
-
-result = await container.call(process_async, data="test")
 
 # Container branching
 child = container.branch()
@@ -272,47 +257,25 @@ child.add(Database, TestDatabase())  # Override for testing
 
 ### Result[T]
 
-Represents a deferred dependency resolution that can be executed in either sync or async contexts.
+Represents a deferred dependency resolution.
 
 ```python
 from bevy.find_results import Result
 
 class Result[T]:
     def get(self) -> T:
-        """Resolve dependency synchronously.
-
-        Runs async resolution in a thread with an isolated event loop.
-        Use this only when you cannot use async/await.
-        """
-
-    async def get_async(self) -> T:
-        """Resolve dependency asynchronously.
-
-        Truly async-native resolution with no thread overhead.
-        Async hooks execute in the same async context.
-        """
-
-    def __await__(self):
-        """Allow direct awaiting: instance = await result"""
+        """Resolve dependency synchronously."""
 ```
 
 **Usage Examples:**
 
 ```python
-# In async code - recommended
-async def process_order():
-    db = await container.find(Database)  # Truly async
-    cache = await container.find(Cache)
+# Using find() for deferred resolution
+result = container.find(Database)
+db = result.get()
 
-    # Or equivalently
-    result = container.find(Database)
-    db = await result.get_async()
-
-# In sync code
-def sync_process():
-    db = container.find(Database).get()  # Runs async in thread
-    # Or just use get() directly
-    db = container.get(Database)
+# Or just use get() directly
+db = container.get(Database)
 
 # All options work with find()
 result = container.find(
@@ -320,15 +283,8 @@ result = container.find(
     qualifier="primary",
     default_factory=create_db,
 )
-db = await result  # Direct await
+db = result.get()
 ```
-
-**Why use `find()` over `get()` in async code?**
-
-- `container.get(T)` spawns a thread + event loop for async hooks
-- `await container.find(T)` stays truly async with no thread overhead
-- Async hooks can do real async work (I/O, delays) when using `find()`
-- Dependencies injected into async functions use `find()` automatically
 
 ### Registry
 
