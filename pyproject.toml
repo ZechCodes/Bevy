@@ -20,7 +20,9 @@ python = "^3.12"
 tramp = "^0.1.17"
 
 [tool.poetry.group.dev.dependencies]
+certifi = ">=2026.10.19"
 pytest = "^6.2.5"
+pytest-cov = "^5.0"
 pytest-asyncio = "^0.18.3"
 mkdocs-material = "^9.1.9"
 mkdocstrings = "^0.21.2"
