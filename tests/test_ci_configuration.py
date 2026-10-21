@@ -1,0 +1,33 @@
+"""Keep CI on declared Python versions with a portable, complete test toolchain."""
+import re
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class CiConfigurationTests(unittest.TestCase):
+    def test_matrix_matches_the_project_python_floor(self):
+        workflow = (ROOT / ".github/workflows/tests.yaml").read_text()
+        self.assertIn("python-version: ['3.12', '3.13']", workflow)
+
+    def test_poetry_uses_the_selected_interpreter_on_every_platform(self):
+        workflow = (ROOT / ".github/workflows/tests.yaml").read_text()
+        self.assertNotIn("snok/install-poetry", workflow)
+        self.assertIn('version: "0.13.4"', workflow)
+        self.assertIn(
+            'uv pip install --system "poetry==1.8.5" "certifi>=2026.10.19"', workflow
+        )
+        self.assertIn("python -m poetry env use python", workflow)
+        self.assertNotRegex(workflow, r"(?m)^\s*(?:run: )?poetry (?:install|run)")
+
+    def test_coverage_plugin_is_declared_and_locked(self):
+        manifest = (ROOT / "pyproject.toml").read_text()
+        self.assertIn('pytest-cov = "^5.0"', manifest)
+        self.assertRegex(
+            (ROOT / "poetry.lock").read_text(), r'(?m)^name = "pytest-cov"$'
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
