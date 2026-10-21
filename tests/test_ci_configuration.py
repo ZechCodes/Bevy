@@ -18,8 +18,13 @@ class CiConfigurationTests(unittest.TestCase):
         self.assertIn(
             'uv pip install --system "poetry==1.8.5" "certifi>=2026.10.19"', workflow
         )
-        self.assertIn("python -m poetry env use python", workflow)
+        self.assertIn("python -I -m poetry env use python", workflow)
         self.assertNotRegex(workflow, r"(?m)^\s*(?:run: )?poetry (?:install|run)")
+
+    def test_poetry_commands_ignore_repository_module_shadows(self):
+        workflow = (ROOT / ".github/workflows/tests.yaml").read_text()
+        self.assertNotIn("python -m poetry", workflow)
+        self.assertIn("python -I -m poetry install", workflow)
 
     def test_coverage_plugin_is_declared_and_locked(self):
         manifest = (ROOT / "pyproject.toml").read_text()
