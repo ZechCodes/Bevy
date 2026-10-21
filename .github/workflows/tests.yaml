@@ -15,6 +15,9 @@ env:
 
 jobs:
   test:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -63,9 +66,10 @@ jobs:
     
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-      uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # v3
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
+        use_oidc: true
         fail_ci_if_error: true
 
   lint:

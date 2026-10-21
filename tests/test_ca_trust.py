@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class CaTrustTests(unittest.TestCase):
     def test_locked_certifi_excludes_distrusted_roots(self):
-        lock = (ROOT / "poetry.lock").read_text()
+        lock = (ROOT / "poetry.lock").read_text(encoding="utf-8")
         package = re.search(r'(?m)^name = "certifi"\nversion = "([^"\n]+)"', lock)
         self.assertIsNotNone(package, "certifi must remain explicitly locked")
         version = tuple(int(part) for part in package.group(1).split("."))
